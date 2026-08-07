@@ -212,7 +212,7 @@ export default function HomePage() {
     setIsTyping(true);
 
     setTimeout(() => {
-      let reply = "Dạ mình đã ghi nhận thông tin. Bạn có thể để lại SĐT hoặc gọi Zalo 0824.654.321 để nhân viên hỗ trợ nhanh nhất nhé!";
+      let reply = "Dạ mình đã ghi nhận thông tin. Bạn có thể để lại SĐT hoặc gọi Zalo 0325.477.841 để nhân viên hỗ trợ nhanh nhất nhé!";
       const lowerInput = textToSend.toLowerCase();
       
       if (lowerInput.includes('chính hãng')) {

@@ -55,15 +55,15 @@ export default function Footer() {
             </h4>
             <p className="font-medium mb-2 flex items-start gap-2">
               <MapPin size={16} className="text-red-600 shrink-0 mt-0.5" /> 
-              <span>Đường LÊ VĂN SỸ, Phường 14, Quận 3, TP. Hồ Chí Minh</span>
+              <span>Lô 7 Cư Xá Thanh Đa, Bình Thạnh, TP. Hồ Chí Minh</span>
             </p>
             <p className="font-medium mb-4 flex items-center gap-2">
               <Mail size={16} className="text-red-600 shrink-0" /> 
-              cskh@tritech.vn
+              tricuc77@gmail.com
             </p>
             <div className="w-full h-[180px] rounded-2xl overflow-hidden border border-gray-200 shadow-sm opacity-90 hover:opacity-100 transition-opacity">
               <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.297455823157!2d106.66669911474921!3d10.788514192313364!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3175292c3008034d%3A0xc6c4293f063c5a61!2zTMOqIFbEg24gU-G7uSwgUXXhuq1uIDMsIFRow6BuaCBwaOG7kSBI4buTIENow60gTWluaA!5e0!3m2!1svi!2s!4v1655385610000!5m2!1svi!2s" 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3918.9043442056227!2d106.71602427575296!3d10.818631989332712!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3175289126aaaaab%3A0xbf99862f617dcd30!2sCong%20Doan%20Thanh%20Da%20Hotel!5e0!3m2!1svi!2s!4v1786079182047!5m2!1svi!2s" 
                 width="100%" 
                 height="100%" 
                 style={{ border: 0 }} 
@@ -89,7 +89,7 @@ export default function Footer() {
             <h4 className="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm border-b border-gray-200 pb-2 inline-block">Thanh toán & CSKH</h4>
             <div className="mb-6">
               <p>Hotline hỗ trợ 24/7:</p>
-              <p className="text-xl font-black text-amber-500 mt-1 hover:text-amber-600 transition-colors cursor-pointer">0824.654.321</p>
+              <p className="text-xl font-black text-amber-500 mt-1 hover:text-amber-600 transition-colors cursor-pointer">0325.477.841</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <div className="w-10 h-6 bg-white border border-gray-200 rounded flex items-center justify-center font-bold text-[8px] text-gray-700 cursor-pointer hover:bg-gray-50 transition-colors">VISA</div>
@@ -124,7 +124,7 @@ export default function Footer() {
 
         <div className="max-w-[1280px] mx-auto px-4 border-t border-gray-200 pt-6 text-center text-[11px] text-gray-500 leading-relaxed">
           <p>Công ty TNHH Tritech Channel - GPĐKKD 0109597994 tại Sở Kế Hoạch Đầu Tư Thành Phố HCM ngày 15-4-2021.</p>
-          <p className="mt-1">Địa chỉ: Đường LÊ VĂN SỸ, Phường 14, Quận 3, TP. Hồ Chí Minh - Điện thoại: 0824.654.321 - Chịu trách nhiệm quản lý nội dung: Hồ Minh Trí</p>
+          <p className="mt-1">Địa chỉ: Lô 7 Cư Xá Thanh Đa, Bình Thạnh, TP. Hồ Chí Minh - Điện thoại: 0325.477.841 - Chịu trách nhiệm quản lý nội dung: Hồ Minh Trí</p>
           <p className="mt-3 font-bold text-gray-600">Copyright © 2026 Tritech Channel</p>
         </div>
       </footer>
