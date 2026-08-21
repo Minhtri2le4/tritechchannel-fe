@@ -196,7 +196,7 @@ export default function HomePage() {
             <img src="/assets/bannermini-left.jpg" alt="QC Trái" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
           </a>
           <a href="#" className="hidden xl:block absolute left-full ml-4 top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300">
-            <img src="https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&h=900&fit=crop" alt="QC Phải" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
+            <img src="/assets/bannermini-right.jpg" alt="QC Phải" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
           </a>
 
           <div className="bg-[#FFF8D6] rounded-xl p-2 mb-3 flex items-center justify-between text-[10px] md:text-xs font-semibold text-gray-800 border border-yellow-200 overflow-x-auto whitespace-nowrap gap-4 md:gap-0 scrollbar-hide">
