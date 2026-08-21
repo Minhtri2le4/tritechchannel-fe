@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MapPin, Mail, Bot, X, Send, PhoneCall } from 'lucide-react';
 
 export default function Footer() {

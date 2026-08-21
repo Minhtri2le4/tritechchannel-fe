@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext'; 
-import { categoryProducts } from '../data/categoryData';
 import ProductCard from '../components/ProductCard.jsx';
 import { Link } from 'react-router-dom';
 import { products, sidebarCategories, quickCategories } from "../data/mockData";
 import { 
   ShieldCheck, RefreshCw, Truck, RotateCcw, 
-  ChevronLeft, ChevronRight, PhoneCall, ExternalLink, Star, Play, Flame, Zap, Clock,
+  ChevronLeft, ChevronRight, PhoneCall, Star, Play, Flame, Zap, Clock,
   Smartphone, Tablet, Percent, Headphones, Speaker, Watch, Laptop, Home, Gift, Newspaper, 
-  ArrowRight, Tag, Sparkles, MapPin, Mail, Bot, X, Send
+  ArrowRight, Sparkles, Bot
 } from 'lucide-react';
 
 const iconMap = {
@@ -155,15 +154,6 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState('all');
   const shortsContainerRef = useRef(null);
 
-  // === STATE CHO CHATBOX AI ===
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState("");
-  const [messages, setMessages] = useState([
-    { sender: 'ai', text: 'Chào bạn! Mình là Trợ lý AI của Tritech. Bạn cần tư vấn về hàng chính hãng, giao hàng hay bảo hành ạ?' }
-  ]);
-  const [isTyping, setIsTyping] = useState(false);
-  const chatBodyRef = useRef(null);
-
   useEffect(() => {
     const bannerTimer = setInterval(() => setCurrentBanner(p => (p === bannerImages.length - 1 ? 0 : p + 1)), 3000);
     const countdownTimer = setInterval(() => {
@@ -181,13 +171,6 @@ export default function HomePage() {
     return () => { clearInterval(bannerTimer); clearInterval(countdownTimer); };
   }, []);
 
-  // Tự động cuộn xuống dưới cùng của phần chat khi có tin nhắn mới hoặc đang gõ
-  useEffect(() => {
-    if (chatBodyRef.current) {
-      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
-    }
-  }, [messages, isChatOpen, isTyping]);
-
   const handleScrollShorts = () => {
     if (shortsContainerRef.current) {
       const container = shortsContainerRef.current;
@@ -199,34 +182,7 @@ export default function HomePage() {
 
   const nextBanner = () => setCurrentBanner((prev) => (prev === bannerImages.length - 1 ? 0 : prev + 1));
   const prevBanner = () => setCurrentBanner((prev) => (prev === 0 ? bannerImages.length - 1 : prev - 1));
-  const handleAddToCart = (product) => setCart([...cart, product]);
-
-  // === HÀM XỬ LÝ CHAT AI KÈM HIỆU ỨNG 3 CHẤM ===
-  const handleSendMessage = (quickText = "") => {
-    const textToSend = typeof quickText === 'string' && quickText.trim() ? quickText : chatInput;
-    if (!textToSend.trim() || isTyping) return; // Chặn nếu đang trống HOẶC AI đang gõ
-    
-    setMessages(prev => [...prev, { sender: 'user', text: textToSend }]);
-    if (!quickText) setChatInput(""); 
-    
-    setIsTyping(true);
-
-    setTimeout(() => {
-      let reply = "Dạ mình đã ghi nhận thông tin. Bạn có thể để lại SĐT hoặc gọi Zalo 0325.477.841 để nhân viên hỗ trợ nhanh nhất nhé!";
-      const lowerInput = textToSend.toLowerCase();
-      
-      if (lowerInput.includes('chính hãng')) {
-        reply = "Dạ 100% sản phẩm tại Tritech đều là hàng CHÍNH HÃNG, nguyên seal, xuất VAT đầy đủ ạ. Bạn hoàn toàn yên tâm nha!";
-      } else if (lowerInput.includes('giao') || lowerInput.includes('bao lâu')) {
-        reply = "Dạ nội thành TP.HCM Tritech giao hỏa tốc 2H. Các tỉnh thành khác thời gian giao tiêu chuẩn từ 2-3 ngày làm việc ạ.";
-      } else if (lowerInput.includes('bảo hành') || lowerInput.includes('đổi trả')) {
-        reply = "Dạ sản phẩm được bảo hành chính hãng 1 đổi 1. Có lỗi từ nhà sản xuất sẽ được đổi mới ngay trong 45 ngày đầu nhé!";
-      }
-
-      setMessages(prev => [...prev, { sender: 'ai', text: reply }]);
-      setIsTyping(false);
-    }, 1500); 
-  };
+  const handleAddToCart = (product) => addToCart(product);
 
   return (
     <div className="min-h-screen bg-[#F4F4F4] font-sans text-gray-800 overflow-x-hidden relative">
@@ -237,7 +193,7 @@ export default function HomePage() {
         {/* QUẢNG CÁO NỔI & BANNERS */}
         <div className="relative mb-4 md:mb-6">
           <a href="#" className="hidden xl:block absolute right-full mr-4 top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300">
-            <img src="https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=400&h=900&fit=crop" alt="QC Trái" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
+            <img src="/assets/bannermini-left.jpg" alt="QC Trái" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
           </a>
           <a href="#" className="hidden xl:block absolute left-full ml-4 top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300">
             <img src="https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&h=900&fit=crop" alt="QC Phải" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
@@ -589,14 +545,14 @@ export default function HomePage() {
       {/* ========================================================== */}
       <div className="fixed bottom-4 right-4 z-50 group">
         <div className="absolute bottom-full right-0 mb-3 flex flex-col items-end gap-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-4 group-hover:translate-y-0">
-          <button onClick={() => setIsChatOpen(true)} className="flex items-center gap-2 group/ai cursor-pointer">
+          <a href="tel:0325477841" className="flex items-center gap-2 group/ai cursor-pointer">
             <span className="bg-black/80 text-white text-[10px] md:text-xs font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover/ai:opacity-100 transition-opacity whitespace-nowrap shadow-sm">
               Hỏi Trợ lý AI Tritech
             </span>
             <div className="w-11 h-11 md:w-12 md:h-12 bg-gray-900 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform border-2 border-white">
               <Bot className="text-white w-5 h-5 md:w-6 md:h-6" />
             </div>
-          </button>
+          </a>
           <a href="https://zalo.me/0824654321" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group/zalo cursor-pointer">
             <span className="bg-black/80 text-white text-[10px] md:text-xs font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover/zalo:opacity-100 transition-opacity whitespace-nowrap shadow-sm">
               Chat Zalo NV Tư Vấn

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, ShieldCheck, AlertCircle, Clock, Wrench, PhoneCall, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 export default function WarrantyPage() {

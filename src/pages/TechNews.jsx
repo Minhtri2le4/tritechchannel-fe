@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Newspaper, ExternalLink, Clock, RefreshCw, Home, ChevronRight } from 'lucide-react';
 
@@ -44,7 +44,8 @@ export default function TechNews() {
   };
 
   useEffect(() => {
-    fetchNews(selectedSource);
+    const fetchTimer = setTimeout(() => fetchNews(selectedSource), 0);
+    return () => clearTimeout(fetchTimer);
   }, [selectedSource]);
 
   // Bóc tách URL ảnh

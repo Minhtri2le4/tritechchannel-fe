@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShoppingCart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom'; // 1. Import thêm Link từ react-router-dom
 import { useCart } from '../context/CartContext'; 

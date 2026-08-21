@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ShieldCheck, RefreshCw, Truck, MapPin, CheckCircle, 
-  ChevronRight, Star, ShoppingBag, Zap, Award, Check, AlertCircle, PhoneCall
+  ChevronRight, ShoppingBag, Zap, Award, Check
 } from 'lucide-react';
 import { categoryProducts } from '../data/categoryData';
 import { useCart } from '../context/CartContext';
@@ -13,7 +13,7 @@ export default function ProductDetail() {
   const { addToCart } = useCart();
 
   // Tìm sản phẩm theo ID (nếu không thấy lấy mặc định sản phẩm đầu tiên làm mẫu)
-  const productData = categoryProducts.find(p => p.id === Number(id)) || categoryProducts[0];
+  const productData = categoryProducts.find(p => String(p.id) === String(id)) || categoryProducts[0];
 
   // State quản lý lựa chọn của khách hàng
   const [selectedStorage, setSelectedStorage] = useState('512GB - Máy Đẹp');

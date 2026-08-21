@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Search, ShoppingBag, Grid3X3, Phone, ShieldCheck, Trash2, TrendingUp,

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { RefreshCw, CheckCircle2, PhoneCall, ArrowRight, FileText, PackageCheck, UploadCloud, X, Camera } from 'lucide-react';
+import { useState } from 'react';
+import { RefreshCw, PhoneCall, ArrowRight, FileText, PackageCheck, X, Camera } from 'lucide-react';
 
 export default function TradeIn() {
   const [formData, setFormData] = useState({
