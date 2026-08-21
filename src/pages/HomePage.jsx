@@ -26,7 +26,7 @@ const iconMap = {
 
 const bannerImages = [
   "/assets/A1695.jpg",
-  "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=1200&h=600&fit=crop",
+  "/assets/why.jpg",
   "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&h=600&fit=crop",
   "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1200&h=600&fit=crop",
   "https://images.unsplash.com/photo-1523206489230-c012c64b2b48?w=1200&h=600&fit=crop",
