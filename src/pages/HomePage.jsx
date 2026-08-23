@@ -27,8 +27,8 @@ const iconMap = {
 const bannerImages = [
   "/assets/A1695.jpg",
   "/assets/why.jpg",
-  "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1200&h=600&fit=crop",
+  "/assets/thucu.jpg",
+  "/assets/tainghe.jpg", 
   "https://images.unsplash.com/photo-1523206489230-c012c64b2b48?w=1200&h=600&fit=crop",
   "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=1200&h=600&fit=crop",
   "https://images.unsplash.com/photo-1542393545-10f5cde2c810?w=1200&h=600&fit=crop",
