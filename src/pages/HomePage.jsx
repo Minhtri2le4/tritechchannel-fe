@@ -29,10 +29,10 @@ const bannerImages = [
   "/assets/why.jpg",
   "/assets/thucu.jpg",
   "/assets/tainghe.jpg", 
-  "https://images.unsplash.com/photo-1523206489230-c012c64b2b48?w=1200&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=1200&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1542393545-10f5cde2c810?w=1200&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1505156868547-9b49f4df4e04?w=1200&h=600&fit=crop"
+  "/assets/asus.jpg",
+  "/assets/aura.jpg",
+  "/assets/best.jpg",
+  "/assets/quy.jpg"
 ];
 
 const ecomStores = [
