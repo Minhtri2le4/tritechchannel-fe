@@ -99,8 +99,8 @@ const bestPricesToday = [
 ];
 
 const youtubeShortsVideos = [
-  { id: 1, shortsUrl: "https://www.youtube.com/embed/45K95-qv-Pg?autoplay=1&mute=1", title: "Review tai nghe và thiết bị công nghệ", productName: "[Bản giới hạn] Tai nghe Gạch TWS", price: 599000, oldPrice: 1299000, productImage: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=150" },
-  { id: 2, shortsUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0", title: "Đánh giá chi tiết củ sạc nhanh Oca 65W", productName: "Ô cắm điện đa năng Tritech", price: 559000, oldPrice: 699000, productImage: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=150" },
+  { id: 1, shortsUrl: "https://www.youtube.com/shorts/1krdQqyCpbw", title: "Review tai nghe và thiết bị công nghệ", productName: "[Bản giới hạn] Tai nghe Gạch TWS", price: 599000, oldPrice: 1299000, productImage: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=150" },
+  { id: 2, shortsUrl: "https://www.youtube.com/shorts/wZ5AD7mChUM", title: "Đánh giá chi tiết củ sạc nhanh Oca 65W", productName: "Ô cắm điện đa năng Tritech", price: 559000, oldPrice: 699000, productImage: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=150" },
   { id: 3, shortsUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0", title: "Test camera S24 Ultra", productName: "Samsung Galaxy S24 Ultra", price: 25990000, oldPrice: 33990000, productImage: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=150" },
   { id: 4, shortsUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0", title: "Trải nghiệm nhanh phụ kiện", productName: "Sạc dự phòng Cube 2", price: 459000, oldPrice: 799000, productImage: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=150" },
   { id: 5, shortsUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0", title: "Mở hộp định vị thông minh", productName: "Divitag Pro Chính Hãng", price: 399000, oldPrice: 879000, productImage: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=150" }
