@@ -99,11 +99,11 @@ const bestPricesToday = [
 ];
 
 const youtubeShortsVideos = [
-  { id: 1, shortsUrl: "https://www.youtube.com/shorts/1krdQqyCpbw", title: "Review tai nghe và thiết bị công nghệ", productName: "[Bản giới hạn] Tai nghe Gạch TWS", price: 599000, oldPrice: 1299000, productImage: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=150" },
-  { id: 2, shortsUrl: "https://www.youtube.com/shorts/wZ5AD7mChUM", title: "Đánh giá chi tiết củ sạc nhanh Oca 65W", productName: "Ô cắm điện đa năng Tritech", price: 559000, oldPrice: 699000, productImage: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=150" },
-  { id: 3, shortsUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0", title: "Test camera S24 Ultra", productName: "Samsung Galaxy S24 Ultra", price: 25990000, oldPrice: 33990000, productImage: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=150" },
-  { id: 4, shortsUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0", title: "Trải nghiệm nhanh phụ kiện", productName: "Sạc dự phòng Cube 2", price: 459000, oldPrice: 799000, productImage: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=150" },
-  { id: 5, shortsUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0", title: "Mở hộp định vị thông minh", productName: "Divitag Pro Chính Hãng", price: 399000, oldPrice: 879000, productImage: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=150" }
+  { id: 1, shortsUrl: "https://www.youtube.com/embed/1krdQqyCpbw", title: "Review tai nghe và thiết bị công nghệ", productName: "Sạc Dự Phòng Anker Zolo 25.000mAh 165W", price: 1400000, oldPrice: 1400000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpfaa59kf8cgc0.webp" },
+  { id: 2, shortsUrl: "https://www.youtube.com/embed/79QrqmGRrzk", title: "Đánh giá chi tiết củ sạc nhanh Oca 65W", productName: "Bộ sạc nhanh Anker ZoLo 140W (4 cổng, GaN)", price: 900000, oldPrice: 699000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpuizoniuiob90.webp" },
+  { id: 3, shortsUrl: "https://www.youtube.com/embed/gBw27RN96LU", title: "Test camera S24 Ultra", productName: "Tai Nghe Không Dây Baseus BP1 Pro ANC -50dB", price: 388000, oldPrice: 33990000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mspd8f20yupya2.webp" },
+  { id: 4, shortsUrl: "https://www.youtube.com/embed/8ut8aOKLfyA", title: "Trải nghiệm nhanh phụ kiện", productName: "Tai nghe Bluetooth Ugreen Hitune Max5c Hi-Res", price: 499000, oldPrice: 799000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mo58anpzl4au06.webp" },
+  { id: 5, shortsUrl: "https://www.youtube.com/embed/rPjLNSUs4eQ", title: "Mở hộp định vị thông minh", productName: "Trạm sạc di động Anker SOLIX C300 DC - A1726", price: 4000000, oldPrice: 879000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpul7sbjssunc4.webp" }
 ];
 
 const newsArticles = [
@@ -554,7 +554,7 @@ export default function HomePage() {
               <Bot className="text-white w-5 h-5 md:w-6 md:h-6" />
             </div>
           </a>
-          <a href="https://zalo.me/0824654321" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group/zalo cursor-pointer">
+          <a href="https://zalo.me/0325477841" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group/zalo cursor-pointer">
             <span className="bg-black/80 text-white text-[10px] md:text-xs font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover/zalo:opacity-100 transition-opacity whitespace-nowrap shadow-sm">
               Chat Zalo NV Tư Vấn
             </span>
