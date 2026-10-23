@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RefreshCw, PhoneCall, ArrowRight, FileText, PackageCheck, X, Camera } from 'lucide-react';
+import { shopApi } from '../services/shop';
 
 export default function TradeIn() {
   const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ export default function TradeIn() {
   // State quản lý ảnh upload
   const [images, setImages] = useState([]);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Xử lý khi chọn/chụp ảnh
   const handleImageUpload = (e) => {
@@ -39,18 +41,29 @@ export default function TradeIn() {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.fullName || !formData.phone || !formData.brand || !formData.deviceName) {
       alert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
       return;
     }
 
-    // TODO: Tại đây sẽ gọi API gửi dữ liệu + images lên Telegram Bot hoặc Server
-    console.log("Dữ liệu Form:", formData);
-    console.log("Danh sách file ảnh:", images.map(img => img.file));
+    // Gửi dạng multipart/form-data: các trường form + ảnh ở key "images"
+    const body = new FormData();
+    Object.entries(formData).forEach(([key, value]) => body.append(key, value));
+    images.forEach((img) => body.append('images', img.file));
 
-    setSubmitted(true);
+    setSubmitting(true);
+    try {
+      await shopApi.createTradeIn(body);
+      images.forEach((img) => URL.revokeObjectURL(img.preview));
+      setSubmitted(true);
+    } catch (err) {
+      const detail = err.details?.map((d) => `• ${d.message}`).join('\n');
+      alert(detail ? `${err.message}\n${detail}` : err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -182,7 +195,7 @@ export default function TradeIn() {
                   <input
                     type="file"
                     multiple
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
                     id="image-upload"
                     className="hidden"
                     onChange={handleImageUpload}
@@ -265,9 +278,10 @@ export default function TradeIn() {
 
               <button
                 type="submit"
-                className="w-full bg-[#FFD400] hover:bg-yellow-400 text-black font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all uppercase text-xs sm:text-sm shadow-md active:scale-[0.98] cursor-pointer"
+                disabled={submitting}
+                className="w-full bg-[#FFD400] hover:bg-yellow-400 disabled:opacity-60 text-black font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all uppercase text-xs sm:text-sm shadow-md active:scale-[0.98] cursor-pointer"
               >
-                <span>Gửi Thông Tin & Ảnh Định Giá</span>
+                <span>{submitting ? 'Đang gửi...' : 'Gửi Thông Tin & Ảnh Định Giá'}</span>
                 <ArrowRight size={16} />
               </button>
             </form>

@@ -2,19 +2,37 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Trash2, Plus, Minus, MapPin, QrCode, 
-  ChevronRight, Truck, Check, Copy, ShoppingBag
+  ChevronRight, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2
 } from 'lucide-react';
 import { useCart } from '../context/CartContext'; // Dynamic import Context
+import { shopApi } from '../services/shop';
+import { assetUrl } from '../lib/api';
+
+// Tính tiền giảm theo mã đã áp dụng (server sẽ tính lại khi đặt hàng)
+const calcCouponDiscount = (coupon, subtotal) => {
+  if (!coupon || subtotal < coupon.minOrder) return 0;
+  let amount = coupon.type === 'PERCENT' ? Math.floor((subtotal * coupon.value) / 100) : coupon.value;
+  if (coupon.maxDiscount != null) amount = Math.min(amount, coupon.maxDiscount);
+  return Math.min(amount, subtotal);
+};
 
 export default function CartPage() {
-  const { 
-    cartItems, 
-    updateQuantity, 
-    toggleSelect, 
-    toggleSelectAll, 
-    removeItem, 
-    clearCart 
+  const {
+    cartItems,
+    updateQuantity,
+    toggleSelect,
+    toggleSelectAll,
+    removeItem,
+    clearCart,
+    removeSelected
   } = useCart();
+
+  // State gọi API
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponMessage, setCouponMessage] = useState('');
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [placedOrder, setPlacedOrder] = useState(null);
 
   // State Form Checkout
   const [step, setStep] = useState('cart'); // 'cart' hoặc 'checkout'
@@ -46,9 +64,108 @@ export default function CartPage() {
   // Tính toán tổng tiền
   const selectedItems = cartItems.filter((i) => i.selected);
   const subTotal = selectedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const discount = calcCouponDiscount(appliedCoupon, subTotal);
+  const couponBelowMin = appliedCoupon && subTotal < appliedCoupon.minOrder;
+  const total = subTotal - discount;
 
   // QR VietQR MB Bank
-  const qrUrl = `https://img.vietqr.io/image/MB-${bankInfo.accountNo}-compact2.png?amount=${subTotal}&addInfo=TT%20DH%20${phone || 'TRITECH'}&accountName=${encodeURIComponent(bankInfo.accountName)}`;
+  const buildQrUrl = (amount, content) =>
+    `https://img.vietqr.io/image/MB-${bankInfo.accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(content)}&accountName=${encodeURIComponent(bankInfo.accountName)}`;
+  const qrUrl = buildQrUrl(total, `TT DH ${phone || 'TRITECH'}`);
+
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim();
+    if (!code) return;
+    setApplyingCoupon(true);
+    setCouponMessage('');
+    try {
+      const { data } = await shopApi.validateCoupon(code, subTotal);
+      setAppliedCoupon(data);
+      setCouponMessage(`Đã áp dụng mã ${data.code}`);
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponMessage(err.message);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!fullName.trim() || !phone.trim()) {
+      alert("Vui lòng nhập đầy đủ Họ và Tên và Số điện thoại!");
+      return;
+    }
+    if (deliveryMethod === 'home' && !address.trim()) {
+      alert("Vui lòng nhập địa chỉ nhận hàng tận nhà!");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { data } = await shopApi.createOrder({
+        gender,
+        fullName,
+        phone,
+        email,
+        deliveryMethod: deliveryMethod === 'home' ? 'HOME' : 'STORE',
+        address,
+        note,
+        paymentMethod: paymentMethod === 'bank' ? 'BANK' : 'COD',
+        couponCode: appliedCoupon && !couponBelowMin ? appliedCoupon.code : undefined,
+        items: selectedItems.map((i) => ({
+          productId: i.productId,
+          variantId: i.variantId,
+          color: i.color || undefined,
+          quantity: i.quantity,
+        })),
+      });
+      setPlacedOrder(data);
+      removeSelected();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      // Lỗi dữ liệu từ server: hiện chi tiết từng trường
+      const detail = err.details?.map((d) => `• ${d.message}`).join('\n');
+      alert(detail ? `${err.message}\n${detail}` : err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // GIAO DIỆN SAU KHI ĐẶT HÀNG THÀNH CÔNG
+  if (placedOrder) {
+    return (
+      <div className="bg-gray-100 min-h-[70vh] flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm text-center max-w-md w-full space-y-3">
+          <CheckCircle2 size={56} className="mx-auto text-emerald-500" />
+          <h2 className="text-lg font-black text-gray-900">Đặt hàng thành công!</h2>
+          <p className="text-xs text-gray-600">
+            Mã đơn hàng của bạn: <strong className="text-red-600 text-sm tracking-wide">{placedOrder.code}</strong>
+          </p>
+          <p className="text-xs text-gray-600">
+            Tổng thanh toán: <strong className="text-gray-900">{placedOrder.total.toLocaleString()}đ</strong>
+          </p>
+          {placedOrder.paymentMethod === 'BANK' && (
+            <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-3 space-y-2">
+              <img
+                src={buildQrUrl(placedOrder.total, placedOrder.transferContent)}
+                alt="Mã QR thanh toán"
+                className="w-40 h-40 mx-auto object-contain rounded-lg"
+              />
+              <p className="text-[11px] text-gray-700">
+                Nội dung chuyển khoản: <strong className="text-black">{placedOrder.transferContent}</strong>
+              </p>
+            </div>
+          )}
+          <p className="text-[11px] text-gray-500">TriTech sẽ gọi xác nhận qua SĐT <strong>{placedOrder.phone}</strong> trong ít phút.</p>
+          <Link
+            to="/"
+            className="inline-block bg-[#FFD400] hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs uppercase transition-all shadow"
+          >
+            Tiếp tục mua sắm
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // GIAO DIỆN KHI GIỎ HÀNG TRỐNG
   if (cartItems.length === 0) {
@@ -129,7 +246,7 @@ export default function CartPage() {
                         className="w-4 h-4 accent-amber-400 rounded cursor-pointer mt-1 sm:mt-2 shrink-0"
                       />
                       <img 
-                        src={item.image} 
+                        src={assetUrl(item.image)}
                         alt={item.name} 
                         className="w-16 h-16 sm:w-20 sm:h-20 object-contain border border-gray-100 rounded-lg shrink-0 bg-gray-50"
                       />
@@ -139,7 +256,7 @@ export default function CartPage() {
                             <h3 className="font-bold text-xs sm:text-sm text-gray-900 line-clamp-2 leading-snug">
                               {item.name}
                             </h3>
-                            <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 sm:mt-1">Màu sắc: {item.color}</p>
+                            <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 sm:mt-1">Màu sắc: {item.color || 'Mặc định'}</p>
                           </div>
                           <div className="text-left sm:text-right shrink-0 mt-1 sm:mt-0">
                             <p className="font-bold text-red-600 text-xs sm:text-sm">{item.price?.toLocaleString()}đ</p>
@@ -350,7 +467,7 @@ export default function CartPage() {
                               </div>
                             </div>
                             <p className="text-[10px] text-amber-700 font-medium italic pt-1 border-t border-gray-100">
-                              * Nội dung CK: <strong className="text-black">{fullName || 'Họ tên'} - {phone || 'SĐT'}</strong>
+                              * Mã QR kèm <strong className="text-black">nội dung chuyển khoản theo mã đơn</strong> sẽ hiện sau khi bạn xác nhận đặt hàng
                             </p>
                           </div>
                         </div>
@@ -389,10 +506,21 @@ export default function CartPage() {
                   onChange={e => setCouponCode(e.target.value)}
                   className="flex-1 min-w-0 text-[11px] sm:text-xs px-2.5 py-2 border border-gray-200 rounded-lg outline-none focus:border-amber-400 uppercase"
                 />
-                <button className="bg-[#FFD400] hover:bg-amber-400 text-black font-bold px-3 sm:px-4 py-2 rounded-lg text-xs transition-colors shrink-0">
-                  Áp dụng
+                <button
+                  onClick={handleApplyCoupon}
+                  disabled={applyingCoupon || !couponCode.trim()}
+                  className="bg-[#FFD400] hover:bg-amber-400 disabled:opacity-60 text-black font-bold px-3 sm:px-4 py-2 rounded-lg text-xs transition-colors shrink-0"
+                >
+                  {applyingCoupon ? <Loader2 size={14} className="animate-spin" /> : 'Áp dụng'}
                 </button>
               </div>
+              {couponMessage && (
+                <p className={`text-[11px] -mt-2 ${appliedCoupon && !couponBelowMin ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {couponBelowMin
+                    ? `Đơn tối thiểu ${appliedCoupon.minOrder.toLocaleString()}đ để dùng mã ${appliedCoupon.code}`
+                    : couponMessage}
+                </p>
+              )}
 
               <hr className="border-gray-100" />
 
@@ -403,6 +531,12 @@ export default function CartPage() {
                     <span>Tổng tiền:</span>
                     <span className="font-bold text-gray-900">{subTotal.toLocaleString()}đ</span>
                   </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Giảm giá ({appliedCoupon.code}):</span>
+                      <span className="font-bold text-emerald-600">-{discount.toLocaleString()}đ</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-gray-600">
                     <span>Phí vận chuyển:</span>
                     <span className="text-emerald-600 font-bold">Miễn phí</span>
@@ -413,7 +547,7 @@ export default function CartPage() {
 
                 <div className="flex justify-between items-center text-xs sm:text-sm font-bold">
                   <span>Số tiền cần thanh toán:</span>
-                  <span className="text-red-600 text-sm sm:text-base">{subTotal.toLocaleString()}đ</span>
+                  <span className="text-red-600 text-sm sm:text-base">{total.toLocaleString()}đ</span>
                 </div>
               </div>
 
@@ -426,21 +560,12 @@ export default function CartPage() {
                   ĐẶT HÀNG NGAY ({selectedItems.length})
                 </button>
               ) : (
-                <button 
-                  onClick={() => {
-                    if (!fullName.trim() || !phone.trim()) {
-                      alert("Vui lòng nhập đầy đủ Họ và Tên và Số điện thoại!");
-                      return;
-                    }
-                    if (deliveryMethod === 'home' && !address.trim()) {
-                      alert("Vui lòng nhập địa chỉ nhận hàng tận nhà!");
-                      return;
-                    }
-                    alert("Đặt hàng thành công! Shop sẽ liên hệ bạn sớm nhất.");
-                    clearCart();
-                  }}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-[0.98] uppercase cursor-pointer"
+                <button
+                  onClick={handlePlaceOrder}
+                  disabled={submitting || selectedItems.length === 0}
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-black py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-[0.98] uppercase cursor-pointer flex items-center justify-center gap-2"
                 >
+                  {submitting && <Loader2 size={16} className="animate-spin" />}
                   XÁC NHẬN ĐẶT HÀNG
                 </button>
               )}

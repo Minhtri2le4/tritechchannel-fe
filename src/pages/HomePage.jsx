@@ -1,8 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext'; 
 import ProductCard from '../components/ProductCard.jsx';
-import { Link } from 'react-router-dom';
-import { products, sidebarCategories, quickCategories } from "../data/mockData";
+import { Link, useNavigate } from 'react-router-dom';
+import useCategories from '../hooks/useCategories';
+import useFetch from '../hooks/useFetch';
+import { shopApi } from '../services/shop';
+import { assetUrl } from '../lib/api';
+
+// Tab "Gợi ý cho bạn" -> tham số lọc gửi lên API
+const SUGGEST_TABS = {
+  all: { sort: 'best_selling' },
+  apple: { brand: 'APPLE', sort: 'best_selling' },
+  audio: { category: '6', sort: 'best_selling' },
+};
+const SUGGEST_PAGE = 20;
 import { 
   ShieldCheck, RefreshCw, Truck, RotateCcw, 
   ChevronLeft, ChevronRight, PhoneCall, Star, Play, Flame, Zap, Clock,
@@ -89,15 +100,6 @@ const ecomStores = [
   }
 ];
 
-const bestPricesToday = [
-  { id: 201, name: "DIVITAG PRO THIẾT BỊ ĐỊNH VỊ CHÍNH HÃNG", price: 399000, oldPrice: 879000, timer: "0 Ngày : 1 : 32 : 11", image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300" },
-  { id: 202, name: "Gối massage cổ đa năng cao cấp (Kèm quà tặng)", price: 279000, oldPrice: 349000, timer: "Kèm quà tặng", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300" },
-  { id: 203, name: "Tủ chống ẩm Andbon AB-18C bảo quản máy ảnh", price: 1099000, oldPrice: 2650000, timer: "0 Ngày : 0 : 27 : 11", image: "https://images.unsplash.com/photo-1523206489230-c012c64b2b48?w=300" },
-  { id: 204, name: "Đèn năng lượng mặt trời T25008 siêu sáng", price: 79000, oldPrice: 149000, timer: "0 Ngày : 1 : 32 : 11", image: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=300" },
-  { id: 205, name: "Đèn năng lượng mặt trời T25005 chống nước", price: 99000, oldPrice: 199000, timer: "0 Ngày : 1 : 21 : 11", image: "https://images.unsplash.com/photo-1542393545-10f5cde2c810?w=300" },
-  { id: 206, name: "Quạt cầm tay mini Turbo Rock LQ-217B", price: 139000, oldPrice: 220000, timer: "0 Ngày : 1 : 32 : 11", image: "https://images.unsplash.com/photo-1505156868547-9b49f4df4e04?w=300" }
-];
-
 const youtubeShortsVideos = [
   { id: 1, shortsUrl: "https://www.youtube.com/embed/1krdQqyCpbw", title: "Review tai nghe và thiết bị công nghệ", productName: "Sạc Dự Phòng Anker Zolo 25.000mAh 165W", price: 1400000, oldPrice: 1400000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpfaa59kf8cgc0.webp" },
   { id: 2, shortsUrl: "https://www.youtube.com/embed/79QrqmGRrzk", title: "Đánh giá chi tiết củ sạc nhanh Oca 65W", productName: "Bộ sạc nhanh Anker ZoLo 140W (4 cổng, GaN)", price: 900000, oldPrice: 699000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpuizoniuiob90.webp" },
@@ -114,46 +116,30 @@ const newsArticles = [
   { id: 5, title: "Ghi dấu 10 năm huyền thoại âm nhạc bằng bộ sưu tập độc quyền", img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400" }
 ];
 
-const thirtyProducts = [
-  { id: 301, name: "Tai nghe Bluetooth TWS True Wireless chống ồn đỉnh cao V2", price: 199000, oldPrice: 350000, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300", soldCount: 1250, rating: "4.9" },
-  { id: 302, name: "Củ sạc nhanh GaN 65W tích hợp 3 cổng Type-C thông minh", price: 350000, oldPrice: 550000, image: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=300", soldCount: 890, rating: "4.8" },
-  { id: 303, name: "Đế sạc không dây nam châm MagSafe tích hợp tản nhiệt", price: 499000, oldPrice: 799000, image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=300", soldCount: 450, rating: "4.7" },
-  { id: 304, name: "Chuột không dây Gaming Silent độ nhạy cao 4000 DPI", price: 250000, oldPrice: 400000, image: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=300", soldCount: 2100, rating: "4.9" },
-  { id: 305, name: "Bàn phím cơ mini Bluetooth LED RGB hiệu ứng cực ngầu", price: 890000, oldPrice: 1290000, image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=300", soldCount: 320, rating: "4.8" },
-  { id: 306, name: "Cáp sạc nhanh bọc dù chống đứt hãng cao cấp 1.2 mét", price: 150000, oldPrice: 250000, image: "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=300", soldCount: 3400, rating: "5.0" },
-  { id: 307, name: "Sạc dự phòng không dây nam châm 10.000mAh siêu mỏng", price: 550000, oldPrice: 850000, image: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=300", soldCount: 780, rating: "4.6" },
-  { id: 308, name: "Hub chuyển đổi Type-C sang HDMI/USB 3.0 cho Laptop", price: 450000, oldPrice: 650000, image: "https://images.unsplash.com/photo-1523206489230-c012c64b2b48?w=300", soldCount: 560, rating: "4.7" },
-  { id: 309, name: "Quạt tản nhiệt điện thoại sò lạnh livestream gaming", price: 299000, oldPrice: 499000, image: "https://images.unsplash.com/photo-1505156868547-9b49f4df4e04?w=300", soldCount: 1100, rating: "4.8" },
-  { id: 310, name: "Kính cường lực full màn hình chống bám vân tay cao cấp", price: 99000, oldPrice: 150000, image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300", soldCount: 5000, rating: "4.9" },
-  { id: 311, name: "Tai nghe chụp tai Bluetooth có mic đàm thoại khử ồn", price: 650000, oldPrice: 950000, image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300", soldCount: 420, rating: "4.5" },
-  { id: 312, name: "Giá đỡ điện thoại, iPad hợp kim nhôm gấp gọn tiện lợi", price: 120000, oldPrice: 200000, image: "https://images.unsplash.com/photo-1542393545-10f5cde2c810?w=300", soldCount: 2300, rating: "4.9" },
-  { id: 313, name: "Loa Bluetooth mini chống nước âm bass cực mạnh", price: 390000, oldPrice: 590000, image: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=300", soldCount: 890, rating: "4.7" },
-  { id: 314, name: "Đèn LED để bàn học chống cận có sạc không dây", price: 450000, oldPrice: 700000, image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300", soldCount: 670, rating: "4.8" },
-  { id: 315, name: "Webcam Full HD 1080p tích hợp mic cho học trực tuyến", price: 550000, oldPrice: 850000, image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=300", soldCount: 430, rating: "4.6" },
-  { id: 316, name: "Balo Laptop chống nước tích hợp cổng sạc USB", price: 320000, oldPrice: 500000, image: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=300", soldCount: 1500, rating: "4.8" },
-  { id: 317, name: "Bút cảm ứng Stylus Pen chống tỳ tay dành cho iPad", price: 490000, oldPrice: 790000, image: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=300", soldCount: 800, rating: "4.9" },
-  { id: 318, name: "Gậy chụp ảnh Tripod có remote Bluetooth từ xa", price: 180000, oldPrice: 300000, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300", soldCount: 3100, rating: "4.7" },
-  { id: 319, name: "Micro thu âm không dây cài áo cho điện thoại vlog", price: 650000, oldPrice: 990000, image: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=300", soldCount: 520, rating: "4.8" },
-  { id: 320, name: "Đồng hồ thông minh Smartwatch theo dõi sức khỏe", price: 890000, oldPrice: 1400000, image: "https://images.unsplash.com/photo-1523206489230-c012c64b2b48?w=300", soldCount: 940, rating: "4.6" },
-  { id: 321, name: "Ốp lưng chống sốc viền màu cao cấp cho iPhone", price: 150000, oldPrice: 250000, image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300", soldCount: 4200, rating: "4.9" },
-  { id: 322, name: "Thẻ nhớ MicroSD 128GB tốc độ đọc ghi cực nhanh", price: 299000, oldPrice: 450000, image: "https://images.unsplash.com/photo-1542393545-10f5cde2c810?w=300", soldCount: 1800, rating: "4.8" },
-  { id: 323, name: "Túi đựng phụ kiện công nghệ chống thấm gọn gàng", price: 190000, oldPrice: 300000, image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300", soldCount: 1100, rating: "4.7" },
-  { id: 324, name: "Bàn di chuột lót chuột khổ lớn viền LED RGB", price: 250000, oldPrice: 350000, image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=300", soldCount: 2400, rating: "4.9" },
-  { id: 325, name: "Sạc nhanh ô tô 2 cổng PD + QC3.0 vỏ kim loại", price: 350000, oldPrice: 550000, image: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=300", soldCount: 630, rating: "4.8" },
-  { id: 326, name: "Đầu lọc thẻ nhớ đa năng Type-C và USB 3.0", price: 120000, oldPrice: 200000, image: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=300", soldCount: 1300, rating: "4.7" },
-  { id: 327, name: "Giá đỡ Laptop nhôm nguyên khối tản nhiệt tốt", price: 420000, oldPrice: 650000, image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300", soldCount: 880, rating: "4.9" },
-  { id: 328, name: "Cáp chia âm thanh Audio 3.5mm cho tai nghe và mic", price: 80000, oldPrice: 150000, image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300", soldCount: 5000, rating: "4.8" },
-  { id: 329, name: "Tẩu nghe nhạc MP3 Bluetooth cho xe hơi ô tô", price: 290000, oldPrice: 450000, image: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=300", soldCount: 750, rating: "4.6" },
-  { id: 330, name: "Đèn viền màn hình máy tính bảo vệ mắt chống lóa", price: 690000, oldPrice: 1100000, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300", soldCount: 390, rating: "4.9" }
-];
-
 export default function HomePage() {
   const { addToCart } = useCart();
   const [currentBanner, setCurrentBanner] = useState(0);
   const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 15, seconds: 40 });
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('all');
+  const [suggestLimit, setSuggestLimit] = useState(SUGGEST_PAGE);
   const shortsContainerRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Dữ liệu từ backend
+  const { sidebar: sidebarCategories, quick: quickCategories } = useCategories();
+  const { data: products } = useFetch(() => shopApi.products({ isHot: true, limit: 8 }), []);
+  const { data: flashSale } = useFetch(() => shopApi.products({ isFlashSale: true, limit: 6 }), []);
+  const bestPricesToday = flashSale || [];
+  const { data: suggested, meta: suggestMeta, loading: suggestLoading } = useFetch(
+    () => shopApi.products({ ...SUGGEST_TABS[activeTab], limit: suggestLimit }),
+    [activeTab, suggestLimit]
+  );
+  const thirtyProducts = suggested || [];
+  const changeTab = (tab) => {
+    setActiveTab(tab);
+    setSuggestLimit(SUGGEST_PAGE);
+  };
 
   useEffect(() => {
     const bannerTimer = setInterval(() => setCurrentBanner(p => (p === bannerImages.length - 1 ? 0 : p + 1)), 3000);
@@ -183,7 +169,11 @@ export default function HomePage() {
 
   const nextBanner = () => setCurrentBanner((prev) => (prev === bannerImages.length - 1 ? 0 : prev + 1));
   const prevBanner = () => setCurrentBanner((prev) => (prev === 0 ? bannerImages.length - 1 : prev - 1));
-  const handleAddToCart = (product) => addToCart(product);
+  // Sản phẩm có dung lượng/màu phải vào trang chi tiết để chọn trước
+  const handleAddToCart = (product) => {
+    if (product.hasOptions) navigate(`/product/${product.id}`);
+    else addToCart(product);
+  };
 
   return (
     <div className="min-h-screen bg-[#F4F4F4] font-sans text-gray-800 overflow-x-hidden relative">
@@ -257,7 +247,7 @@ export default function HomePage() {
                 className="flex flex-col items-center gap-1.5 shrink-0 w-16 md:w-auto group cursor-pointer"
               >
                 <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-100 p-1 flex items-center justify-center border border-gray-100 group-hover:border-yellow-400 transition-all shadow-sm">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-full" />
+                  <img src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-cover rounded-full" />
                 </div>
                 <span className="text-[10px] md:text-[11px] font-semibold text-gray-700 group-hover:text-red-600 line-clamp-1">{item.name}</span>
               </Link>
@@ -358,18 +348,18 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {bestPricesToday.map((item) => (
-                <div key={item.id} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-lg relative group cursor-pointer border border-yellow-400/30 hover:border-yellow-400">
+                <div key={item.id} onClick={() => navigate(`/product/${item.id}`)} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-lg relative group cursor-pointer border border-yellow-400/30 hover:border-yellow-400">
                   <span className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full z-10 shadow-sm flex items-center gap-0.5 animate-pulse">
                     <Flame size={10} fill="currentColor" /> GIẢM SỐC
                   </span>
                   <div className="relative w-full aspect-square bg-gray-50 rounded-xl flex items-center justify-center p-2 mt-5">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-300" />
+                    <img src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-300" />
                   </div>
                   <div className="mt-2.5">
                     <h3 className="text-[11px] md:text-xs font-bold text-gray-800 line-clamp-2 leading-tight">{item.name}</h3>
                     <div className="mt-2">
                       <span className="text-xs md:text-sm font-black text-red-600 block leading-none">{item.price.toLocaleString('vi-VN')}đ</span>
-                      <span className="text-[10px] text-gray-400 line-through">{item.oldPrice.toLocaleString('vi-VN')}đ</span>
+                      {item.originalPrice > item.price && <span className="text-[10px] text-gray-400 line-through">{item.originalPrice.toLocaleString('vi-VN')}đ</span>}
                     </div>
                   </div>
                 </div>
@@ -452,7 +442,7 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {[{ id: 'all', label: '🔥 Tất cả gợi ý' }, { id: 'apple', label: '🍎 Apple Ecosystem' }, { id: 'audio', label: '🎧 Tai nghe & Loa' }].map((tab) => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeTab === tab.id ? 'bg-red-600 text-white shadow-red-600/20 shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'}`}>{tab.label}</button>
+              <button key={tab.id} onClick={() => changeTab(tab.id)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeTab === tab.id ? 'bg-red-600 text-white shadow-red-600/20 shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'}`}>{tab.label}</button>
             ))}
           </div>
         </div>
@@ -461,10 +451,10 @@ export default function HomePage() {
         <div className="mb-16">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
             {thirtyProducts.map((item) => (
-              <div key={item.id} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative group cursor-pointer border border-gray-100">
+              <div key={item.id} onClick={() => navigate(`/product/${item.id}`)} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative group cursor-pointer border border-gray-100">
                 <span className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full z-10 shadow-sm">CHÍNH HÃNG</span>
                 <div className="relative w-full aspect-square bg-gray-50 rounded-xl flex items-center justify-center p-2 overflow-hidden">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
+                  <img src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
                 </div>
                 <div className="mt-3 flex flex-col flex-1 justify-between">
                   <div>
@@ -477,7 +467,7 @@ export default function HomePage() {
                   <div className="mt-3 pt-2 border-t border-gray-100 flex items-end justify-between">
                     <div>
                       <span className="text-xs md:text-sm font-black text-red-600 block leading-none">{item.price.toLocaleString('vi-VN')}đ</span>
-                      <span className="text-[10px] text-gray-400 line-through mt-0.5 block">{item.oldPrice.toLocaleString('vi-VN')}đ</span>
+                      {item.originalPrice > item.price && <span className="text-[10px] text-gray-400 line-through mt-0.5 block">{item.originalPrice.toLocaleString('vi-VN')}đ</span>}
                     </div>
                     <button onClick={(e) => { e.stopPropagation(); handleAddToCart(item); }} className="bg-yellow-400 hover:bg-yellow-500 text-black p-2 rounded-xl text-xs font-extrabold transition-all shadow-sm border border-yellow-200 transform hover:scale-105">🛒</button>
                   </div>
@@ -488,9 +478,9 @@ export default function HomePage() {
           
           {/* KHÔI PHỤC NÚT XEM THÊM */}
           <div className="flex justify-center mt-8">
-            <button className="bg-white hover:bg-gray-50 text-gray-900 font-black text-xs px-8 py-3.5 rounded-2xl shadow-md border border-gray-200 transition-all hover:scale-105">
+            {(suggestMeta?.total ?? 0) > thirtyProducts.length && <button disabled={suggestLoading} onClick={() => setSuggestLimit((n) => n + SUGGEST_PAGE)} className="bg-white hover:bg-gray-50 disabled:opacity-60 text-gray-900 font-black text-xs px-8 py-3.5 rounded-2xl shadow-md border border-gray-200 transition-all hover:scale-105">
               XEM THÊM SẢN PHẨM KHÁC ▾
-            </button>
+            </button>}
           </div>
         </div>
 

@@ -1,83 +1,82 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  ShieldCheck, RefreshCw, Truck, MapPin, CheckCircle, 
-  ChevronRight, ShoppingBag, Zap, Award, Check
+import {
+  ShieldCheck, RefreshCw, Truck, MapPin, CheckCircle,
+  ChevronRight, ShoppingBag, Zap, Award, Check, Loader2
 } from 'lucide-react';
-import { categoryProducts } from '../data/categoryData';
 import { useCart } from '../context/CartContext';
+import useFetch from '../hooks/useFetch';
+import { shopApi } from '../services/shop';
+import { assetUrl } from '../lib/api';
+import ProductCard from '../components/ProductCard';
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const { data: product, loading, error } = useFetch(() => shopApi.product(id), [id]);
+
+  if (loading && !product) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center text-gray-400">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
+  }
+  if (error || !product) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-sm text-gray-600">
+        <p>{error?.status === 404 ? 'Sản phẩm không tồn tại hoặc đã ngừng bán.' : error?.message}</p>
+        <Link to="/" className="bg-[#FFD400] px-5 py-2 rounded-xl font-bold text-xs">Về trang chủ</Link>
+      </div>
+    );
+  }
+  // key: đổi sản phẩm thì reset lựa chọn dung lượng / màu
+  return <ProductDetailView key={product.id} productData={product} />;
+}
+
+function ProductDetailView({ productData }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  // Tìm sản phẩm theo ID (nếu không thấy lấy mặc định sản phẩm đầu tiên làm mẫu)
-  const productData = categoryProducts.find(p => String(p.id) === String(id)) || categoryProducts[0];
+  const storages = productData.variants || [];
+  const colors = productData.colors || [];
 
-  // State quản lý lựa chọn của khách hàng
-  const [selectedStorage, setSelectedStorage] = useState('512GB - Máy Đẹp');
-  const [selectedColor, setSelectedColor] = useState('Cam Vũ Trụ');
-  const [activeImage, setActiveImage] = useState(productData.image);
+  // Mặc định chọn phiên bản & màu đầu tiên
+  const [selectedVariantId, setSelectedVariantId] = useState(storages[0]?.id ?? null);
+  const [selectedColor, setSelectedColor] = useState(colors[0]?.name ?? '');
+  const [activeImage, setActiveImage] = useState(assetUrl(productData.image));
   const [showNotification, setShowNotification] = useState(false);
 
-  // Danh sách dung lượng giả lập cho sản phẩm cao cấp
-  const storages = [
-    { name: '256GB - Cũ 99%', priceOffset: -3000000 },
-    { name: '256GB - Máy Đẹp', priceOffset: -1500000 },
-    { name: '512GB - Cũ 99%', priceOffset: -1000000 },
-    { name: '512GB - Máy Đẹp', priceOffset: 0 },
-    { name: '1TB - Máy Đẹp', priceOffset: 3500000 },
-  ];
+  // Ảnh thumbnail: ảnh đại diện + ảnh phụ (bỏ trùng)
+  const productImages = [...new Set([productData.image, ...(productData.images || [])].filter(Boolean))].map(assetUrl);
 
-  // Danh sách màu sắc giả lập
-  const colors = [
-    { name: 'Cam Vũ Trụ', hex: '#d97706', img: productData.image },
-    { name: 'Xanh Đậm', hex: '#1e3a8a', img: productData.image },
-    { name: 'Bạc Titan', hex: '#94a3b8', img: productData.image },
-  ];
+  // Giá theo phiên bản đã chọn
+  const selectedVariant = storages.find((v) => v.id === selectedVariantId) || null;
+  const currentPrice = selectedVariant?.price ?? productData.price;
+  const originalPrice = selectedVariant ? selectedVariant.originalPrice : productData.originalPrice;
+  const discountPercent = originalPrice > currentPrice ? Math.round((1 - currentPrice / originalPrice) * 100) : 0;
+  const stock = selectedVariant ? selectedVariant.stock : productData.stock;
+  const inStock = stock > 0;
 
-  // Danh sách ảnh thumbnail giả lập
-  const productImages = [
-    productData.image,
-    'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1695048065059-472e3408a287?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1695048132964-e2808728d844?auto=format&fit=crop&w=600&q=80',
-  ];
-
-  // Tính toán giá tiền theo tùy chọn
-  const basePrice = productData.price || 35990000;
-  const storageExtra = storages.find(s => s.name === selectedStorage)?.priceOffset || 0;
-  const currentPrice = basePrice + storageExtra;
-  const originalPrice = Math.round(currentPrice * 1.24); // Giá gốc cao hơn ~24%
+  const addSelected = () => {
+    if (!inStock) {
+      alert('Phiên bản này tạm hết hàng, vui lòng chọn phiên bản khác!');
+      return false;
+    }
+    addToCart(productData, 1, selectedColor, selectedVariant);
+    return true;
+  };
 
   // Xử lý thêm vào giỏ hàng và mua ngay
   const handleBuyNow = () => {
-    const itemToAdd = {
-      ...productData,
-      id: `${productData.id}-${selectedStorage}-${selectedColor}`,
-      name: `${productData.name} (${selectedStorage} - ${selectedColor})`,
-      price: currentPrice,
-      image: activeImage,
-      quantity: 1
-    };
-    addToCart(itemToAdd);
-    navigate('/cart');
+    if (addSelected()) navigate('/cart');
   };
 
   const handleAddToCartOnly = () => {
-    const itemToAdd = {
-      ...productData,
-      id: `${productData.id}-${selectedStorage}-${selectedColor}`,
-      name: `${productData.name} (${selectedStorage} - ${selectedColor})`,
-      price: currentPrice,
-      image: activeImage,
-      quantity: 1
-    };
-    addToCart(itemToAdd);
+    if (!addSelected()) return;
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
   };
+
 
   return (
     <div className="bg-gray-100 min-h-screen py-4 px-2 md:px-4">
@@ -87,10 +86,18 @@ export default function ProductDetail() {
         <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3 overflow-x-auto whitespace-nowrap pb-1">
           <Link to="/" className="hover:text-black">Trang chủ</Link>
           <ChevronRight size={12} />
-          <span className="hover:text-black cursor-pointer">Điện thoại</span>
-          <ChevronRight size={12} />
-          <span className="hover:text-black cursor-pointer">APPLE IPHONE</span>
-          <ChevronRight size={12} />
+          {productData.category && (
+            <>
+              <Link to={`/category/${productData.category.id}`} className="hover:text-black">{productData.category.name}</Link>
+              <ChevronRight size={12} />
+            </>
+          )}
+          {productData.brand && (
+            <>
+              <span>{productData.brand}</span>
+              <ChevronRight size={12} />
+            </>
+          )}
           <span className="text-gray-900 font-semibold">{productData.name}</span>
         </div>
 
@@ -158,9 +165,13 @@ export default function ProductDetail() {
                 <span className="bg-yellow-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
                   TRITECH CHUẨN 68 BƯỚC
                 </span>
-                <span className="text-emerald-600 text-xs font-bold flex items-center gap-1">
-                  <Check size={14} /> Còn hàng tại showroom
-                </span>
+                {inStock ? (
+                  <span className="text-emerald-600 text-xs font-bold flex items-center gap-1">
+                    <Check size={14} /> Còn hàng tại showroom
+                  </span>
+                ) : (
+                  <span className="text-red-600 text-xs font-bold">Tạm hết hàng</span>
+                )}
               </div>
               <h1 className="text-xl md:text-2xl font-black text-gray-900">
                 {productData.name}
@@ -172,12 +183,16 @@ export default function ProductDetail() {
               <span className="text-2xl md:text-3xl font-black text-red-600">
                 {currentPrice.toLocaleString()}đ
               </span>
-              <span className="text-sm text-gray-400 line-through font-semibold">
-                {originalPrice.toLocaleString()}đ
-              </span>
-              <span className="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-md">
-                -24%
-              </span>
+              {discountPercent > 0 && (
+                <>
+                  <span className="text-sm text-gray-400 line-through font-semibold">
+                    {originalPrice.toLocaleString()}đ
+                  </span>
+                  <span className="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-md">
+                    -{discountPercent}%
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Box Thu Cũ Lên Đời */}
@@ -189,7 +204,7 @@ export default function ProductDetail() {
                 <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded font-bold">15 Phút</span>
               </div>
               <p className="text-[11px] font-medium text-gray-900 mb-2">
-                Chỉ từ <span className="font-black text-red-700 text-sm">{(currentPrice - 4000000).toLocaleString()}đ</span>. Thu máy cũ giá cao không thủ tục rườm rà.
+                Chỉ từ <span className="font-black text-red-700 text-sm">{Math.max(currentPrice - 4000000, 0).toLocaleString()}đ</span>. Thu máy cũ giá cao không thủ tục rườm rà.
               </p>
               <button 
                 onClick={() => navigate('/thu-cu-doi-moi')} 
@@ -200,47 +215,58 @@ export default function ProductDetail() {
             </div>
 
             {/* Chọn dung lượng */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Dung lượng phiên bản:
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {storages.map((store, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedStorage(store.name)}
-                    className={`border rounded-xl p-2 text-left transition-all ${selectedStorage === store.name ? 'border-black bg-black text-white shadow-md' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-800'}`}
-                  >
-                    <p className="font-bold text-xs">{store.name}</p>
-                    <p className={`text-[10px] font-semibold mt-0.5 ${selectedStorage === store.name ? 'text-yellow-400' : 'text-red-600'}`}>
-                      {(basePrice + store.priceOffset).toLocaleString()}đ
-                    </p>
-                  </button>
-                ))}
+            {storages.length > 0 && (
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Dung lượng phiên bản:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {storages.map((store) => (
+                    <button
+                      key={store.id}
+                      onClick={() => setSelectedVariantId(store.id)}
+                      className={`border rounded-xl p-2 text-left transition-all ${selectedVariantId === store.id ? 'border-black bg-black text-white shadow-md' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-800'} ${store.stock > 0 ? '' : 'opacity-50'}`}
+                    >
+                      <p className="font-bold text-xs">{store.label}</p>
+                      <p className={`text-[10px] font-semibold mt-0.5 ${selectedVariantId === store.id ? 'text-yellow-400' : 'text-red-600'}`}>
+                        {store.stock > 0 ? `${store.price.toLocaleString()}đ` : 'Hết hàng'}
+                      </p>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Chọn màu sắc */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Màu sắc: <span className="text-black font-extrabold">{selectedColor}</span>
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {colors.map((color, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setSelectedColor(color.name);
-                      setActiveImage(color.img);
-                    }}
-                    className={`flex items-center gap-2 border px-3 py-1.5 rounded-xl transition-all ${selectedColor === color.name ? 'border-black bg-black text-white shadow-md' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-800'}`}
-                  >
-                    <span className="w-4 h-4 rounded-full border border-gray-300 shadow-inner" style={{ backgroundColor: color.hex }}></span>
-                    <span className="text-xs font-semibold">{color.name}</span>
-                  </button>
-                ))}
+            {colors.length > 0 && (
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Màu sắc: <span className="text-black font-extrabold">{selectedColor}</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {colors.map((color) => (
+                    <button
+                      key={color.id}
+                      onClick={() => {
+                        setSelectedColor(color.name);
+                        if (color.image) setActiveImage(assetUrl(color.image));
+                      }}
+                      className={`flex items-center gap-2 border px-3 py-1.5 rounded-xl transition-all ${selectedColor === color.name ? 'border-black bg-black text-white shadow-md' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-800'}`}
+                    >
+                      <span className="w-4 h-4 rounded-full border border-gray-300 shadow-inner" style={{ backgroundColor: color.hex || '#e5e7eb' }}></span>
+                      <span className="text-xs font-semibold">{color.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Mô tả sản phẩm */}
+            {productData.description && (
+              <div className="text-xs text-gray-700 leading-relaxed whitespace-pre-line border border-gray-200 rounded-2xl p-3">
+                {productData.description}
+              </div>
+            )}
 
             {/* Nút Mua Hàng Action */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
@@ -309,6 +335,18 @@ export default function ProductDetail() {
           </div>
 
         </div>
+
+        {/* Sản phẩm cùng danh mục */}
+        {productData.related?.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-base md:text-lg font-black text-gray-900 mb-3 uppercase">Sản phẩm tương tự</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+              {productData.related.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
