@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Phone, Mail, MapPin, Store } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, MapPin, Store, Printer } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { assetUrl, formatDate, formatPrice } from '../../lib/api';
 import { adminApi } from '../adminApi';
@@ -8,7 +8,7 @@ import { Badge, Button, Card, ErrorBox, Field, ORDER_STATUS, PAYMENT_STATUS, Pag
 
 // Bước tiếp theo hợp lệ (khớp quy tắc chuyển trạng thái ở backend)
 const NEXT_ACTIONS = {
-  PENDING: [['CONFIRMED', 'Xác nhận đơn', 'primary']],
+  PENDING: [['CONFIRMED', 'Xác nhận & in phiếu', 'primary']],
   CONFIRMED: [['SHIPPING', 'Bắt đầu giao', 'dark'], ['COMPLETED', 'Hoàn tất', 'outline']],
   SHIPPING: [['COMPLETED', 'Đã giao xong', 'primary']],
   COMPLETED: [],
@@ -25,13 +25,20 @@ export default function OrderDetailPage() {
   if (loading && !order) return <Spinner />;
   if (error && !order) return <ErrorBox error={error} onRetry={reload} />;
 
+  const printUrl = `/admin/orders/${order.id}/print`;
+
   const update = async (patch, label) => {
+    // Xác nhận đơn thì mở sẵn tab in phiếu. Phải mở ngay lúc bấm (trước khi chờ API)
+    // để trình duyệt không chặn cửa sổ bật lên.
+    const printTab = patch.status === 'CONFIRMED' ? window.open('', '_blank') : null;
     setSaving(label);
     try {
       await adminApi.orders.update(order.id, patch);
+      if (printTab) printTab.location.href = printUrl;
       reload();
       setNote(null);
     } catch (err) {
+      printTab?.close();
       alert(err.message);
     } finally {
       setSaving('');
@@ -49,7 +56,14 @@ export default function OrderDetailPage() {
       <PageHeader
         title={<span className="font-mono">{order.code}</span>}
         subtitle={`Đặt lúc ${formatDate(order.createdAt, true)}`}
-        actions={<Button variant="outline" onClick={() => navigate(-1)}><ArrowLeft size={16} /> Quay lại</Button>}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => navigate(-1)}><ArrowLeft size={16} /> Quay lại</Button>
+            <a href={printUrl} target="_blank" rel="noreferrer">
+              <Button variant="dark"><Printer size={16} /> In phiếu</Button>
+            </a>
+          </>
+        }
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
