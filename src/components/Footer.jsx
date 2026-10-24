@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { MapPin, Mail, Bot, X, Send, PhoneCall } from 'lucide-react';
 
 export default function Footer() {
@@ -77,11 +78,11 @@ export default function Footer() {
           <div>
             <h4 className="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm border-b border-gray-200 pb-2 inline-block">Hỗ trợ khách hàng</h4>
             <ul className="space-y-3 font-medium">
-              <li><a href="#" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Chính sách chung</a></li>
-              <li><a href="#" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Bảo hành 1 đổi 1</a></li>
-              <li><a href="#" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Giao hàng và kiểm tra</a></li>
-              <li><a href="#" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Trả hàng hoàn tiền</a></li>
-              <li><a href="#" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Bảo mật thông tin</a></li>
+              <li><Link to="/chinh-sach/chinh-sach-chung" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Chính sách chung</Link></li>
+              <li><Link to="/chinh-sach/bao-hanh" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Bảo hành 1 đổi 1</Link></li>
+              <li><Link to="/chinh-sach/giao-hang" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Giao hàng và kiểm tra</Link></li>
+              <li><Link to="/chinh-sach/doi-tra" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Trả hàng hoàn tiền</Link></li>
+              <li><Link to="/chinh-sach/bao-mat" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Bảo mật thông tin</Link></li>
             </ul>
           </div>
 

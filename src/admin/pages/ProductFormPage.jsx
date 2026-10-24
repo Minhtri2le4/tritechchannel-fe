@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ImagePlus, Plus, Star, Trash2, X } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { assetUrl } from '../../lib/api';
+import { assetUrl, imgFallback } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import { Button, Card, Checkbox, ErrorBox, Field, Input, MoneyInput, PageHeader, Select, Spinner, Textarea, errorText } from '../ui';
 
@@ -178,7 +178,7 @@ function ProductForm({ initial, productId }) {
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {allImages.map((url) => (
                   <div key={url} className={`relative aspect-square rounded-lg border-2 bg-gray-50 ${form.image === url ? 'border-amber-400' : 'border-gray-200'}`}>
-                    <img src={assetUrl(url)} alt="" className="w-full h-full object-contain p-1" />
+                    <img onError={imgFallback} src={assetUrl(url)} alt="" className="w-full h-full object-contain p-1" />
                     <div className="absolute top-1 right-1 flex gap-1">
                       <button type="button" title="Đặt làm ảnh đại diện" onClick={() => set('image', url)} className="bg-white/90 rounded p-0.5 text-amber-500">
                         <Star size={14} fill={form.image === url ? 'currentColor' : 'none'} />

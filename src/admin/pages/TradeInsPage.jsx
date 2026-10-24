@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Phone, Search, Trash2 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { assetUrl, formatDate, formatPrice } from '../../lib/api';
+import { assetUrl, imgFallback, formatDate, formatPrice } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import { useAuth } from '../AuthContext';
 import {
@@ -57,7 +57,7 @@ export default function TradeInsPage() {
               title: 'Ảnh',
               render: (t) =>
                 t.images[0] ? (
-                  <img src={assetUrl(t.images[0])} alt="" className="w-11 h-11 rounded-lg object-cover border border-gray-100" />
+                  <img onError={imgFallback} src={assetUrl(t.images[0])} alt="" className="w-11 h-11 rounded-lg object-cover border border-gray-100" />
                 ) : (
                   <span className="text-xs text-gray-400">—</span>
                 ),
@@ -157,7 +157,7 @@ function TradeInModal({ item, onClose, onSaved }) {
             <div className="grid grid-cols-3 gap-2">
               {item.images.map((img) => (
                 <a key={img} href={assetUrl(img)} target="_blank" rel="noreferrer">
-                  <img src={assetUrl(img)} alt="" className="w-full aspect-square object-cover rounded-lg border border-gray-200 hover:opacity-80" />
+                  <img onError={imgFallback} src={assetUrl(img)} alt="" className="w-full aspect-square object-cover rounded-lg border border-gray-200 hover:opacity-80" />
                 </a>
               ))}
             </div>

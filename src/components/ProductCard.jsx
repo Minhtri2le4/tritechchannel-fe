@@ -1,7 +1,7 @@
 import { ShoppingCart, Star } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom'; // 1. Import thêm Link từ react-router-dom
 import { useCart } from '../context/CartContext';
-import { assetUrl } from '../lib/api';
+import { assetUrl, imgFallback } from '../lib/api';
 
 // Rút gọn số đã bán: 1250 -> 1.2K
 const formatSold = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}K` : n);
@@ -36,7 +36,7 @@ export default function ProductCard({ product }) {
       {/* Khung Ảnh Sản Phẩm */}
       <div className="relative w-full aspect-square bg-gray-50/50 flex items-center justify-center p-4">
         <img 
-          src={assetUrl(product.image)}
+          onError={imgFallback} src={assetUrl(product.image)}
           alt={product.name} 
           className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
         />

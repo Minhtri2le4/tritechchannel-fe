@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext'; // Dynamic import Context
 import { shopApi } from '../services/shop';
-import { assetUrl } from '../lib/api';
+import { assetUrl, imgFallback } from '../lib/api';
 
 // Tính tiền giảm theo mã đã áp dụng (server sẽ tính lại khi đặt hàng)
 const calcCouponDiscount = (coupon, subtotal) => {
@@ -141,7 +141,7 @@ export default function CartPage() {
             Mã đơn hàng của bạn: <strong className="text-red-600 text-sm tracking-wide">{placedOrder.code}</strong>
           </p>
           <p className="text-xs text-gray-600">
-            Tổng thanh toán: <strong className="text-gray-900">{placedOrder.total.toLocaleString()}đ</strong>
+            Tổng thanh toán: <strong className="text-gray-900">{placedOrder.total.toLocaleString('vi-VN')}đ</strong>
           </p>
           {placedOrder.paymentMethod === 'BANK' && (
             <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-3 space-y-2">
@@ -246,7 +246,7 @@ export default function CartPage() {
                         className="w-4 h-4 accent-amber-400 rounded cursor-pointer mt-1 sm:mt-2 shrink-0"
                       />
                       <img 
-                        src={assetUrl(item.image)}
+                        onError={imgFallback} src={assetUrl(item.image)}
                         alt={item.name} 
                         className="w-16 h-16 sm:w-20 sm:h-20 object-contain border border-gray-100 rounded-lg shrink-0 bg-gray-50"
                       />
@@ -259,9 +259,9 @@ export default function CartPage() {
                             <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 sm:mt-1">Màu sắc: {item.color || 'Mặc định'}</p>
                           </div>
                           <div className="text-left sm:text-right shrink-0 mt-1 sm:mt-0">
-                            <p className="font-bold text-red-600 text-xs sm:text-sm">{item.price?.toLocaleString()}đ</p>
+                            <p className="font-bold text-red-600 text-xs sm:text-sm">{item.price?.toLocaleString('vi-VN')}đ</p>
                             {item.oldPrice && (
-                              <p className="text-[9px] sm:text-[10px] text-gray-400 line-through">{item.oldPrice?.toLocaleString()}đ</p>
+                              <p className="text-[9px] sm:text-[10px] text-gray-400 line-through">{item.oldPrice?.toLocaleString('vi-VN')}đ</p>
                             )}
                           </div>
                         </div>
@@ -517,7 +517,7 @@ export default function CartPage() {
               {couponMessage && (
                 <p className={`text-[11px] -mt-2 ${appliedCoupon && !couponBelowMin ? 'text-emerald-600' : 'text-red-600'}`}>
                   {couponBelowMin
-                    ? `Đơn tối thiểu ${appliedCoupon.minOrder.toLocaleString()}đ để dùng mã ${appliedCoupon.code}`
+                    ? `Đơn tối thiểu ${appliedCoupon.minOrder.toLocaleString('vi-VN')}đ để dùng mã ${appliedCoupon.code}`
                     : couponMessage}
                 </p>
               )}
@@ -529,12 +529,12 @@ export default function CartPage() {
                 <div className="space-y-1.5 text-xs">
                   <div className="flex justify-between text-gray-600">
                     <span>Tổng tiền:</span>
-                    <span className="font-bold text-gray-900">{subTotal.toLocaleString()}đ</span>
+                    <span className="font-bold text-gray-900">{subTotal.toLocaleString('vi-VN')}đ</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-gray-600">
                       <span>Giảm giá ({appliedCoupon.code}):</span>
-                      <span className="font-bold text-emerald-600">-{discount.toLocaleString()}đ</span>
+                      <span className="font-bold text-emerald-600">-{discount.toLocaleString('vi-VN')}đ</span>
                     </div>
                   )}
                   <div className="flex justify-between text-gray-600">
@@ -547,7 +547,7 @@ export default function CartPage() {
 
                 <div className="flex justify-between items-center text-xs sm:text-sm font-bold">
                   <span>Số tiền cần thanh toán:</span>
-                  <span className="text-red-600 text-sm sm:text-base">{total.toLocaleString()}đ</span>
+                  <span className="text-red-600 text-sm sm:text-base">{total.toLocaleString('vi-VN')}đ</span>
                 </div>
               </div>
 
@@ -572,7 +572,7 @@ export default function CartPage() {
 
               <p className="text-[9px] sm:text-[10px] text-gray-400 text-center leading-relaxed">
                 🔒 Bằng việc đặt hàng, bạn đã đọc và chấp nhận <br />
-                <a href="#" className="text-gray-600 underline">Chính sách bảo mật</a> và <a href="#" className="text-gray-600 underline">Xử lý thông tin cá nhân</a>.
+                <Link to="/chinh-sach/bao-mat" className="text-gray-600 underline">Chính sách bảo mật</Link> và <Link to="/chinh-sach/chinh-sach-chung" className="text-gray-600 underline">Điều khoản mua hàng</Link>.
               </p>
 
             </div>

@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
-import { assetUrl } from '../lib/api';
+import { assetUrl, imgFallback } from '../lib/api';
 
 // Tab "Gợi ý cho bạn" -> tham số lọc gửi lên API
 const SUGGEST_TABS = {
@@ -35,15 +35,16 @@ const iconMap = {
   Newspaper: <Newspaper size={16} />,
 };
 
+// Tên banner trong public/assets: <tên>.webp (1600px) và <tên>-sm.webp (800px cho điện thoại)
 const bannerImages = [
-  "/assets/A1695.jpg",
-  "/assets/why.jpg",
-  "/assets/thucu.jpg",
-  "/assets/tainghe.jpg", 
-  "/assets/asus.jpg",
-  "/assets/aura.jpg",
-  "/assets/best.jpg",
-  "/assets/quy.jpg"
+  "A1695",
+  "why",
+  "thucu",
+  "tainghe", 
+  "asus",
+  "aura",
+  "best",
+  "quy"
 ];
 
 const ecomStores = [
@@ -183,11 +184,11 @@ export default function HomePage() {
         
         {/* QUẢNG CÁO NỔI & BANNERS */}
         <div className="relative mb-4 md:mb-6">
-          <a href="#" className="hidden xl:block absolute right-full mr-4 top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300">
-            <img src="/assets/bannermini-left.jpg" alt="QC Trái" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
+          <a href="/promotions" className="hidden min-[1720px]:block absolute right-full mr-4 top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300">
+            <img src="/assets/bannermini-left.webp" loading="lazy" alt="QC Trái" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
           </a>
-          <a href="#" className="hidden xl:block absolute left-full ml-4 top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300">
-            <img src="/assets/bannermini-right.jpg" alt="QC Phải" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
+          <a href="/promotions" className="hidden min-[1720px]:block absolute left-full ml-4 top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300">
+            <img src="/assets/bannermini-right.webp" loading="lazy" alt="QC Phải" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
           </a>
 
           <div className="bg-[#FFF8D6] rounded-xl p-2 mb-3 flex items-center justify-between text-[10px] md:text-xs font-semibold text-gray-800 border border-yellow-200 overflow-x-auto whitespace-nowrap gap-4 md:gap-0 scrollbar-hide">
@@ -218,9 +219,9 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="col-span-1 md:col-span-9 relative rounded-xl overflow-hidden shadow-sm h-[200px] sm:h-[300px] md:h-[380px] group">
+            <div className="col-span-1 md:col-span-9 relative rounded-xl overflow-hidden shadow-sm aspect-[160/65] md:aspect-auto md:h-[380px] group">
               {bannerImages.map((img, idx) => (
-                <img key={idx} src={img} alt={`Banner ${idx}`} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${currentBanner === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`} />
+                <img key={idx} src={`/assets/${img}.webp`} srcSet={`/assets/${img}-sm.webp 800w, /assets/${img}.webp 1600w`} sizes="(min-width: 768px) 75vw, 100vw" alt={`Banner ${idx + 1}`} loading={idx === 0 ? "eager" : "lazy"} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${currentBanner === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`} />
               ))}
               <button onClick={prevBanner} className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/60 hover:bg-white p-2 rounded-full text-black opacity-0 group-hover:opacity-100 transition-opacity z-20">
                 <ChevronLeft size={20} />
@@ -247,7 +248,7 @@ export default function HomePage() {
                 className="flex flex-col items-center gap-1.5 shrink-0 w-16 md:w-auto group cursor-pointer"
               >
                 <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-100 p-1 flex items-center justify-center border border-gray-100 group-hover:border-yellow-400 transition-all shadow-sm">
-                  <img src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-cover rounded-full" />
+                  <img onError={imgFallback} src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-cover rounded-full" />
                 </div>
                 <span className="text-[10px] md:text-[11px] font-semibold text-gray-700 group-hover:text-red-600 line-clamp-1">{item.name}</span>
               </Link>
@@ -353,7 +354,7 @@ export default function HomePage() {
                     <Flame size={10} fill="currentColor" /> GIẢM SỐC
                   </span>
                   <div className="relative w-full aspect-square bg-gray-50 rounded-xl flex items-center justify-center p-2 mt-5">
-                    <img src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-300" />
+                    <img onError={imgFallback} src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-300" />
                   </div>
                   <div className="mt-2.5">
                     <h3 className="text-[11px] md:text-xs font-bold text-gray-800 line-clamp-2 leading-tight">{item.name}</h3>
@@ -454,7 +455,7 @@ export default function HomePage() {
               <div key={item.id} onClick={() => navigate(`/product/${item.id}`)} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative group cursor-pointer border border-gray-100">
                 <span className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full z-10 shadow-sm">CHÍNH HÃNG</span>
                 <div className="relative w-full aspect-square bg-gray-50 rounded-xl flex items-center justify-center p-2 overflow-hidden">
-                  <img src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
+                  <img onError={imgFallback} src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
                 </div>
                 <div className="mt-3 flex flex-col flex-1 justify-between">
                   <div>
@@ -496,7 +497,7 @@ export default function HomePage() {
            </div>
            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               {newsArticles.map((article) => (
-                 <a key={article.id} href="#" className="group cursor-pointer">
+                 <a key={article.id} href="/tech-news" className="group cursor-pointer">
                     <div className="w-full aspect-video rounded-xl overflow-hidden mb-3 bg-gray-50 border border-gray-100">
                        <img src={article.img} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     </div>

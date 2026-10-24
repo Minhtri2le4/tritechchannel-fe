@@ -46,7 +46,7 @@ export const CartProvider = ({ children }) => {
           name: variant ? `${product.name} (${variant.label})` : product.name,
           price: variant?.price ?? product.price,
           oldPrice: (variant ? variant.originalPrice : product.originalPrice) || null,
-          image: product.image || product.images?.[0] || 'https://via.placeholder.com/100',
+          image: product.image || product.images?.[0] || '',
           color,
           quantity,
           selected: true, // Mặc định tích chọn

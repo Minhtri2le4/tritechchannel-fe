@@ -38,8 +38,18 @@ api.interceptors.response.use(
   },
 );
 
-// Ảnh upload lên backend có dạng /uploads/... -> thêm domain backend
-export const assetUrl = (path) => (path?.startsWith('/uploads/') ? `${API_ORIGIN}${path}` : path);
+export const NO_IMAGE = '/assets/no-image.svg';
+
+// Ảnh upload lên backend có dạng /uploads/... -> thêm domain backend. Không có ảnh -> ảnh mặc định.
+export const assetUrl = (path) => {
+  if (!path) return NO_IMAGE;
+  return path.startsWith('/uploads/') ? `${API_ORIGIN}${path}` : path;
+};
+
+// Gắn vào <img onError={imgFallback}>: ảnh hỏng (link chết) thì thay bằng ảnh mặc định
+export const imgFallback = (e) => {
+  if (!e.currentTarget.src.endsWith(NO_IMAGE)) e.currentTarget.src = NO_IMAGE;
+};
 
 export const formatPrice = (n) => `${Number(n || 0).toLocaleString('vi-VN')}đ`;
 

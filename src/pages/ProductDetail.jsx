@@ -7,7 +7,7 @@ import {
 import { useCart } from '../context/CartContext';
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
-import { assetUrl } from '../lib/api';
+import { assetUrl, imgFallback } from '../lib/api';
 import ProductCard from '../components/ProductCard';
 
 export default function ProductDetail() {
@@ -56,6 +56,10 @@ function ProductDetailView({ productData }) {
   const discountPercent = originalPrice > currentPrice ? Math.round((1 - currentPrice / originalPrice) * 100) : 0;
   const stock = selectedVariant ? selectedVariant.stock : productData.stock;
   const inStock = stock > 0;
+
+  // Trợ giá thu cũ chỉ hợp lý với máy giá trị cao
+  const TRADE_IN_CATEGORIES = [1, 2, 8];
+  const showTradeIn = TRADE_IN_CATEGORIES.includes(productData.categoryId) && currentPrice >= 5000000;
 
   const addSelected = () => {
     if (!inStock) {
@@ -116,6 +120,7 @@ function ProductDetailView({ productData }) {
           <div className="lg:col-span-5 flex flex-col gap-4">
             <div className="relative border border-gray-200 rounded-2xl overflow-hidden bg-gray-50 aspect-square flex items-center justify-center p-4 group">
               <img 
+                onError={imgFallback}
                 src={activeImage} 
                 alt={productData.name} 
                 className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
@@ -133,7 +138,7 @@ function ProductDetailView({ productData }) {
                   onClick={() => setActiveImage(img)}
                   className={`border-2 rounded-xl overflow-hidden aspect-square cursor-pointer transition-all bg-gray-50 p-1 flex items-center justify-center ${activeImage === img ? 'border-amber-500 shadow-md ring-2 ring-amber-200' : 'border-gray-200 hover:border-gray-300'}`}
                 >
-                  <img src={img} alt="thumb" className="w-full h-full object-contain" />
+                  <img onError={imgFallback} src={img} alt="thumb" className="w-full h-full object-contain" />
                 </div>
               ))}
             </div>
@@ -181,12 +186,12 @@ function ProductDetailView({ productData }) {
             {/* Giá tiền */}
             <div className="bg-gray-50 border border-gray-200/80 rounded-2xl p-3.5 flex items-baseline gap-3">
               <span className="text-2xl md:text-3xl font-black text-red-600">
-                {currentPrice.toLocaleString()}đ
+                {currentPrice.toLocaleString('vi-VN')}đ
               </span>
               {discountPercent > 0 && (
                 <>
                   <span className="text-sm text-gray-400 line-through font-semibold">
-                    {originalPrice.toLocaleString()}đ
+                    {originalPrice.toLocaleString('vi-VN')}đ
                   </span>
                   <span className="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-md">
                     -{discountPercent}%
@@ -195,7 +200,8 @@ function ProductDetailView({ productData }) {
               )}
             </div>
 
-            {/* Box Thu Cũ Lên Đời */}
+            {/* Box Thu Cũ Lên Đời – chỉ với máy (điện thoại, tablet, Macbook) giá từ 5 triệu */}
+            {showTradeIn && (
             <div className="bg-gradient-to-r from-amber-500 to-yellow-400 rounded-2xl p-3 text-black shadow-sm">
               <div className="flex items-center justify-between mb-1">
                 <span className="font-extrabold text-xs uppercase flex items-center gap-1">
@@ -204,7 +210,7 @@ function ProductDetailView({ productData }) {
                 <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded font-bold">15 Phút</span>
               </div>
               <p className="text-[11px] font-medium text-gray-900 mb-2">
-                Chỉ từ <span className="font-black text-red-700 text-sm">{Math.max(currentPrice - 4000000, 0).toLocaleString()}đ</span>. Thu máy cũ giá cao không thủ tục rườm rà.
+                Chỉ từ <span className="font-black text-red-700 text-sm">{Math.max(currentPrice - 4000000, 0).toLocaleString('vi-VN')}đ</span>. Thu máy cũ giá cao không thủ tục rườm rà.
               </p>
               <button 
                 onClick={() => navigate('/thu-cu-doi-moi')} 
@@ -213,6 +219,7 @@ function ProductDetailView({ productData }) {
                 Định giá máy cũ ngay →
               </button>
             </div>
+            )}
 
             {/* Chọn dung lượng */}
             {storages.length > 0 && (
@@ -229,7 +236,7 @@ function ProductDetailView({ productData }) {
                     >
                       <p className="font-bold text-xs">{store.label}</p>
                       <p className={`text-[10px] font-semibold mt-0.5 ${selectedVariantId === store.id ? 'text-yellow-400' : 'text-red-600'}`}>
-                        {store.stock > 0 ? `${store.price.toLocaleString()}đ` : 'Hết hàng'}
+                        {store.stock > 0 ? `${store.price.toLocaleString('vi-VN')}đ` : 'Hết hàng'}
                       </p>
                     </button>
                   ))}

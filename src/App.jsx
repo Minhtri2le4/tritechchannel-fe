@@ -1,16 +1,17 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import CategoryPage from './pages/CategoryPage';
 import WarrantyPage from './pages/WarrantyPage';
 import TradeInPage from './pages/TradeInPage';
-import SmartHome from './pages/SmartHome';
 import Promotions from './pages/Promotions';
 import TechNews from './pages/TechNews';
 import CartPage from './pages/CartPage';
 import ProductDetail from './pages/ProductDetail';
+import PolicyPage from './pages/PolicyPage';
+import NotFound from './pages/NotFound';
 
 // Trang quản trị tách bundle riêng, chỉ tải khi vào /admin
 const AdminApp = lazy(() => import('./admin/AdminApp'));
@@ -30,14 +31,15 @@ function AppContent() {
           <Route path="/category/:categoryId" element={<CategoryPage />} />
           <Route path="/bao-hanh" element={<WarrantyPage />} />
           <Route path="/thu-cu-doi-moi" element={<TradeInPage />} />
-          <Route path="/category/9" element={<SmartHome />} /> 
-          <Route path="/smart-home" element={<SmartHome />} />
+          <Route path="/smart-home" element={<Navigate to="/category/9" replace />} />
           <Route path="/category/10" element={<Promotions />} />
           <Route path="/promotions" element={<Promotions />} />
           <Route path="/category/11" element={<TechNews />} />
           <Route path="/tech-news" element={<TechNews />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/chinh-sach/:slug" element={<PolicyPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
