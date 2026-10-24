@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, EyeOff, Trash2, X } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { assetUrl, imgFallback, formatPrice } from '../../lib/api';
 import { adminApi } from '../adminApi';
-import { Badge, Button, Card, ErrorBox, Input, PageHeader, Pagination, Select, Table, useDebounced } from '../ui';
+import { Badge, Button, Card, ErrorBox, Input, Modal, PageHeader, Pagination, Select, Table, useDebounced } from '../ui';
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -12,6 +12,10 @@ export default function ProductsPage() {
   const [status, setStatus] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState([]);
+  // confirm: { ids, names } – hộp xác nhận xóa (1 hoặc nhiều sản phẩm)
+  const [confirm, setConfirm] = useState(null);
+  const [busy, setBusy] = useState(false);
   const q = useDebounced(search);
 
   const { data: categories } = useFetch(() => adminApi.categories.list(), []);
@@ -23,6 +27,7 @@ export default function ProductsPage() {
   const filter = (setter) => (e) => {
     setter(e.target.value);
     setPage(1);
+    setSelected([]);
   };
 
   const toggleStatus = async (p) => {
@@ -34,13 +39,19 @@ export default function ProductsPage() {
     }
   };
 
-  const remove = async (p) => {
-    if (!confirm(`Xóa vĩnh viễn "${p.name}"?\nNếu chỉ muốn ngừng bán, hãy bấm nút ẩn.`)) return;
+  const nameOf = (id) => data?.find((p) => p.id === id)?.name;
+
+  const runBulk = async (ids, action) => {
+    setBusy(true);
     try {
-      await adminApi.products.remove(p.id);
+      await adminApi.products.bulk(ids, action);
+      setSelected((sel) => sel.filter((id) => !ids.includes(id)));
+      setConfirm(null);
       reload();
     } catch (err) {
       alert(err.message);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -73,12 +84,32 @@ export default function ProductsPage() {
           </Select>
         </div>
 
+        {selected.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-gray-900 text-white text-sm">
+            <span className="font-semibold mr-auto">Đã chọn {selected.length} sản phẩm</span>
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => runBulk(selected, 'show')}>
+              <Eye size={14} /> Hiện
+            </Button>
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => runBulk(selected, 'hide')}>
+              <EyeOff size={14} /> Ẩn
+            </Button>
+            <Button size="sm" variant="danger" disabled={busy} onClick={() => setConfirm({ ids: selected, names: selected.map(nameOf).filter(Boolean) })}>
+              <Trash2 size={14} /> Xóa
+            </Button>
+            <button title="Bỏ chọn" className="p-1.5 rounded-md text-gray-300 hover:bg-white/10 hover:text-white" onClick={() => setSelected([])}>
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {error && <div className="p-3"><ErrorBox error={error} onRetry={reload} /></div>}
 
         <Table
           rows={data}
           loading={loading}
           onRowClick={(p) => navigate(`/admin/products/${p.id}`)}
+          selected={selected}
+          onSelectChange={setSelected}
           empty="Không có sản phẩm phù hợp"
           columns={[
             {
@@ -133,7 +164,7 @@ export default function ProductsPage() {
                   <Button size="sm" variant="ghost" title={p.status === 'ACTIVE' ? 'Ẩn khỏi website' : 'Hiện lên website'} onClick={() => toggleStatus(p)}>
                     {p.status === 'ACTIVE' ? <EyeOff size={15} /> : <Eye size={15} />}
                   </Button>
-                  <Button size="sm" variant="ghost" title="Xóa" className="hover:text-red-600" onClick={() => remove(p)}>
+                  <Button size="sm" variant="ghost" title="Xóa" className="hover:text-red-600" onClick={() => setConfirm({ ids: [p.id], names: [p.name] })}>
                     <Trash2 size={15} />
                   </Button>
                 </div>
@@ -143,6 +174,28 @@ export default function ProductsPage() {
         />
         <Pagination meta={meta} onChange={setPage} />
       </Card>
+
+      <Modal
+        open={Boolean(confirm)}
+        title={confirm?.ids.length > 1 ? `Xóa ${confirm.ids.length} sản phẩm?` : 'Xóa sản phẩm?'}
+        onClose={() => !busy && setConfirm(null)}
+        footer={
+          <>
+            <Button variant="outline" disabled={busy} onClick={() => setConfirm(null)}>Hủy</Button>
+            <Button variant="danger" loading={busy} onClick={() => runBulk(confirm.ids, 'delete')}>
+              <Trash2 size={15} /> Xóa vĩnh viễn
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-700">Sản phẩm sẽ bị xóa khỏi hệ thống và không khôi phục được. Đơn hàng cũ vẫn giữ nguyên thông tin.</p>
+        {confirm?.names.length > 0 && (
+          <ul className="mt-3 max-h-48 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100 text-sm">
+            {confirm.names.map((n) => <li key={n} className="px-3 py-1.5 truncate">{n}</li>)}
+          </ul>
+        )}
+        <p className="mt-3 text-xs text-gray-500">Chỉ muốn ngừng bán? Dùng nút <b>Ẩn</b> để giữ lại sản phẩm.</p>
+      </Modal>
     </>
   );
 }
