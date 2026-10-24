@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { Spinner } from './ui';
+import ScrollToTop from '../components/ScrollToTop';
 import AdminLayout from './AdminLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -58,6 +59,7 @@ function AdminRoutes() {
 export default function AdminApp() {
   return (
     <AuthProvider>
+      <ScrollToTop />
       <AdminRoutes />
     </AuthProvider>
   );

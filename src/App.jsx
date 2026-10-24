@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import HomePage from './pages/HomePage';
 import CategoryPage from './pages/CategoryPage';
 import WarrantyPage from './pages/WarrantyPage';
@@ -22,6 +23,7 @@ import { CartProvider } from './context/CartContext';
 function AppContent() {
   return (
     <div className="min-h-screen flex flex-col bg-[#f4f4f4] text-gray-800">
+      <ScrollToTop />
       {/* Header giờ sẽ tự lấy dữ liệu giỏ hàng từ Context */}
       <Header />
 
