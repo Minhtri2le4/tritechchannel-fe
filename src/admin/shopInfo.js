@@ -3,7 +3,7 @@ export const SHOP = {
   name: 'TRITECH CHANNEL',
   hotline: '0325 477 841',
   address: 'Lô 7 Cư Xá Thanh Đa, Bình Thạnh, TP.HCM',
-  carrier: 'SPX Express',
+  carrier: 'Viettel Post',
 };
 
 // Khổ giấy máy in nhiệt (mm). A7 là mặc định.
