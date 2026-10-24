@@ -4,10 +4,15 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  // Lấy giỏ hàng từ localStorage hoặc khởi tạo mảng rỗng []
+  // Lấy giỏ hàng từ localStorage hoặc khởi tạo mảng rỗng [].
+  // Bỏ các món kiểu cũ (từ mock data, không có productId) vì backend không đặt hàng được.
   const [cartItems, setCartItems] = useState(() => {
-    const saved = localStorage.getItem('tritech_cart');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = JSON.parse(localStorage.getItem('tritech_cart') || '[]');
+      return Array.isArray(saved) ? saved.filter((i) => Number.isInteger(i.productId)) : [];
+    } catch {
+      return [];
+    }
   });
 
   // Tự động lưu vào localStorage mỗi khi giỏ hàng thay đổi
@@ -16,35 +21,38 @@ export const CartProvider = ({ children }) => {
   }, [cartItems]);
 
   // 1. Thêm sản phẩm vào giỏ
-  const addToCart = (product, quantity = 1, selectedColor = '') => {
+  // product: sản phẩm từ API; variant: phiên bản đã chọn (nếu có); selectedColor: tên màu (nếu có)
+  const addToCart = (product, quantity = 1, selectedColor = '', variant = null) => {
+    // id = sản phẩm + phiên bản; cùng id khác màu vẫn là 2 dòng riêng
+    const id = `${product.id}:${variant?.id ?? 0}`;
+    const color = selectedColor || '';
+
     setCartItems((prev) => {
-      // Kiểm tra sản phẩm đã có trong giỏ chưa (trùng ID + trùng Màu)
-      const existingIndex = prev.findIndex(
-        (item) => item.id === product.id && item.color === (selectedColor || product.color)
-      );
+      const existingIndex = prev.findIndex((item) => item.id === id && item.color === color);
 
       if (existingIndex > -1) {
         // Nếu đã có -> Tăng số lượng
-        const updated = [...prev];
-        updated[existingIndex].quantity += quantity;
-        return updated;
-      } else {
-        // Chưa có -> Thêm mới vào giỏ
-        return [
-          ...prev,
-          {
-            id: product.id,
-            name: product.name || product.title,
-            price: product.price,
-            oldPrice: product.oldPrice || null,
-            image: product.image || product.images?.[0] || 'https://via.placeholder.com/100',
-            color: selectedColor || product.color || 'Mặc định',
-            quantity: quantity,
-            selected: true, // Mặc định tích chọn
-            perks: product.perks || []
-          }
-        ];
+        return prev.map((item, idx) =>
+          idx === existingIndex ? { ...item, quantity: item.quantity + quantity } : item
+        );
       }
+      // Chưa có -> Thêm mới vào giỏ
+      return [
+        ...prev,
+        {
+          id,
+          productId: product.id,
+          variantId: variant?.id ?? null,
+          name: variant ? `${product.name} (${variant.label})` : product.name,
+          price: variant?.price ?? product.price,
+          oldPrice: (variant ? variant.originalPrice : product.originalPrice) || null,
+          image: product.image || product.images?.[0] || 'https://via.placeholder.com/100',
+          color,
+          quantity,
+          selected: true, // Mặc định tích chọn
+          perks: product.perks || []
+        }
+      ];
     });
   };
 
@@ -84,6 +92,9 @@ export const CartProvider = ({ children }) => {
   // 6. Xóa tất cả sản phẩm
   const clearCart = () => setCartItems([]);
 
+  // 7. Xóa các sản phẩm đã đặt hàng (đang tích chọn), giữ lại phần còn lại
+  const removeSelected = () => setCartItems((prev) => prev.filter((i) => !i.selected));
+
   return (
     <CartContext.Provider
       value={{
@@ -93,7 +104,8 @@ export const CartProvider = ({ children }) => {
         toggleSelect,
         toggleSelectAll,
         removeItem,
-        clearCart
+        clearCart,
+        removeSelected
       }}
     >
       {children}

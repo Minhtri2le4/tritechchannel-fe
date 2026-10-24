@@ -1,64 +1,54 @@
 import { useState } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { sidebarCategories } from '../data/mockData';
-import { categoryProducts } from '../data/categoryData';
-import { ChevronRight, Filter } from 'lucide-react';
+import useCategories from '../hooks/useCategories';
+import useFetch from '../hooks/useFetch';
+import { shopApi } from '../services/shop';
+import { ChevronRight, Filter, Loader2 } from 'lucide-react';
 
-const cleanString = (str) => {
-  if (!str) return '';
-  return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .replace(/\s+/g, '')
-    .toLowerCase();
-};
+const PAGE_SIZE = 10;
+const SORT_PARAM = { DEFAULT: 'default', PRICE_ASC: 'price_asc', PRICE_DESC: 'price_desc' };
+const initialFilters = (key) => ({ key, brand: 'ALL', sortBy: 'DEFAULT', visibleCount: PAGE_SIZE });
 
-export default function CategoryPage({ onAddToCart }) {
+export default function CategoryPage() {
   const { categoryId } = useParams();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
 
-  const [selectedBrand, setSelectedBrand] = useState('ALL');
-  const [sortBy, setSortBy] = useState('DEFAULT');
-  const [visibleCount, setVisibleCount] = useState(8);
+  // Đổi danh mục / từ khóa thì bộ lọc tự đặt lại
+  const filterKey = `${categoryId}|${searchQuery}`;
+  const [filters, setFilters] = useState(() => initialFilters(filterKey));
+  const current = filters.key === filterKey ? filters : initialFilters(filterKey);
+  const { brand: selectedBrand, sortBy, visibleCount } = current;
+  const update = (patch) => setFilters({ ...current, ...patch });
+  const setSelectedBrand = (brand) => update({ brand, visibleCount: PAGE_SIZE });
+  const setSortBy = (s) => update({ sortBy: s });
+  const setVisibleCount = (fn) => update({ visibleCount: fn(visibleCount) });
 
-  const currentCat = sidebarCategories?.find(
+  const { all: categories } = useCategories();
+  const currentCat = categories?.find(
     (c) => String(c.id) === String(categoryId) || c.slug === categoryId
   );
 
-  let filtered = categoryProducts || [];
+  // Tìm kiếm thì tìm trên toàn bộ sản phẩm, không giới hạn trong danh mục
+  const categoryParam = searchQuery.trim() ? undefined : categoryId;
 
-  if (searchQuery.trim() !== '') {
-    const key = cleanString(searchQuery);
-    filtered = filtered.filter((p) => {
-      const name = cleanString(p.name);
-      const brand = cleanString(p.brand);
-      const catName = cleanString(p.category);
-      return name.includes(key) || brand.includes(key) || catName.includes(key);
-    });
-  } else if (categoryId) {
-    filtered = filtered.filter(
-      (item) => String(item.categoryId) === String(categoryId) || String(item.category) === String(categoryId)
-    );
-  }
+  const { data: products, meta, loading, error } = useFetch(
+    () =>
+      shopApi.products({
+        category: categoryParam,
+        search: searchQuery.trim() || undefined,
+        brand: selectedBrand === 'ALL' ? undefined : selectedBrand,
+        sort: SORT_PARAM[sortBy],
+        limit: visibleCount,
+      }),
+    [categoryParam, searchQuery, selectedBrand, sortBy, visibleCount]
+  );
+  const { data: brandList } = useFetch(() => shopApi.brands(categoryParam), [categoryParam]);
 
-  if (selectedBrand !== 'ALL') {
-    const brandKey = cleanString(selectedBrand);
-    filtered = filtered.filter(
-      (p) => cleanString(p.brand) === brandKey || cleanString(p.name).includes(brandKey)
-    );
-  }
-
-  if (sortBy === 'PRICE_ASC') {
-    filtered = [...filtered].sort((a, b) => a.price - b.price);
-  } else if (sortBy === 'PRICE_DESC') {
-    filtered = [...filtered].sort((a, b) => b.price - a.price);
-  }
-
-  const brands = ['ALL', 'APPLE', 'SAMSUNG', 'OPPO', 'XIAOMI'];
+  const filtered = products || [];
+  const total = meta?.total ?? 0;
+  const brands = ['ALL', ...(brandList || [])];
 
   return (
     <div className="max-w-[1280px] mx-auto px-2 md:px-4 py-3">
@@ -95,7 +85,7 @@ export default function CategoryPage({ onAddToCart }) {
           {searchQuery ? `KẾT QUẢ TÌM KIẾM: "${searchQuery}"` : (currentCat ? currentCat.name : 'ĐIỆN THOẠI')}
         </h1>
         <p className="text-xs text-gray-500 mt-1">
-          Hiển thị {filtered.length} sản phẩm {searchQuery && `cho từ khóa "${searchQuery}"`}
+          Hiển thị {total} sản phẩm {searchQuery && `cho từ khóa "${searchQuery}"`}
         </p>
       </div>
 
@@ -142,15 +132,19 @@ export default function CategoryPage({ onAddToCart }) {
       </div>
 
       {/* 6. Product Grid */}
-      {filtered.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 mb-6">
-          {filtered.slice(0, visibleCount).map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={onAddToCart}
-            />
+      {error ? (
+        <div className="bg-white p-8 text-center rounded-xl my-4 text-red-600 text-sm">
+          {error.message}
+        </div>
+      ) : filtered.length > 0 ? (
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 mb-6 transition-opacity ${loading ? 'opacity-60' : ''}`}>
+          {filtered.map((product) => (
+            <ProductCard key={product.id} product={product} />
           ))}
+        </div>
+      ) : loading ? (
+        <div className="bg-white p-8 flex justify-center rounded-xl my-4 text-gray-400">
+          <Loader2 className="animate-spin" />
         </div>
       ) : (
         <div className="bg-white p-8 text-center rounded-xl my-4 text-gray-500 text-sm">
@@ -159,13 +153,14 @@ export default function CategoryPage({ onAddToCart }) {
       )}
 
       {/* 7. Nút "Xem thêm" */}
-      {visibleCount < filtered.length && (
+      {filtered.length < total && (
         <div className="text-center mb-8">
           <button
-            onClick={() => setVisibleCount((prev) => prev + 5)}
-            className="px-8 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-xs uppercase rounded-xl shadow-sm transition-all"
+            disabled={loading}
+            onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+            className="px-8 py-2.5 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 text-black font-bold text-xs uppercase rounded-xl shadow-sm transition-all"
           >
-            Xem thêm {filtered.length - visibleCount} sản phẩm
+            Xem thêm {total - filtered.length} sản phẩm
           </button>
         </div>
       )}

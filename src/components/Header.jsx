@@ -5,8 +5,10 @@ import {
   Smartphone, Tablet, Percent, RefreshCw, Headphones, Speaker, Watch, Laptop, Home, Gift, Newspaper,
   Headset, Wrench, Copy, Check, MessageCircle, ChevronDown
 } from 'lucide-react';
-import { sidebarCategories } from '../data/mockData';
-import { categoryProducts } from '../data/categoryData';
+import useCategories from '../hooks/useCategories';
+import useFetch from '../hooks/useFetch';
+import { shopApi } from '../services/shop';
+import { assetUrl } from '../lib/api';
 import { useCart } from '../context/CartContext'; // Lấy hook Context
 
 const iconMap = {
@@ -106,7 +108,9 @@ export default function Header() {
   };
 
   // Lấy danh sách gợi ý xu hướng
-  const trendingProducts = categoryProducts?.slice(0, 6) || [];
+  const { sidebar: sidebarCategories } = useCategories();
+  const { data: hotProducts } = useFetch(() => shopApi.products({ isHot: true, limit: 6 }), []);
+  const trendingProducts = hotProducts || [];
 
   return (
     <header className="sticky top-0 z-50 shadow-md">
@@ -153,9 +157,9 @@ export default function Header() {
                 <div className="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col p-2">
                   {sidebarCategories && sidebarCategories.map((cat) => {
                     // Xử lý điều hướng riêng cho mục Thu Cũ Đổi Mới (id = 4 hoặc theo tên)
-                    const categoryPath = (cat.id === 4 || cat.name?.toLowerCase().includes('thu cũ')) 
+                    const categoryPath = cat.path || ((cat.id === 4 || cat.name?.toLowerCase().includes('thu cũ')) 
                       ? '/thu-cu-doi-moi' 
-                      : `/category/${cat.id}`;
+                      : `/category/${cat.id}`);
 
                     return (
                       <Link
@@ -261,12 +265,12 @@ export default function Header() {
                         key={prod.id}
                         onClick={() => {
                           setIsOpen(false);
-                          navigate(`/category/1?search=${encodeURIComponent(prod.name)}`);
+                          navigate(`/product/${prod.id}`);
                         }}
                         className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
                       >
                         <img 
-                          src={prod.image || 'https://via.placeholder.com/40'} 
+                          src={assetUrl(prod.image) || 'https://via.placeholder.com/40'} 
                           alt={prod.name} 
                           className="w-9 h-9 object-cover rounded-md border border-gray-100 shrink-0"
                         />

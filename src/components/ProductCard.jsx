@@ -1,9 +1,14 @@
 import { ShoppingCart, Star } from 'lucide-react';
-import { Link } from 'react-router-dom'; // 1. Import thêm Link từ react-router-dom
-import { useCart } from '../context/CartContext'; 
+import { Link, useNavigate } from 'react-router-dom'; // 1. Import thêm Link từ react-router-dom
+import { useCart } from '../context/CartContext';
+import { assetUrl } from '../lib/api';
+
+// Rút gọn số đã bán: 1250 -> 1.2K
+const formatSold = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}K` : n);
 
 export default function ProductCard({ product }) {
-  const { addToCart } = useCart(); 
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   return (
     /* 2. Bọc toàn bộ card bằng thẻ Link trỏ tới trang chi tiết sản phẩm */
@@ -14,9 +19,9 @@ export default function ProductCard({ product }) {
       
       {/* Cụm Tem Nhãn */}
       <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1.5 pointer-events-none">
-        {product.discount && (
+        {product.discountPercent > 0 && (
           <span className="bg-red-500 text-white text-[9px] md:text-[10px] font-black px-2.5 py-1 rounded-full shadow-sm w-fit border border-red-600 tracking-wide">
-            Giảm {product.discount}%
+            Giảm {product.discountPercent}%
           </span>
         )}
       </div>
@@ -31,7 +36,7 @@ export default function ProductCard({ product }) {
       {/* Khung Ảnh Sản Phẩm */}
       <div className="relative w-full aspect-square bg-gray-50/50 flex items-center justify-center p-4">
         <img 
-          src={product.image} 
+          src={assetUrl(product.image)}
           alt={product.name} 
           className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
         />
@@ -47,9 +52,9 @@ export default function ProductCard({ product }) {
           <span className="text-sm md:text-lg font-black text-red-600 leading-none">
             {product.price.toLocaleString('vi-VN')}đ
           </span>
-          {product.oldPrice && (
+          {product.originalPrice > product.price && (
             <span className="text-[10px] md:text-xs text-gray-400 line-through font-medium leading-none mb-0.5">
-              {product.oldPrice.toLocaleString('vi-VN')}đ
+              {product.originalPrice.toLocaleString('vi-VN')}đ
             </span>
           )}
         </div>
@@ -60,7 +65,7 @@ export default function ProductCard({ product }) {
             <span className="ml-1.5 text-gray-600 font-bold">{product.rating || 5}</span>
           </div>
           <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-          <span>Đã bán {product.sold || '100+'}</span>
+          <span>Đã bán {formatSold(product.soldCount || 0)}</span>
         </div>
 
         {/* Nút thêm vào giỏ hàng giữ nguyên e.stopPropagation để không bị nhảy trang khi bấm mua nhanh */}
@@ -68,7 +73,9 @@ export default function ProductCard({ product }) {
           onClick={(e) => {
             e.preventDefault(); // Ngăn hành vi mặc định của Link
             e.stopPropagation(); // Ngăn sự kiện nổi bọt
-            addToCart(product); 
+            // Sản phẩm có dung lượng/màu thì phải vào trang chi tiết để chọn
+            if (product.hasOptions) navigate(`/product/${product.id}`);
+            else addToCart(product);
           }}
           className="mt-auto pt-2 w-full"
         >

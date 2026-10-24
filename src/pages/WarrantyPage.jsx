@@ -1,49 +1,45 @@
 import { useState } from 'react';
 import { Search, ShieldCheck, AlertCircle, Clock, Wrench, PhoneCall, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { shopApi } from '../services/shop';
+import { formatDate } from '../lib/api';
 
 export default function WarrantyPage() {
   const [searchKey, setSearchKey] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
+  // 1 SĐT có thể có nhiều thiết bị -> lưu cả danh sách, hiển thị thiết bị đang chọn
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Mock dữ liệu tra cứu
-  const mockWarrantyData = [
-    {
-      imei: '0325477841',
-      phone: '0325477841',
-      productName: 'iPhone 15 Pro Max 256GB - VN/A',
-      purchaseDate: '15/10/2023',
-      expiryDate: '15/10/2024',
-      status: 'Hết hạn',
-      customerName: 'Hồ Minh Trí',
-      history: [
-        { date: '20/12/2023', note: 'Vệ sinh máy & dán lại cường lực miễn phí', status: 'Hoàn tất' }
-      ]
-    },
-    {
-      imei: '0987654321',
-      phone: '0987654321',
-      productName: 'MacBook Pro M3 14 inch 16GB / 512GB',
-      purchaseDate: '01/03/2026',
-      expiryDate: '01/03/2027',
-      status: 'Còn hạn',
-      customerName: 'Nguyễn Văn A',
-      history: []
-    }
-  ];
+  // Chuẩn hóa dữ liệu API cho khớp giao diện (ngày dd/MM/yyyy)
+  const toView = (w) => ({
+    ...w,
+    purchaseDate: formatDate(w.purchaseDate),
+    expiryDate: formatDate(w.expiryDate),
+    history: w.history.map((h) => ({ ...h, date: formatDate(h.date) })),
+  });
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchKey.trim()) return;
 
-    setHasSearched(true);
-    const key = searchKey.trim().toLowerCase();
-    
-    const found = mockWarrantyData.find(
-      (item) => item.phone.includes(key) || item.imei.toLowerCase().includes(key)
-    );
-
-    setSearchResult(found || null);
+    setSearching(true);
+    setErrorMessage('');
+    try {
+      const { data } = await shopApi.lookupWarranty(searchKey.trim());
+      const list = data.map(toView);
+      setResults(list);
+      setSearchResult(list[0] || null);
+    } catch (err) {
+      setResults([]);
+      setSearchResult(null);
+      // 404 = không tìm thấy -> dùng giao diện "không tìm thấy" sẵn có
+      if (err.status !== 404) setErrorMessage(err.message);
+    } finally {
+      setHasSearched(true);
+      setSearching(false);
+    }
   };
 
   return (
@@ -80,9 +76,10 @@ export default function WarrantyPage() {
               </div>
               <button
                 type="submit"
-                className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-6 py-2.5 rounded-lg text-xs sm:text-sm transition-colors cursor-pointer shrink-0"
+                disabled={searching}
+                className="bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 text-black font-bold px-6 py-2.5 rounded-lg text-xs sm:text-sm transition-colors cursor-pointer shrink-0"
               >
-                Tra cứu ngay
+                {searching ? 'Đang tra cứu...' : 'Tra cứu ngay'}
               </button>
             </form>
 
@@ -103,6 +100,24 @@ export default function WarrantyPage() {
         {/* 2. Kết Quả Tra Cứu */}
         {hasSearched && (
           <div className="mb-10 sm:mb-12">
+            {errorMessage && (
+              <p className="max-w-3xl mx-auto mb-3 text-center text-xs text-red-600">{errorMessage}</p>
+            )}
+            {/* Nhiều thiết bị cùng SĐT -> chọn thiết bị cần xem */}
+            {results.length > 1 && (
+              <div className="max-w-3xl mx-auto mb-3 flex flex-wrap gap-2 justify-center">
+                {results.map((w) => (
+                  <button
+                    key={w.imei}
+                    type="button"
+                    onClick={() => setSearchResult(w)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${searchResult?.imei === w.imei ? 'bg-black text-white border-black' : 'bg-white border-gray-200 hover:border-gray-400'}`}
+                  >
+                    {w.productName}
+                  </button>
+                ))}
+              </div>
+            )}
             {searchResult ? (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden max-w-3xl mx-auto">
                 

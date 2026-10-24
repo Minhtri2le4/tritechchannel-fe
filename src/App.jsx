@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -10,6 +11,9 @@ import Promotions from './pages/Promotions';
 import TechNews from './pages/TechNews';
 import CartPage from './pages/CartPage';
 import ProductDetail from './pages/ProductDetail';
+
+// Trang quản trị tách bundle riêng, chỉ tải khi vào /admin
+const AdminApp = lazy(() => import('./admin/AdminApp'));
 
 // Import CartProvider
 import { CartProvider } from './context/CartContext';
@@ -44,6 +48,19 @@ function AppContent() {
 
 // Bọc CartProvider ở ngoài cùng
 export default function App() {
+  const { pathname } = useLocation();
+
+  // /admin dùng giao diện riêng, không có Header/Footer của website
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    return (
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/admin/*" element={<AdminApp />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
   return (
     <CartProvider>
       <AppContent />
