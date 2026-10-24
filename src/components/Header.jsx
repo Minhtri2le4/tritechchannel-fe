@@ -110,6 +110,8 @@ export default function Header() {
         setRecentSearches([query.trim(), ...recentSearches.slice(0, 4)]);
       }
       setIsOpen(false);
+      // Ẩn bàn phím điện thoại sau khi tìm
+      document.activeElement?.blur?.();
       navigate(`/category/1?search=${encodeURIComponent(query.trim())}`);
     }
   };
@@ -223,7 +225,7 @@ export default function Header() {
             <form onSubmit={handleFormSubmit} className="relative">
               <input
                 type="text"
-                placeholder="Bạn muốn tìm gì..."
+                placeholder="Tìm sản phẩm..."
                 value={searchTerm}
                 onFocus={openSearch}
                 onChange={(e) => setSearchTerm(e.target.value)}
