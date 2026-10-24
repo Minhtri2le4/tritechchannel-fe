@@ -158,12 +158,34 @@ export function ErrorBox({ error, onRetry }) {
 }
 
 // Bảng dữ liệu: columns = [{ key, title, render?(row), className? }]
-export function Table({ columns, rows, loading, empty = 'Chưa có dữ liệu', onRowClick, rowKey = 'id' }) {
+// Chọn nhiều dòng: truyền selected (mảng id) + onSelectChange(ids) -> hiện cột checkbox
+export function Table({ columns, rows, loading, empty = 'Chưa có dữ liệu', onRowClick, rowKey = 'id', selected, onSelectChange }) {
+  const selectable = Boolean(onSelectChange);
+  const pageIds = rows?.map((r) => r[rowKey]) || [];
+  const picked = new Set(selected);
+  const allPicked = pageIds.length > 0 && pageIds.every((id) => picked.has(id));
+  const somePicked = !allPicked && pageIds.some((id) => picked.has(id));
+  const toggleAll = () =>
+    onSelectChange(allPicked ? selected.filter((id) => !pageIds.includes(id)) : [...new Set([...selected, ...pageIds])]);
+  const toggle = (id) => onSelectChange(picked.has(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+            {selectable && (
+              <th className="w-10 pl-3 pr-0 py-2.5">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn tất cả"
+                  className="w-4 h-4 accent-amber-500 cursor-pointer align-middle"
+                  checked={allPicked}
+                  ref={(el) => el && (el.indeterminate = somePicked)}
+                  onChange={toggleAll}
+                />
+              </th>
+            )}
             {columns.map((c) => (
               <th key={c.key} className={cx('px-3 py-2.5 font-semibold whitespace-nowrap', c.className)}>
                 {c.title}
@@ -176,8 +198,23 @@ export function Table({ columns, rows, loading, empty = 'Chưa có dữ liệu',
             <tr
               key={row[rowKey]}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={cx('border-b border-gray-100 last:border-0', onRowClick && 'cursor-pointer hover:bg-amber-50/50')}
+              className={cx(
+                'border-b border-gray-100 last:border-0',
+                onRowClick && 'cursor-pointer hover:bg-amber-50/50',
+                picked.has(row[rowKey]) && 'bg-amber-50'
+              )}
             >
+              {selectable && (
+                <td className="w-10 pl-3 pr-0 py-2.5 align-middle" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn dòng"
+                    className="w-4 h-4 accent-amber-500 cursor-pointer align-middle"
+                    checked={picked.has(row[rowKey])}
+                    onChange={() => toggle(row[rowKey])}
+                  />
+                </td>
+              )}
               {columns.map((c) => (
                 <td key={c.key} className={cx('px-3 py-2.5 align-middle', c.className)}>
                   {c.render ? c.render(row) : row[c.key]}

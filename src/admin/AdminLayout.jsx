@@ -8,14 +8,24 @@ import { useAuth } from './AuthContext';
 import ChangePasswordModal from './pages/ChangePasswordModal';
 
 const NAV = [
-  { to: '/admin', label: 'Tổng quan', icon: LayoutDashboard, end: true },
-  { to: '/admin/orders', label: 'Đơn hàng', icon: ShoppingCart },
-  { to: '/admin/products', label: 'Sản phẩm', icon: Package },
-  { to: '/admin/trade-ins', label: 'Thu cũ đổi mới', icon: RefreshCw },
-  { to: '/admin/warranties', label: 'Bảo hành', icon: ShieldCheck },
-  { to: '/admin/coupons', label: 'Mã giảm giá', icon: Ticket },
-  { to: '/admin/categories', label: 'Danh mục', icon: FolderTree },
-  { to: '/admin/users', label: 'Nhân viên', icon: Users, adminOnly: true },
+  { group: null, items: [{ to: '/admin', label: 'Tổng quan', icon: LayoutDashboard, end: true }] },
+  {
+    group: 'Bán hàng',
+    items: [
+      { to: '/admin/orders', label: 'Đơn hàng', icon: ShoppingCart },
+      { to: '/admin/trade-ins', label: 'Thu cũ đổi mới', icon: RefreshCw },
+      { to: '/admin/warranties', label: 'Bảo hành', icon: ShieldCheck },
+      { to: '/admin/coupons', label: 'Mã giảm giá', icon: Ticket },
+    ],
+  },
+  {
+    group: 'Sản phẩm',
+    items: [
+      { to: '/admin/products', label: 'Sản phẩm', icon: Package },
+      { to: '/admin/categories', label: 'Danh mục', icon: FolderTree },
+    ],
+  },
+  { group: 'Hệ thống', items: [{ to: '/admin/users', label: 'Nhân viên', icon: Users, adminOnly: true }] },
 ];
 
 export default function AdminLayout() {
@@ -24,23 +34,32 @@ export default function AdminLayout() {
   const [pwOpen, setPwOpen] = useState(false);
 
   const nav = (
-    <nav className="flex flex-col gap-0.5 p-3">
-      {NAV.filter((n) => !n.adminOnly || isAdmin).map(({ to, label, icon: Icon, end }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          onClick={() => setMenuOpen(false)}
-          className={({ isActive }) =>
-            `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              isActive ? 'bg-[#FFD400] text-black font-bold' : 'text-gray-300 hover:bg-white/10 hover:text-white'
-            }`
-          }
-        >
-          <Icon size={17} />
-          {label}
-        </NavLink>
-      ))}
+    <nav className="flex flex-col gap-4 p-3">
+      {NAV.map(({ group, items }) => {
+        const visible = items.filter((n) => !n.adminOnly || isAdmin);
+        if (!visible.length) return null;
+        return (
+          <div key={group || 'main'} className="flex flex-col gap-0.5">
+            {group && <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">{group}</p>}
+            {visible.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive ? 'bg-[#FFD400] text-black font-bold' : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                  }`
+                }
+              >
+                <Icon size={17} />
+                {label}
+              </NavLink>
+            ))}
+          </div>
+        );
+      })}
     </nav>
   );
 
@@ -84,7 +103,10 @@ export default function AdminLayout() {
             <ExternalLink size={14} /> Xem website
           </a>
           <div className="flex items-center gap-1 sm:gap-3">
-            <div className="text-right leading-tight">
+            <span className="hidden sm:flex w-8 h-8 rounded-full bg-gray-900 text-[#FFD400] text-sm font-black items-center justify-center">
+              {user?.name?.trim().split(/\s+/).pop()?.[0]?.toUpperCase() || 'A'}
+            </span>
+            <div className="text-right sm:text-left leading-tight">
               <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
               <p className="text-[11px] text-gray-500">{user?.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên'}</p>
             </div>

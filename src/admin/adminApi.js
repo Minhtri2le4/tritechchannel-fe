@@ -14,7 +14,7 @@ export const adminApi = {
   me: () => api.get('/admin/auth/me'),
   changePassword: (body) => api.post('/admin/auth/change-password', body),
 
-  dashboard: () => api.get('/admin/dashboard'),
+  dashboard: (days = 30) => api.get('/admin/dashboard', { params: { days } }),
 
   // files: FileList | File[] -> trả về [{ url }]
   upload: (files) => {
@@ -23,7 +23,11 @@ export const adminApi = {
     return api.post('/admin/uploads', body);
   },
 
-  products: crud('/admin/products'),
+  products: {
+    ...crud('/admin/products'),
+    // action: 'delete' | 'hide' | 'show'
+    bulk: (ids, action) => api.post('/admin/products/bulk', { ids, action }),
+  },
   categories: crud('/admin/categories'),
   coupons: crud('/admin/coupons'),
   orders: crud('/admin/orders'),
