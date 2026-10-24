@@ -76,12 +76,13 @@ export default function OrdersPage() {
           columns={[
             { key: 'code', title: 'Mã đơn', render: (o) => <span className="font-mono font-semibold">{o.code}</span> },
             { key: 'customer', title: 'Khách hàng', render: (o) => <><p className="font-medium">{o.fullName}</p><p className="text-xs text-gray-500">{o.phone}</p></> },
-            { key: 'items', title: 'SP', className: 'text-center', render: (o) => o._count?.items },
-            { key: 'delivery', title: 'Nhận hàng', className: 'whitespace-nowrap text-xs', render: (o) => (o.deliveryMethod === 'HOME' ? '🚚 Giao tận nhà' : '🏪 Tại cửa hàng') },
+            { key: 'items', title: 'SP', className: 'text-center hidden md:table-cell', render: (o) => o._count?.items },
+            { key: 'delivery', title: 'Nhận hàng', className: 'whitespace-nowrap text-xs hidden md:table-cell', render: (o) => (o.deliveryMethod === 'HOME' ? '🚚 Giao tận nhà' : '🏪 Tại cửa hàng') },
             { key: 'total', title: 'Tổng tiền', className: 'text-right whitespace-nowrap font-bold', render: (o) => formatPrice(o.total) },
             {
               key: 'payment',
               title: 'Thanh toán',
+              className: 'hidden sm:table-cell',
               render: (o) => (
                 <div className="flex flex-col gap-0.5 items-start">
                   <span className="text-[11px] text-gray-500">{o.paymentMethod === 'BANK' ? 'Chuyển khoản' : 'COD'}</span>
@@ -90,7 +91,7 @@ export default function OrdersPage() {
               ),
             },
             { key: 'status', title: 'Trạng thái', render: (o) => <Badge map={ORDER_STATUS} value={o.status} /> },
-            { key: 'createdAt', title: 'Ngày đặt', className: 'whitespace-nowrap text-gray-500 text-xs', render: (o) => formatDate(o.createdAt, true) },
+            { key: 'createdAt', title: 'Ngày đặt', className: 'whitespace-nowrap text-gray-500 text-xs hidden lg:table-cell', render: (o) => formatDate(o.createdAt, true) },
           ]}
         />
         <Pagination meta={meta} onChange={(p) => setParam('page', String(p))} />

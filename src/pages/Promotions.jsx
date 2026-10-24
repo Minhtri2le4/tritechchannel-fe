@@ -1,103 +1,40 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ChevronRight, Home } from 'lucide-react';
+import { Sparkles, ChevronRight, Home, Loader2 } from 'lucide-react';
+import ProductCard from '../components/ProductCard';
+import useFetch from '../hooks/useFetch';
+import { shopApi } from '../services/shop';
 
-const HOT_DEALS = [
-  {
-    id: 1,
-    name: "Xiaomi Poco C65 6GB/128GB Chính Hãng",
-    price: "2.690.000đ",
-    oldPrice: "3.690.000đ",
-    discount: "-27%",
-    tag: "Trả góp 0%",
-    subTag: "ƯU ĐÃI MUA TRẢ GÓP GIẢM 100.000Đ",
-    image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&fit=crop",
-    status: "Còn hàng"
-  },
-  {
-    id: 2,
-    name: "Xiaomi Redmi 13C 4GB/128GB Chính Hãng",
-    price: "2.990.000đ",
-    oldPrice: "4.090.000đ",
-    discount: "-26%",
-    tag: "Trả góp 0%",
-    subTag: "ƯU ĐÃI MUA TRẢ GÓP GIẢM 100.000Đ",
-    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&fit=crop",
-    status: "Còn hàng"
-  },
-  {
-    id: 3,
-    name: "Xiaomi Redmi 13 6GB/128GB Chính Hãng",
-    price: "3.890.000đ",
-    oldPrice: "4.790.000đ",
-    discount: "-19%",
-    tag: "Trả góp 0%",
-    subTag: "ƯU ĐÃI MUA TRẢ GÓP GIẢM 100.000Đ",
-    image: "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=500&fit=crop",
-    status: "Còn hàng"
-  },
-  {
-    id: 4,
-    name: "Oppo A3x 4GB/64GB Chính Hãng",
-    price: "3.990.000đ",
-    oldPrice: "4.690.000đ",
-    discount: "-15%",
-    tag: "Trả góp 0%",
-    subTag: "ƯU ĐÃI MUA TRẢ GÓP GIẢM 100.000Đ",
-    image: "https://images.unsplash.com/photo-1546054454-aa26e2b734c7?w=500&fit=crop",
-    status: "Còn hàng"
-  },
-];
+// Tab ưu đãi -> điều kiện lọc sản phẩm đang giảm giá
+const TABS = {
+  android: { label: 'Điện thoại Android', params: { category: '1' }, excludeBrand: 'APPLE' },
+  iphone: { label: 'iPhone', params: { category: '1', brand: 'APPLE' } },
+  accessory: { label: 'Phụ kiện & Sạc dự phòng', params: { category: '5' } },
+};
 
-const NEW_ARRIVALS = [
-  {
-    id: 5,
-    name: "Oppo Reno12 F 5G 8GB/256GB Chính Hãng",
-    price: "11.490.000đ",
-    oldPrice: "15.990.000đ",
-    discount: "-28%",
-    tag: "Trả góp 0%",
-    subTag: "GIÁ SỐC GIẢM 100.000Đ",
-    image: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=500&fit=crop",
-    status: "Còn hàng"
-  },
-  {
-    id: 6,
-    name: "Samsung Galaxy S25 Ultra 12GB/256GB Chính Hãng",
-    price: "19.990.000đ",
-    oldPrice: "33.990.000đ",
-    discount: "-41%",
-    tag: "Trả góp 0%",
-    subTag: "BÁN NHANH LÊN ĐỜI GIẢM 200.000Đ",
-    image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&fit=crop",
-    status: "Còn hàng"
-  },
-  {
-    id: 7,
-    name: "iPhone 17 Pro Max 512GB Cũ 99%",
-    price: "35.290.000đ",
-    oldPrice: "44.990.000đ",
-    discount: "-21%",
-    tag: "Trả góp 0%",
-    subTag: "BÁN NHANH LÊN ĐỜI GIẢM 200.000Đ",
-    image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500&fit=crop",
-    status: "Còn hàng"
-  },
-  {
-    id: 8,
-    name: "Samsung Galaxy Tab S9 FE WiFi 6GB/128GB",
-    price: "6.490.000đ",
-    oldPrice: "10.990.000đ",
-    discount: "-41%",
-    tag: "Trả góp 0%",
-    subTag: "GIÁ SỐC GIẢM 100.000Đ",
-    image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500&fit=crop",
-    status: "Còn hàng"
-  },
-];
+function ProductGrid({ items, loading, empty }) {
+  if (loading && !items) {
+    return <div className="flex justify-center py-10 text-gray-400"><Loader2 className="animate-spin" /></div>;
+  }
+  if (!items?.length) return <p className="text-center text-sm text-gray-500 py-8">{empty}</p>;
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      {items.map((p) => <ProductCard key={p.id} product={p} />)}
+    </div>
+  );
+}
 
 export default function Promotions() {
   const [activeTab, setActiveTab] = useState('android');
+  const tab = TABS[activeTab];
+
+  // Sản phẩm đang giảm giá của tab, giảm nhiều nhất lên trước
+  const { data: tabProducts, loading: dealsLoading } = useFetch(() => shopApi.products({ ...tab.params, limit: 40 }), [activeTab]);
+  const deals = tabProducts
+    ?.filter((p) => p.discountPercent > 0 && p.brand !== tab.excludeBrand)
+    .sort((a, b) => b.discountPercent - a.discountPercent)
+    .slice(0, 8);
+  const { data: newArrivals, loading: newLoading } = useFetch(() => shopApi.products({ sort: 'newest', limit: 8 }), []);
 
   return (
     <div className="bg-[#f4f4f4] min-h-screen pb-16 text-gray-800 overflow-x-hidden w-full">
@@ -142,38 +79,21 @@ export default function Promotions() {
 
           {/* Quick Filter Tabs */}
           <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-none text-xs">
-            <button 
-              onClick={() => setActiveTab('android')}
-              className={`whitespace-nowrap font-bold px-3 py-1.5 rounded-lg border transition-all ${
-                activeTab === 'android' ? 'bg-black text-[#FFD400] border-black' : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Điện thoại Android Giảm đến 100K
-            </button>
-            <button 
-              onClick={() => setActiveTab('iphone')}
-              className={`whitespace-nowrap font-bold px-3 py-1.5 rounded-lg border transition-all ${
-                activeTab === 'iphone' ? 'bg-black text-[#FFD400] border-black' : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              iPhone Giảm Thêm 300K
-            </button>
-            <button 
-              onClick={() => setActiveTab('accessory')}
-              className={`whitespace-nowrap font-bold px-3 py-1.5 rounded-lg border transition-all ${
-                activeTab === 'accessory' ? 'bg-black text-[#FFD400] border-black' : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Sạc dự phòng Giảm đến 100K
-            </button>
+            {Object.entries(TABS).map(([key, t]) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`whitespace-nowrap font-bold px-3 py-1.5 rounded-lg border transition-all ${
+                  activeTab === key ? 'bg-black text-[#FFD400] border-black' : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
           {/* Grid Sản Phẩm */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            {HOT_DEALS.map((item) => (
-              <ProductCard key={item.id} item={item} />
-            ))}
-          </div>
+          <ProductGrid items={deals} loading={dealsLoading} empty="Hiện chưa có sản phẩm giảm giá trong mục này." />
         </section>
 
 
@@ -194,7 +114,7 @@ export default function Promotions() {
           </div>
 
           {/* Ô 2: Nền Đen - Chữ Vàng (Thu Cũ Đổi Mới) */}
-          <div className="bg-black text-white rounded-xl p-4 shadow-sm flex flex-col justify-between min-h-[105px] border border-yellow-500/50">
+          <Link to="/thu-cu-doi-moi" className="bg-black text-white rounded-xl p-4 shadow-sm flex flex-col justify-between min-h-[105px] border border-yellow-500/50 hover:border-yellow-400">
             <span className="bg-[#FFD400] text-black text-[10px] font-black px-2 py-0.5 rounded w-fit uppercase tracking-wider">
               THU CŨ ĐỔI MỚI
             </span>
@@ -204,7 +124,7 @@ export default function Promotions() {
               </h3>
               <p className="text-[11px] text-gray-300 font-semibold">Trợ giá đến 5 Triệu + Trả góp 0%</p>
             </div>
-          </div>
+          </Link>
 
           {/* Ô 3: Nền Vàng Đậm - Chữ Đen (Đối Tác) */}
           <div className="bg-[#FFD400] text-black rounded-xl p-4 shadow-sm flex flex-col justify-between min-h-[105px] border border-yellow-500">
@@ -233,74 +153,10 @@ export default function Promotions() {
             <Sparkles size={18} className="text-red-600 fill-red-600 shrink-0" />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            {NEW_ARRIVALS.map((item) => (
-              <ProductCard key={item.id} item={item} />
-            ))}
-          </div>
+          <ProductGrid items={newArrivals} loading={newLoading} empty="Chưa có sản phẩm mới." />
         </section>
 
       </div>
-    </div>
-  );
-}
-
-// Sub Component Card
-function ProductCard({ item }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 hover:border-[#FFD400] shadow-sm transition-all duration-200 flex flex-col justify-between p-2.5 relative group">
-      
-      {/* Badges Top */}
-      <div className="flex items-center gap-1 absolute top-2 left-2 z-10">
-        <span className="bg-red-600 text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded shadow-sm">
-          {item.discount}
-        </span>
-        {item.tag && (
-          <span className="bg-gray-100 text-gray-600 font-medium text-[9px] px-1 py-0.5 rounded border border-gray-200 hidden sm:inline-block">
-            {item.tag}
-          </span>
-        )}
-      </div>
-
-      {/* Ảnh sản phẩm */}
-      <div className="h-28 sm:h-36 w-full my-1.5 flex items-center justify-center overflow-hidden">
-        <img 
-          src={item.image} 
-          alt={item.name} 
-          className="max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
-        />
-      </div>
-
-      {/* Thông tin */}
-      <div className="flex flex-col justify-between flex-grow">
-        <h3 className="text-[11px] sm:text-xs font-bold text-gray-800 line-clamp-2 leading-tight group-hover:text-amber-600 transition-colors">
-          {item.name}
-        </h3>
-
-        {/* Sub Tag quà tặng/giảm giá */}
-        {item.subTag && (
-          <div className="mt-1.5 bg-[#FFD400] text-black text-[9px] font-black py-0.5 px-1 rounded text-center truncate">
-            {item.subTag}
-          </div>
-        )}
-
-        {/* Giá */}
-        <div className="mt-2">
-          <div className="text-xs sm:text-sm font-black text-red-600">
-            {item.price}
-          </div>
-          <div className="text-[10px] text-gray-400 line-through">
-            {item.oldPrice}
-          </div>
-        </div>
-
-        {/* Footer Card */}
-        <div className="mt-2 pt-1.5 border-t border-gray-100 flex items-center justify-between text-[9px] sm:text-[10px] text-emerald-600 font-semibold">
-          <span>{item.status}</span>
-          <span className="text-gray-400 font-normal">Giao nhanh</span>
-        </div>
-      </div>
-
     </div>
   );
 }

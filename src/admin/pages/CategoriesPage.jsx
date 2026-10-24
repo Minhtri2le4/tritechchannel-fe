@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { assetUrl } from '../../lib/api';
+import { assetUrl, imgFallback } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import { useAuth } from '../AuthContext';
 import { Badge, Button, Card, Checkbox, ErrorBox, Field, Input, Modal, PageHeader, Table, errorText } from '../ui';
@@ -41,7 +41,7 @@ export default function CategoriesPage() {
               title: 'Tên',
               render: (c) => (
                 <div className="flex items-center gap-2.5">
-                  {c.image ? <img src={assetUrl(c.image)} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="w-8 h-8 rounded-full bg-gray-100" />}
+                  {c.image ? <img onError={imgFallback} src={assetUrl(c.image)} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="w-8 h-8 rounded-full bg-gray-100" />}
                   <div>
                     <p className="font-semibold">{c.name} {c.badge && <span className="text-[10px] text-red-600 font-black">{c.badge}</span>}</p>
                     <p className="text-xs text-gray-500">{c.path || `/category/${c.id}`}</p>

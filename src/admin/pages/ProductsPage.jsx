@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search, Eye, EyeOff, Trash2 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { assetUrl, formatPrice } from '../../lib/api';
+import { assetUrl, imgFallback, formatPrice } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import { Badge, Button, Card, ErrorBox, Input, PageHeader, Pagination, Select, Table, useDebounced } from '../ui';
 
@@ -86,7 +86,7 @@ export default function ProductsPage() {
               title: 'Sản phẩm',
               render: (p) => (
                 <div className="flex items-center gap-3 min-w-[240px]">
-                  <img src={assetUrl(p.image)} alt="" className="w-11 h-11 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />
+                  <img onError={imgFallback} src={assetUrl(p.image)} alt="" className="w-11 h-11 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />
                   <div className="min-w-0">
                     <p className="font-semibold line-clamp-2">{p.name}</p>
                     <p className="text-xs text-gray-500">

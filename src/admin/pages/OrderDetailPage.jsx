@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Phone, Mail, MapPin, Store, Printer } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { assetUrl, formatDate, formatPrice } from '../../lib/api';
+import { assetUrl, imgFallback, formatDate, formatPrice } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import { Badge, Button, Card, ErrorBox, Field, ORDER_STATUS, PAYMENT_STATUS, PageHeader, Spinner, Textarea } from '../ui';
 
@@ -73,7 +73,7 @@ export default function OrderDetailPage() {
             <div className="divide-y divide-gray-100">
               {order.items.map((it) => (
                 <div key={it.id} className="flex items-center gap-3 px-4 py-3">
-                  <img src={assetUrl(it.image)} alt="" className="w-14 h-14 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />
+                  <img onError={imgFallback} src={assetUrl(it.image)} alt="" className="w-14 h-14 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />
                   <div className="flex-1 min-w-0">
                     {it.productId ? (
                       <Link to={`/admin/products/${it.productId}`} className="font-semibold hover:underline line-clamp-2">{it.productName}</Link>

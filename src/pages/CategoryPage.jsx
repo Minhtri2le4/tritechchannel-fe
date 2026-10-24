@@ -63,20 +63,21 @@ export default function CategoryPage() {
 
       {/* 2. CỤM BANNER ĐÔI */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
-        <div className="overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-          <img 
-            src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=800&q=80" 
-            alt="Banner Xài Trước Trả Sau" 
-            className="w-full h-32 sm:h-40 md:h-44 object-cover hover:scale-105 transition-transform duration-300"
+        <Link to="/thu-cu-doi-moi" className="block overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+          <img
+            src="/assets/thucu-sm.webp"
+            alt="Banner Thu Cũ Đổi Mới"
+            className="w-full aspect-[160/65] object-cover hover:scale-105 transition-transform duration-300"
           />
-        </div>
-        <div className="overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-          <img 
-            src="https://images.unsplash.com/photo-1556742049-0a670f4a4591?auto=format&fit=crop&w=800&q=80" 
-            alt="Banner Thu Cũ Đổi Mới" 
-            className="w-full h-32 sm:h-40 md:h-44 object-cover hover:scale-105 transition-transform duration-300"
+        </Link>
+        {/* Banner thứ 2 chỉ hiện trên màn hình rộng để điện thoại không phải cuộn qua 2 banner lớn */}
+        <Link to="/promotions" className="hidden md:block overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+          <img
+            src="/assets/best-sm.webp"
+            alt="Banner Khuyến Mãi"
+            className="w-full aspect-[160/65] object-cover hover:scale-105 transition-transform duration-300"
           />
-        </div>
+        </Link>
       </div>
 
       {/* 3. Title & Số lượng */}

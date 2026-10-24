@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { 
   Search, ShoppingBag, Grid3X3, Phone, ShieldCheck, Trash2, TrendingUp,
   Smartphone, Tablet, Percent, RefreshCw, Headphones, Speaker, Watch, Laptop, Home, Gift, Newspaper,
@@ -8,7 +8,7 @@ import {
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
-import { assetUrl } from '../lib/api';
+import { assetUrl, imgFallback } from '../lib/api';
 import { useCart } from '../context/CartContext'; // Lấy hook Context
 
 const iconMap = {
@@ -41,8 +41,29 @@ export default function Header() {
   const [copiedIndex, setCopiedIndex] = useState(null);
 
   const navigate = useNavigate();
+  const { pathname, search } = useLocation();
   const searchRef = useRef(null);
   const contactRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Menu danh mục: máy tính mở khi rê chuột, điện thoại mở/đóng khi bấm
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Trên điện thoại khung gợi ý tìm kiếm dùng vị trí cố định, ngay dưới header
+  const [dropdownTop, setDropdownTop] = useState(null);
+  const openSearch = () => {
+    const rect = searchRef.current?.getBoundingClientRect();
+    setDropdownTop(window.innerWidth < 640 && rect ? rect.bottom + 8 : null);
+    setIsOpen(true);
+  };
+
+  // Chuyển trang thì đóng menu, khung tìm kiếm và popup liên hệ
+  const [lastPath, setLastPath] = useState(pathname + search);
+  if (lastPath !== pathname + search) {
+    setLastPath(pathname + search);
+    setMenuOpen(false);
+    setIsOpen(false);
+    setShowContact(false);
+  }
 
   // Danh sách Hotline cửa hàng
   const contactList = [
@@ -72,6 +93,9 @@ export default function Header() {
       }
       if (contactRef.current && !contactRef.current.contains(event.target)) {
         setShowContact(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -145,15 +169,25 @@ export default function Header() {
             </Link>
 
             {/* Cụm Nút DANH MỤC + Dropdown */}
-            <div className="relative group ml-0.5">
-              <button className="flex items-center gap-1 bg-[#E6BF00] group-hover:bg-[#D4AF00] text-black px-2 py-1.5 md:px-2.5 rounded-lg font-bold text-[10px] md:text-xs transition-colors cursor-pointer relative z-50">
+            <div
+              ref={menuRef}
+              className="relative ml-0.5"
+              onMouseEnter={() => window.matchMedia('(hover: hover)').matches && setMenuOpen(true)}
+              onMouseLeave={() => window.matchMedia('(hover: hover)').matches && setMenuOpen(false)}
+            >
+              <button
+                type="button"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((o) => !o)}
+                className={`flex items-center gap-1 ${menuOpen ? 'bg-[#D4AF00]' : 'bg-[#E6BF00]'} text-black px-2 py-1.5 md:px-2.5 rounded-lg font-bold text-[10px] md:text-xs transition-colors cursor-pointer relative z-50`}
+              >
                 <Grid3X3 size={14} className="md:w-4 md:h-4" /> 
                 <span className="hidden xs:inline sm:inline">DANH MỤC</span>
               </button>
 
-              <div className="fixed inset-0 top-[85px] bg-black/60 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 pointer-events-none z-40"></div>
+              <div className={`fixed inset-0 top-[85px] bg-black/60 transition-all duration-300 pointer-events-none z-40 ${menuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
 
-              <div className="absolute top-full left-0 pt-3 w-56 md:w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className={`absolute top-full left-0 pt-3 w-56 md:w-64 transition-all duration-200 z-50 ${menuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                 <div className="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col p-2">
                   {sidebarCategories && sidebarCategories.map((cat) => {
                     // Xử lý điều hướng riêng cho mục Thu Cũ Đổi Mới (id = 4 hoặc theo tên)
@@ -191,7 +225,7 @@ export default function Header() {
                 type="text"
                 placeholder="Bạn muốn tìm gì..."
                 value={searchTerm}
-                onFocus={() => setIsOpen(true)}
+                onFocus={openSearch}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-white text-black px-3 py-2 pr-8 rounded-lg text-xs outline-none shadow-inner focus:ring-2 focus:ring-black/20 transition-all"
               />
@@ -205,10 +239,9 @@ export default function Header() {
 
             {/* POPUP DROPDOWN TÌM KIẾM */}
             {isOpen && (
-              <div className="
-                absolute top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-xs text-gray-800 animate-fadeIn
-                w-[calc(100vw-24px)] max-w-[450px]
-                -left-20 sm:left-0 sm:w-full
+              <div style={dropdownTop !== null ? { top: dropdownTop } : undefined} className="
+                bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-xs text-gray-800 animate-fadeIn
+                fixed inset-x-3 sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-2 sm:w-full sm:max-w-[450px]
                 max-h-[75vh] overflow-y-auto
               ">
                 <div className="p-2 border-b border-gray-100 bg-amber-50/50">
@@ -270,7 +303,7 @@ export default function Header() {
                         className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
                       >
                         <img 
-                          src={assetUrl(prod.image) || 'https://via.placeholder.com/40'} 
+                          onError={imgFallback} src={assetUrl(prod.image)} 
                           alt={prod.name} 
                           className="w-9 h-9 object-cover rounded-md border border-gray-100 shrink-0"
                         />
@@ -279,7 +312,7 @@ export default function Header() {
                             {prod.name}
                           </p>
                           <p className="text-[10px] text-red-600 font-bold">
-                            {prod.price?.toLocaleString()}đ
+                            {prod.price?.toLocaleString('vi-VN')}đ
                           </p>
                         </div>
                       </div>
