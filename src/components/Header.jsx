@@ -225,7 +225,7 @@ export default function Header() {
             <form onSubmit={handleFormSubmit} className="relative">
               <input
                 type="text"
-                placeholder="Tìm sản phẩm..."
+                placeholder="Tìm kiếm..."
                 value={searchTerm}
                 onFocus={openSearch}
                 onChange={(e) => setSearchTerm(e.target.value)}
