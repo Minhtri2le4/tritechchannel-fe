@@ -14,3 +14,12 @@ body {
 div, button, input {
   @apply rounded-sm;
 }
+/* iPhone (Safari) tự phóng to trang khi bấm vào ô nhập có chữ nhỏ hơn 16px và không tự thu lại.
+   Trên màn hình nhỏ, ép chữ trong ô nhập = 16px để không bị phóng to (vẫn cho phép người dùng tự zoom). */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

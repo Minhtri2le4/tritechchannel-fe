@@ -501,7 +501,7 @@ export default function CartPage() {
               <div className="flex gap-2">
                 <input 
                   type="text" 
-                  placeholder="CHỌN HOẶC NHẬP MÃ COUPON" 
+                  placeholder="NHẬP MÃ GIẢM GIÁ" 
                   value={couponCode}
                   onChange={e => setCouponCode(e.target.value)}
                   className="flex-1 min-w-0 text-[11px] sm:text-xs px-2.5 py-2 border border-gray-200 rounded-lg outline-none focus:border-amber-400 uppercase"
