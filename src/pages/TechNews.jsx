@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Newspaper, ExternalLink, Clock, RefreshCw, Home, ChevronRight } from 'lucide-react';
+import useSeo from '../hooks/useSeo';
 
 const NEWS_SOURCES = [
   { id: 'vnexpress', name: 'VnExpress Công Nghệ', url: 'https://vnexpress.net/rss/so-hoa.rss' },
@@ -21,6 +22,7 @@ const FALLBACK_IMAGES = [
 ];
 
 export default function TechNews() {
+  useSeo({ title: 'Tin công nghệ', description: 'Tin tức, đánh giá và mẹo hay về điện thoại, sạc dự phòng, phụ kiện công nghệ từ TriTech Channel.' });
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSource, setSelectedSource] = useState(NEWS_SOURCES[0].url);

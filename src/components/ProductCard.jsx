@@ -13,7 +13,7 @@ export default function ProductCard({ product }) {
   return (
     /* 2. Bọc toàn bộ card bằng thẻ Link trỏ tới trang chi tiết sản phẩm */
     <Link 
-      to={`/product/${product.id}`}
+      to={`/product/${product.slug || product.id}`}
       className="group bg-white rounded-2xl border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col relative cursor-pointer block"
     >
       
@@ -74,7 +74,7 @@ export default function ProductCard({ product }) {
             e.preventDefault(); // Ngăn hành vi mặc định của Link
             e.stopPropagation(); // Ngăn sự kiện nổi bọt
             // Sản phẩm có dung lượng/màu thì phải vào trang chi tiết để chọn
-            if (product.hasOptions) navigate(`/product/${product.id}`);
+            if (product.hasOptions) navigate(`/product/${product.slug || product.id}`);
             else addToCart(product);
           }}
           className="mt-auto pt-2 w-full"

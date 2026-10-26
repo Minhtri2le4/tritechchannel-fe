@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
+import useSeo from '../hooks/useSeo';
 import { shopApi } from '../services/shop';
 import { ChevronRight, Filter, Loader2 } from 'lucide-react';
 
@@ -47,6 +48,17 @@ export default function CategoryPage() {
   const { data: brandList } = useFetch(() => shopApi.brands(categoryParam), [categoryParam]);
 
   const filtered = products || [];
+
+  useSeo(
+    searchQuery
+      ? { title: `Tìm kiếm "${searchQuery}"`, noindex: true }
+      : {
+          title: currentCat ? `${currentCat.name} chính hãng giá tốt` : 'Danh mục sản phẩm',
+          description: currentCat
+            ? `${currentCat.name} chính hãng, giá tốt tại TriTech Channel. Giao hàng toàn quốc, bảo hành 1 đổi 1, kiểm tra hàng trước khi nhận.`
+            : undefined,
+        }
+  );
   const total = meta?.total ?? 0;
   const brands = ['ALL', ...(brandList || [])];
 

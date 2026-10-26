@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Search, ShieldCheck, AlertCircle, Clock, Wrench, PhoneCall, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { shopApi } from '../services/shop';
 import { formatDate } from '../lib/api';
+import useSeo from '../hooks/useSeo';
 
 export default function WarrantyPage() {
+  useSeo({ title: 'Tra cứu bảo hành', description: 'Tra cứu thời hạn và lịch sử bảo hành sản phẩm mua tại TriTech Channel bằng số điện thoại hoặc mã đơn hàng.' });
   const [searchKey, setSearchKey] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);

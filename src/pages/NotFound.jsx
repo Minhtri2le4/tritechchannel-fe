@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { SearchX } from 'lucide-react';
+import useSeo from '../hooks/useSeo';
 
 // Trang hiện khi đường dẫn không tồn tại
 export default function NotFound() {
+  useSeo({ title: 'Không tìm thấy trang', noindex: true });
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center max-w-md w-full">
