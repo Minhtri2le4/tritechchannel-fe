@@ -138,7 +138,7 @@ export default function OrderPrintPage() {
             </div>
             <div style={{ fontWeight: 700, fontSize: big ? '12pt' : '8.5pt' }}>{order.phone}</div>
             <div style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-              {order.deliveryMethod === 'HOME' ? order.address : 'Nhận tại cửa hàng'}
+              {order.deliveryMethod === 'HOME' ? order.address : 'Nhận trực tiếp tại Thanh Đa'}
             </div>
           </div>
 

@@ -108,7 +108,7 @@ export default function OrderDetailPage() {
             {order.email && <p className="flex items-center gap-2 text-sm"><Mail size={14} className="text-gray-400" /> {order.email}</p>}
             <p className="flex items-start gap-2 text-sm">
               {order.deliveryMethod === 'HOME' ? <MapPin size={14} className="text-gray-400 mt-0.5" /> : <Store size={14} className="text-gray-400 mt-0.5" />}
-              {order.deliveryMethod === 'HOME' ? order.address : 'Nhận tại cửa hàng'}
+              {order.deliveryMethod === 'HOME' ? order.address : 'Nhận trực tiếp tại Thanh Đa'}
             </p>
             {order.note && <p className="text-sm bg-amber-50 border border-amber-100 rounded-lg p-2"><b>Ghi chú của khách:</b> {order.note}</p>}
           </Card>

@@ -77,7 +77,7 @@ export default function OrdersPage() {
             { key: 'code', title: 'Mã đơn', render: (o) => <span className="font-mono font-semibold">{o.code}</span> },
             { key: 'customer', title: 'Khách hàng', render: (o) => <><p className="font-medium">{o.fullName}</p><p className="text-xs text-gray-500">{o.phone}</p></> },
             { key: 'items', title: 'SP', className: 'text-center hidden md:table-cell', render: (o) => o._count?.items },
-            { key: 'delivery', title: 'Nhận hàng', className: 'whitespace-nowrap text-xs hidden md:table-cell', render: (o) => (o.deliveryMethod === 'HOME' ? '🚚 Giao tận nhà' : '🏪 Tại cửa hàng') },
+            { key: 'delivery', title: 'Nhận hàng', className: 'whitespace-nowrap text-xs hidden md:table-cell', render: (o) => (o.deliveryMethod === 'HOME' ? '🚚 Giao tận nhà' : '🤝 Nhận trực tiếp') },
             { key: 'total', title: 'Tổng tiền', className: 'text-right whitespace-nowrap font-bold', render: (o) => formatPrice(o.total) },
             {
               key: 'payment',

@@ -40,7 +40,7 @@ export default function CartPage() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [deliveryMethod, setDeliveryMethod] = useState('store'); 
+  const [deliveryMethod, setDeliveryMethod] = useState('home'); 
   const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('bank'); 
@@ -52,7 +52,7 @@ export default function CartPage() {
     bankName: "MB BANK (Ngân hàng Quân Đội)",
     accountName: "HỒ MINH TRÍ",
     accountNo: "200320047979",
-    storeAddress: "Lô 7, Cư xá Thanh Đa, Bình Quới, Hồ Chí Minh, Việt Nam"
+    storeAddress: "Lô 7 Cư xá Thanh Đa, P. Bình Quới, Bình Thạnh, TP. Hồ Chí Minh"
   };
 
   const handleCopySTK = () => {
@@ -367,30 +367,33 @@ export default function CartPage() {
                       <input 
                         type="radio" 
                         name="delivery" 
-                        checked={deliveryMethod === 'store'} 
-                        onChange={() => setDeliveryMethod('store')}
+                        checked={deliveryMethod === 'home'} 
+                        onChange={() => setDeliveryMethod('home')}
                         className="accent-amber-400"
                       />
-                      Nhận hàng tại cửa hàng
+                      Giao hàng tận nơi
                     </label>
                     <label className="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
                       <input 
                         type="radio" 
                         name="delivery" 
-                        checked={deliveryMethod === 'home'} 
-                        onChange={() => setDeliveryMethod('home')}
+                        checked={deliveryMethod === 'store'} 
+                        onChange={() => setDeliveryMethod('store')}
                         className="accent-amber-400"
                       />
-                      Nhận hàng tận nhà
+                      Nhận trực tiếp tại Thanh Đa (Bình Thạnh)
                     </label>
                   </div>
 
                   {deliveryMethod === 'store' ? (
                     <div className="p-3 rounded-xl border border-amber-400 bg-amber-50/40 text-xs space-y-1">
                       <p className="font-bold text-gray-900 flex items-center gap-1">
-                        <MapPin size={14} className="text-amber-600 shrink-0" /> Cửa hàng nhận hàng:
+                        <MapPin size={14} className="text-amber-600 shrink-0" /> Điểm nhận hàng trực tiếp:
                       </p>
                       <p className="text-gray-700 pl-5 font-medium leading-relaxed">{bankInfo.storeAddress}</p>
+                      <p className="text-gray-500 pl-5 leading-relaxed">
+                        TriTech bán hàng online, không có cửa hàng trưng bày. Vui lòng gọi/Zalo 0325 477 841 hẹn giờ trước khi qua nhận.
+                      </p>
                     </div>
                   ) : (
                     <input 

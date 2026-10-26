@@ -65,7 +65,7 @@ export default function Header() {
     setShowContact(false);
   }
 
-  // Danh sách Hotline cửa hàng
+  // Danh sách Hotline của shop
   const contactList = [
     {
       title: 'Tư Vấn Bán Hàng & Chốt Đơn',
