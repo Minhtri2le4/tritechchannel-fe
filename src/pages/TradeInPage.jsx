@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { RefreshCw, PhoneCall, ArrowRight, FileText, PackageCheck, X, Camera } from 'lucide-react';
 import { shopApi } from '../services/shop';
+import useSeo from '../hooks/useSeo';
 
 export default function TradeIn() {
+  useSeo({ title: 'Thu cũ đổi mới - Lên đời giá tốt', description: 'Thu cũ đổi mới điện thoại tại TriTech Channel: định giá nhanh, trợ giá lên đời, nhận máy tận nơi hoặc trực tiếp tại Thanh Đa, Bình Thạnh.' });
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import useFetch from '../hooks/useFetch';
+import useSeo, { SITE_URL } from '../hooks/useSeo';
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import ProductCard from '../components/ProductCard';
@@ -56,6 +57,52 @@ function ProductDetailView({ productData }) {
   const discountPercent = originalPrice > currentPrice ? Math.round((1 - currentPrice / originalPrice) * 100) : 0;
   const stock = selectedVariant ? selectedVariant.stock : productData.stock;
   const inStock = stock > 0;
+
+  const productPath = `/product/${productData.slug || productData.id}`;
+  const absImage = (src) => (src && /^https?:/.test(src) ? src : `${SITE_URL}${src || ''}`);
+  const minPrice = storages.length ? Math.min(...storages.map((v) => v.price)) : productData.price;
+  const anyStock = storages.length ? storages.some((v) => v.stock > 0) : productData.stock > 0;
+  useSeo({
+    title: `${productData.name} - Giá ${minPrice.toLocaleString('vi-VN')}đ`,
+    description:
+      productData.description ||
+      `Mua ${productData.name}${productData.brand ? ` chính hãng ${productData.brand}` : ''} giá ${minPrice.toLocaleString('vi-VN')}đ tại TriTech Channel. Giao hàng toàn quốc, bảo hành 1 đổi 1, kiểm tra hàng trước khi nhận.`,
+    image: absImage(productImages[0]),
+    path: productPath,
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: productData.name,
+        image: productImages.map(absImage),
+        description: productData.description || productData.name,
+        sku: String(productData.id),
+        ...(productData.brand && { brand: { '@type': 'Brand', name: productData.brand } }),
+        // Không khai báo điểm đánh giá: số sao hiện tại chưa phải đánh giá thật của khách,
+        // Google phạt nếu dữ liệu đánh giá không có đánh giá thật đi kèm.
+        offers: {
+          '@type': 'Offer',
+          url: `${SITE_URL}${productPath}`,
+          priceCurrency: 'VND',
+          price: minPrice,
+          availability: anyStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          itemCondition: 'https://schema.org/NewCondition',
+          seller: { '@type': 'Organization', name: 'TriTech Channel' },
+        },
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: `${SITE_URL}/` },
+          ...(productData.category
+            ? [{ '@type': 'ListItem', position: 2, name: productData.category.name, item: `${SITE_URL}/category/${productData.category.id}` }]
+            : []),
+          { '@type': 'ListItem', position: productData.category ? 3 : 2, name: productData.name, item: `${SITE_URL}${productPath}` },
+        ],
+      },
+    ],
+  });
 
   // Trợ giá thu cũ chỉ hợp lý với máy giá trị cao
   const TRADE_IN_CATEGORIES = [1, 2, 8];

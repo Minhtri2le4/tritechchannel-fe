@@ -6,6 +6,7 @@ import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
+import useSeo from '../hooks/useSeo';
 
 // Tab "Gợi ý cho bạn" -> tham số lọc gửi lên API
 const SUGGEST_TABS = {
@@ -118,6 +119,7 @@ const newsArticles = [
 ];
 
 export default function HomePage() {
+  useSeo();
   const { addToCart } = useCart();
   const [currentBanner, setCurrentBanner] = useState(0);
   const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 15, seconds: 40 });
@@ -172,7 +174,7 @@ export default function HomePage() {
   const prevBanner = () => setCurrentBanner((prev) => (prev === 0 ? bannerImages.length - 1 : prev - 1));
   // Sản phẩm có dung lượng/màu phải vào trang chi tiết để chọn trước
   const handleAddToCart = (product) => {
-    if (product.hasOptions) navigate(`/product/${product.id}`);
+    if (product.hasOptions) navigate(`/product/${product.slug || product.id}`);
     else addToCart(product);
   };
 
@@ -349,7 +351,7 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {bestPricesToday.map((item) => (
-                <div key={item.id} onClick={() => navigate(`/product/${item.id}`)} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-lg relative group cursor-pointer border border-yellow-400/30 hover:border-yellow-400">
+                <div key={item.id} onClick={() => navigate(`/product/${item.slug || item.id}`)} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-lg relative group cursor-pointer border border-yellow-400/30 hover:border-yellow-400">
                   <span className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full z-10 shadow-sm flex items-center gap-0.5 animate-pulse">
                     <Flame size={10} fill="currentColor" /> GIẢM SỐC
                   </span>
@@ -452,7 +454,7 @@ export default function HomePage() {
         <div className="mb-16">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
             {thirtyProducts.map((item) => (
-              <div key={item.id} onClick={() => navigate(`/product/${item.id}`)} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative group cursor-pointer border border-gray-100">
+              <div key={item.id} onClick={() => navigate(`/product/${item.slug || item.id}`)} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative group cursor-pointer border border-gray-100">
                 <span className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full z-10 shadow-sm">CHÍNH HÃNG</span>
                 <div className="relative w-full aspect-square bg-gray-50 rounded-xl flex items-center justify-center p-2 overflow-hidden">
                   <img onError={imgFallback} src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
