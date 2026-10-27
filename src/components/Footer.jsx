@@ -211,7 +211,7 @@ export default function Footer() {
       )}
 
       {/* WIDGET LIÊN HỆ NỔI */}
-      <div className="fixed bottom-20 md:bottom-4 right-4 z-50 group">
+      <div className="hidden md:block fixed bottom-4 right-4 z-50 group">
         <div className="absolute bottom-full right-0 mb-3 flex flex-col items-end gap-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-4 group-hover:translate-y-0">
           <button onClick={() => setIsChatOpen(true)} className="flex items-center gap-2 group/ai cursor-pointer">
             <span className="bg-black/80 text-white text-[10px] md:text-xs font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover/ai:opacity-100 transition-opacity whitespace-nowrap shadow-sm">
