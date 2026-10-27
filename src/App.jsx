@@ -19,10 +19,11 @@ const AdminApp = lazy(() => import('./admin/AdminApp'));
 
 // Import CartProvider
 import { CartProvider } from './context/CartContext';
+import MobileBottomNav from './components/MobileBottomNav';
 
 function AppContent() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#f4f4f4] text-gray-800">
+    <div className="min-h-screen flex flex-col bg-[#f4f4f4] text-gray-800 pb-16 md:pb-0">
       <ScrollToTop />
       {/* Header giờ sẽ tự lấy dữ liệu giỏ hàng từ Context */}
       <Header />
@@ -46,6 +47,7 @@ function AppContent() {
       </main>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 }

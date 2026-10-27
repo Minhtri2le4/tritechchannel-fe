@@ -32,7 +32,7 @@ export default function Footer() {
     setTimeout(() => {
       let aiReply = "Cảm ơn bạn đã liên hệ TriTech! Sản phẩm hiện đang có sẵn hàng chính hãng, hỗ trợ giao nhanh và bảo hành đầy đủ ạ.";
       if (textToSend.toLowerCase().includes("chính hãng")) {
-        aiReply = "Tất cả sản phẩm tại TriTech Channel đều là hàng chính hãng 100%, có đầy đủ hóa đơn VAT và bảo hành chính hãng.";
+        aiReply = "Tất cả sản phẩm tại TriTech Channel đều là hàng chính hãng 100%, nguồn gốc rõ ràng và được bảo hành 1 đổi 1.";
       } else if (textToSend.toLowerCase().includes("giao hàng")) {
         aiReply = "TriTech hỗ trợ giao hàng hoả tốc trong 2h tại TP.HCM và ship COD toàn quốc từ 1-3 ngày!";
       } else if (textToSend.toLowerCase().includes("bảo hành")) {
@@ -56,7 +56,7 @@ export default function Footer() {
             </h4>
             <p className="font-medium mb-2 flex items-start gap-2">
               <MapPin size={16} className="text-red-600 shrink-0 mt-0.5" /> 
-              <span>Lô 7 Cư Xá Thanh Đa, Bình Thạnh, TP. Hồ Chí Minh</span>
+              <span>Thanh Đa, Bình Thạnh, TP. Hồ Chí Minh</span>
             </p>
             <p className="font-medium mb-4 flex items-center gap-2">
               <Mail size={16} className="text-red-600 shrink-0" /> 
@@ -124,15 +124,15 @@ export default function Footer() {
         </div>
 
         <div className="max-w-[1280px] mx-auto px-4 border-t border-gray-200 pt-6 text-center text-[11px] text-gray-500 leading-relaxed">
-          <p>Công ty TNHH Tritech Channel - GPĐKKD 0109597994 tại Sở Kế Hoạch Đầu Tư Thành Phố HCM ngày 15-4-2021.</p>
-          <p className="mt-1">Địa chỉ: Lô 7 Cư Xá Thanh Đa, Bình Thạnh, TP. Hồ Chí Minh - Điện thoại: 0325.477.841 - Chịu trách nhiệm quản lý nội dung: Hồ Minh Trí</p>
+          <p>Hộ kinh doanh HỒ MINH TRÍ - TriTech Channel.</p>
+          <p className="mt-1">Địa chỉ: Thanh Đa, Bình Thạnh, TP. Hồ Chí Minh - Điện thoại: 0325.477.841 - Chịu trách nhiệm quản lý nội dung: Hồ Minh Trí</p>
           <p className="mt-3 font-bold text-gray-600">Copyright © 2026 Tritech Channel</p>
         </div>
       </footer>
 
       {/* KHUNG CHAT AI CỐ ĐỊNH CHIỀU CAO */}
       {isChatOpen && (
-        <div className="fixed bottom-[90px] right-4 w-[340px] h-[450px] bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-200 z-[60] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5">
+        <div className="fixed bottom-[150px] md:bottom-[90px] right-4 w-[340px] h-[450px] bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-200 z-[60] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5">
           {/* Chat Header */}
           <div className="bg-gray-900 p-3.5 flex justify-between items-center text-white shrink-0">
             <div className="flex items-center gap-2">
@@ -211,7 +211,7 @@ export default function Footer() {
       )}
 
       {/* WIDGET LIÊN HỆ NỔI */}
-      <div className="fixed bottom-4 right-4 z-50 group">
+      <div className="fixed bottom-20 md:bottom-4 right-4 z-50 group">
         <div className="absolute bottom-full right-0 mb-3 flex flex-col items-end gap-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-4 group-hover:translate-y-0">
           <button onClick={() => setIsChatOpen(true)} className="flex items-center gap-2 group/ai cursor-pointer">
             <span className="bg-black/80 text-white text-[10px] md:text-xs font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover/ai:opacity-100 transition-opacity whitespace-nowrap shadow-sm">

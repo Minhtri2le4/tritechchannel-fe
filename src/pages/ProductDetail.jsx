@@ -194,7 +194,7 @@ function ProductDetailView({ productData }) {
             <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 space-y-2 text-xs">
               <div className="flex items-center gap-2 text-gray-800 font-bold">
                 <ShieldCheck size={16} className="text-amber-600" />
-                <span>CHÍNH HÃNG - XUẤT VAT ĐẦY ĐỦ</span>
+                <span>HÀNG CHÍNH HÃNG 100%</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-600 pt-1 border-t border-amber-200/60">
                 <div className="flex items-center gap-1.5">
@@ -372,7 +372,7 @@ function ProductDetailView({ productData }) {
               <div className="space-y-1.5 pt-1 text-[11px] text-gray-600 border-t border-gray-100">
                 <p>🚚 <span className="font-semibold text-gray-800">Đặt online, giao tận nơi toàn quốc</span> – ship COD, kiểm tra hàng trước khi nhận.</p>
                 <p>
-                  🤝 <span className="font-semibold text-gray-800">Nhận trực tiếp:</span> Lô 7 Cư xá Thanh Đa, Bình Thạnh, TP.HCM
+                  🤝 <span className="font-semibold text-gray-800">Nhận trực tiếp:</span> Thanh Đa, Bình Thạnh, TP.HCM
                   <span className="text-gray-500"> (gọi/Zalo 0325 477 841 hẹn trước)</span>
                 </p>
               </div>

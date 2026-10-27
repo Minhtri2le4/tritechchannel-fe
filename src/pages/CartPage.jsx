@@ -54,7 +54,7 @@ export default function CartPage() {
     bankName: "MB BANK (Ngân hàng Quân Đội)",
     accountName: "HỒ MINH TRÍ",
     accountNo: "200320047979",
-    storeAddress: "Lô 7 Cư xá Thanh Đa, P. Bình Quới, Bình Thạnh, TP. Hồ Chí Minh"
+    storeAddress: "Thanh Đa, Bình Thạnh, TP. Hồ Chí Minh"
   };
 
   const handleCopySTK = () => {

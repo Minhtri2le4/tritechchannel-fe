@@ -10,6 +10,7 @@ import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import { useCart } from '../context/CartContext'; // Lấy hook Context
+import { OPEN_CATEGORY_MENU } from './MobileBottomNav';
 
 const iconMap = {
   Smartphone: <Smartphone size={16} />,
@@ -84,6 +85,13 @@ export default function Header() {
       badge: 'HOTLINE 2'
     }
   ];
+
+  // Thanh dưới đáy (điện thoại) bấm "Danh mục" thì mở menu danh mục
+  useEffect(() => {
+    const open = () => setMenuOpen(true);
+    window.addEventListener(OPEN_CATEGORY_MENU, open);
+    return () => window.removeEventListener(OPEN_CATEGORY_MENU, open);
+  }, []);
 
   // Đóng dropdown khi click ngoài
   useEffect(() => {
