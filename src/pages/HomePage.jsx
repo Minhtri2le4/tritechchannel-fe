@@ -20,7 +20,7 @@ import {
   ShieldCheck, RefreshCw, Truck, RotateCcw, 
   ChevronLeft, ChevronRight, PhoneCall, Star, Play, Flame, Zap, Clock,
   Smartphone, Tablet, Percent, Headphones, Speaker, Watch, Laptop, Home, Gift, Newspaper, 
-  ArrowRight, Sparkles, Bot
+  ArrowRight, Sparkles
 } from 'lucide-react';
 
 const iconMap = {
@@ -128,6 +128,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState('all');
   const [suggestLimit, setSuggestLimit] = useState(SUGGEST_PAGE);
   const shortsContainerRef = useRef(null);
+  const storesRef = useRef(null);
   const navigate = useNavigate();
 
   // Dữ liệu từ backend
@@ -144,6 +145,35 @@ export default function HomePage() {
     setActiveTab(tab);
     setSuggestLimit(SUGGEST_PAGE);
   };
+
+  // Đại lý ủy quyền: trên điện thoại các thẻ nằm ngang, cứ 2 giây tự trượt sang thẻ kế tiếp (hết thì quay về đầu).
+  // Người dùng đang chạm/kéo thì tạm dừng 5 giây. Máy tính hiện đủ 3 thẻ nên không trượt.
+  useEffect(() => {
+    const el = storesRef.current;
+    if (!el) return;
+    let pausedUntil = 0;
+    const pause = () => { pausedUntil = Date.now() + 5000; };
+    el.addEventListener('touchstart', pause, { passive: true });
+    el.addEventListener('pointerdown', pause);
+    const timer = setInterval(() => {
+      if (Date.now() < pausedUntil || el.scrollWidth <= el.clientWidth + 4) return;
+      const box = el.getBoundingClientRect();
+      const mid = box.left + box.width / 2;
+      const cards = [...el.children];
+      // Thẻ đang nằm giữa màn hình -> trượt tới thẻ sau nó (vị trí tính theo toạ độ trên màn hình)
+      const current = cards.findIndex((c) => {
+        const r = c.getBoundingClientRect();
+        return r.left <= mid && mid < r.right;
+      });
+      const next = cards[(current + 1) % cards.length].getBoundingClientRect();
+      el.scrollBy({ left: next.left + next.width / 2 - mid, behavior: 'smooth' });
+    }, 2000);
+    return () => {
+      clearInterval(timer);
+      el.removeEventListener('touchstart', pause);
+      el.removeEventListener('pointerdown', pause);
+    };
+  }, []);
 
   useEffect(() => {
     const bannerTimer = setInterval(() => setCurrentBanner(p => (p === bannerImages.length - 1 ? 0 : p + 1)), 3000);
@@ -251,7 +281,7 @@ export default function HomePage() {
               <span className="w-1.5 h-6 bg-red-600 rounded-sm"></span> ĐẠI LÝ ỦY QUYỀN CHÍNH HÃNG
             </h2>
           </div>
-          <div className="flex md:grid md:grid-cols-3 gap-6 md:gap-8 pt-10 pb-8 pl-8 pr-6 md:px-6 md:overflow-visible overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
+          <div ref={storesRef} className="flex md:grid md:grid-cols-3 gap-6 md:gap-8 pt-10 pb-8 pl-8 pr-6 md:px-6 md:overflow-visible overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
             {ecomStores.map((store) => (
               <a key={store.id} href={store.link} target="_blank" rel="noopener noreferrer" className={`w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center relative block rounded-[20px] p-6 pb-5 bg-[#FAFAFA] border-2 ${store.borderColor} shadow-sm ${store.shadowHover} transform group-hover:-translate-y-2 group-hover:scale-[1.02] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-10 hover:z-20 group`}>
                 <div className="absolute -top-8 -left-5 md:-left-6 w-[76px] h-[76px] bg-white rounded-full flex items-center justify-center shadow-lg border border-gray-100 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500 z-30">
@@ -520,32 +550,6 @@ export default function HomePage() {
 
       
 
-      {/* ========================================================== */}
-      {/* WIDGET LIÊN HỆ NỔI */}
-      {/* ========================================================== */}
-      <div className="fixed bottom-4 right-4 z-50 group">
-        <div className="absolute bottom-full right-0 mb-3 flex flex-col items-end gap-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-4 group-hover:translate-y-0">
-          <a href="tel:0325477841" className="flex items-center gap-2 group/ai cursor-pointer">
-            <span className="bg-black/80 text-white text-[10px] md:text-xs font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover/ai:opacity-100 transition-opacity whitespace-nowrap shadow-sm">
-              Hỏi Trợ lý AI Tritech
-            </span>
-            <div className="w-11 h-11 md:w-12 md:h-12 bg-gray-900 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform border-2 border-white">
-              <Bot className="text-white w-5 h-5 md:w-6 md:h-6" />
-            </div>
-          </a>
-          <a href="https://zalo.me/0325477841" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group/zalo cursor-pointer">
-            <span className="bg-black/80 text-white text-[10px] md:text-xs font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover/zalo:opacity-100 transition-opacity whitespace-nowrap shadow-sm">
-              Chat Zalo NV Tư Vấn
-            </span>
-            <div className="w-11 h-11 md:w-12 md:h-12 bg-[#0068FF] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform border-2 border-white">
-              <span className="text-white font-black text-[10px] md:text-xs tracking-wider">Zalo</span>
-            </div>
-          </a>
-        </div>
-        <button className="bg-yellow-400 hover:bg-yellow-500 text-black font-black text-[10px] md:text-xs px-4 py-2.5 md:px-5 md:py-3.5 rounded-full shadow-lg flex items-center gap-2 border-2 border-white transform hover:scale-105 transition-transform z-10 relative">
-          <PhoneCall size={16} className="animate-pulse" /> LIÊN HỆ
-        </button>
-      </div>
 
     </div>
   );
