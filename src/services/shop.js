@@ -16,4 +16,7 @@ export const shopApi = {
   // formData: FormData gồm các field form + nhiều file ở key "images"
   createTradeIn: (formData) => api.post('/trade-ins', formData),
   lookupWarranty: (q) => api.get('/warranties/lookup', { params: { q } }),
+
+  // Banner, video review trang chủ chỉnh trong admin (null = chưa cấu hình, dùng mặc định)
+  homeSettings: () => api.get('/settings/home'),
 };

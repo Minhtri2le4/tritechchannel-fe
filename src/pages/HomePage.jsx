@@ -7,6 +7,8 @@ import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
+import { useHomeContent } from '../lib/homeContent';
+import { youtubeEmbedUrl } from '../lib/youtube';
 import useSeo from '../hooks/useSeo';
 
 // Tab "Gợi ý cho bạn" -> tham số lọc gửi lên API
@@ -36,18 +38,6 @@ const iconMap = {
   Gift: <Gift size={16} />,
   Newspaper: <Newspaper size={16} />,
 };
-
-// Tên banner trong public/assets: <tên>.webp (1600px) và <tên>-sm.webp (800px cho điện thoại)
-const bannerImages = [
-  "A1695",
-  "why",
-  "thucu",
-  "tainghe", 
-  "asus",
-  "aura",
-  "best",
-  "quy"
-];
 
 const ecomStores = [
   {
@@ -103,14 +93,6 @@ const ecomStores = [
   }
 ];
 
-const youtubeShortsVideos = [
-  { id: 1, shortsUrl: "https://www.youtube.com/embed/1krdQqyCpbw", title: "Review tai nghe và thiết bị công nghệ", productName: "Sạc Dự Phòng Anker Zolo 25.000mAh 165W", price: 1400000, oldPrice: 1400000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpfaa59kf8cgc0.webp" },
-  { id: 2, shortsUrl: "https://www.youtube.com/embed/79QrqmGRrzk", title: "Đánh giá chi tiết củ sạc nhanh Oca 65W", productName: "Bộ sạc nhanh Anker ZoLo 140W (4 cổng, GaN)", price: 900000, oldPrice: 699000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpuizoniuiob90.webp" },
-  { id: 3, shortsUrl: "https://www.youtube.com/embed/gBw27RN96LU", title: "Test camera S24 Ultra", productName: "Tai Nghe Không Dây Baseus BP1 Pro ANC -50dB", price: 388000, oldPrice: 33990000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mspd8f20yupya2.webp" },
-  { id: 4, shortsUrl: "https://www.youtube.com/embed/8ut8aOKLfyA", title: "Trải nghiệm nhanh phụ kiện", productName: "Tai nghe Bluetooth Ugreen Hitune Max5c Hi-Res", price: 499000, oldPrice: 799000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mo58anpzl4au06.webp" },
-  { id: 5, shortsUrl: "https://www.youtube.com/embed/rPjLNSUs4eQ", title: "Mở hộp định vị thông minh", productName: "Trạm sạc di động Anker SOLIX C300 DC - A1726", price: 4000000, oldPrice: 879000, productImage: "https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpul7sbjssunc4.webp" }
-];
-
 const newsArticles = [
   { id: 1, title: "Có nên dùng củ sạc thay thế cho iPad? Top sạc tương thích an toàn...", img: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400" },
   { id: 2, title: "4 tính năng đáng tiền của ổ cắm điện đa năng cao cấp hiện nay", img: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=400" },
@@ -128,6 +110,15 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState('all');
   const [suggestLimit, setSuggestLimit] = useState(SUGGEST_PAGE);
   const shortsContainerRef = useRef(null);
+  // Banner, video review: lấy từ Admin → Giao diện trang chủ (chưa cấu hình thì dùng mặc định)
+  const home = useHomeContent();
+  const banners = home.banners;
+  const shorts = home.shorts;
+  const bannerCount = useRef(banners.length);
+  useEffect(() => {
+    bannerCount.current = banners.length;
+  }, [banners.length]);
+  const activeBanner = currentBanner % banners.length;
   const storesRef = useRef(null);
   const navigate = useNavigate();
 
@@ -176,7 +167,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const bannerTimer = setInterval(() => setCurrentBanner(p => (p === bannerImages.length - 1 ? 0 : p + 1)), 3000);
+    const bannerTimer = setInterval(() => setCurrentBanner((p) => (p + 1) % bannerCount.current), 3000);
     const countdownTimer = setInterval(() => {
       setTimeLeft(prev => {
         let { hours, minutes, seconds } = prev;
@@ -201,8 +192,8 @@ export default function HomePage() {
     }
   };
 
-  const nextBanner = () => setCurrentBanner((prev) => (prev === bannerImages.length - 1 ? 0 : prev + 1));
-  const prevBanner = () => setCurrentBanner((prev) => (prev === 0 ? bannerImages.length - 1 : prev - 1));
+  const nextBanner = () => setCurrentBanner((activeBanner + 1) % banners.length);
+  const prevBanner = () => setCurrentBanner((activeBanner - 1 + banners.length) % banners.length);
   // Sản phẩm có dung lượng/màu phải vào trang chi tiết để chọn trước
   const handleAddToCart = (product) => {
     if (product.hasOptions) navigate(`/product/${product.slug || product.id}`);
@@ -217,12 +208,19 @@ export default function HomePage() {
         
         {/* QUẢNG CÁO NỔI & BANNERS */}
         <div className="relative mb-4 md:mb-6">
-          <a href="/promotions" className="hidden min-[1720px]:block absolute right-full mr-4 top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300">
-            <img src="/assets/bannermini-left.webp" loading="lazy" alt="QC Trái" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
-          </a>
-          <a href="/promotions" className="hidden min-[1720px]:block absolute left-full ml-4 top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300">
-            <img src="/assets/bannermini-right.webp" loading="lazy" alt="QC Phải" className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
-          </a>
+          {['left', 'right'].map((side) => {
+            const ad = home.sideBanners?.[side];
+            if (!ad?.image) return null;
+            return (
+              <a
+                key={side}
+                href={ad.link || '#'}
+                className={`hidden min-[1720px]:block absolute ${side === 'left' ? 'right-full mr-4' : 'left-full ml-4'} top-0 w-[160px] 2xl:w-[200px] z-10 hover:-translate-y-1 transition-transform duration-300`}
+              >
+                <img src={assetUrl(ad.image)} loading="lazy" alt={side === 'left' ? 'QC Trái' : 'QC Phải'} className="w-full h-[500px] object-cover rounded-xl shadow-md border border-gray-200" />
+              </a>
+            );
+          })}
 
           <div className="bg-[#FFF8D6] rounded-xl p-2 mb-3 flex items-center justify-between text-[10px] md:text-xs font-semibold text-gray-800 border border-yellow-200 overflow-x-auto whitespace-nowrap gap-4 md:gap-0 scrollbar-hide">
             <div className="flex items-center gap-1.5 shrink-0"><ShieldCheck size={16} className="text-black shrink-0" /><span>HÀNG CHÍNH HÃNG 100%</span></div>
@@ -253,9 +251,21 @@ export default function HomePage() {
             </div>
 
             <div className="col-span-1 md:col-span-9 relative rounded-xl overflow-hidden shadow-sm aspect-[160/65] md:aspect-auto md:h-[380px] group">
-              {bannerImages.map((img, idx) => (
-                <img key={idx} src={`/assets/${img}.webp`} srcSet={`/assets/${img}-sm.webp 800w, /assets/${img}.webp 1600w`} sizes="(min-width: 768px) 75vw, 100vw" alt={`Banner ${idx + 1}`} loading={idx === 0 ? "eager" : "lazy"} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${currentBanner === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`} />
+              {banners.map((b, idx) => (
+                <img
+                  key={idx}
+                  src={assetUrl(b.image)}
+                  srcSet={b.imageMobile ? `${assetUrl(b.imageMobile)} 800w, ${assetUrl(b.image)} 1600w` : undefined}
+                  sizes="(min-width: 768px) 75vw, 100vw"
+                  alt={b.alt || `Banner ${idx + 1}`}
+                  loading={idx === 0 ? 'eager' : 'lazy'}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${activeBanner === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                />
               ))}
+              {/* Bấm vào banner đang hiện thì mở link của banner đó (nếu có) */}
+              {banners[activeBanner]?.link && (
+                <a href={banners[activeBanner].link} aria-label={banners[activeBanner].alt || 'Xem khuyến mãi'} className="absolute inset-0 z-[15]" />
+              )}
               <button onClick={prevBanner} className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/60 hover:bg-white p-2 rounded-full text-black opacity-0 group-hover:opacity-100 transition-opacity z-20">
                 <ChevronLeft size={20} />
               </button>
@@ -263,8 +273,8 @@ export default function HomePage() {
                 <ChevronRight size={20} />
               </button>
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm">
-                {bannerImages.map((_, idx) => (
-                  <span key={idx} onClick={() => setCurrentBanner(idx)} className={`rounded-full cursor-pointer transition-all ${currentBanner === idx ? 'w-3 h-3 bg-yellow-400 border border-white shadow-sm' : 'w-2 h-2 bg-white/60 hover:bg-white'}`}></span>
+                {banners.map((_, idx) => (
+                  <span key={idx} onClick={() => setCurrentBanner(idx)} className={`rounded-full cursor-pointer transition-all ${activeBanner === idx ? 'w-3 h-3 bg-yellow-400 border border-white shadow-sm' : 'w-2 h-2 bg-white/60 hover:bg-white'}`}></span>
                 ))}
               </div>
             </div>
@@ -328,7 +338,7 @@ export default function HomePage() {
             <div className="w-full aspect-video rounded-xl overflow-hidden bg-black/5 flex items-center justify-center">
               <iframe 
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/RIDVNiNebt4" 
+                src={youtubeEmbedUrl(home.reviewVideo.url)}
                 title="YouTube video player" 
                 frameBorder="0" 
                 allowFullScreen
@@ -400,21 +410,33 @@ export default function HomePage() {
             </div>
             
             <div ref={shortsContainerRef} onScroll={handleScrollShorts} className="flex gap-4 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scrollbar-hide">
-              {youtubeShortsVideos.map((video, idx) => (
-                <div key={video.id} onClick={() => { if (idx === youtubeShortsVideos.length - 1) window.open('https://www.youtube.com', '_blank'); }} className="shorts-card w-[300px] sm:w-[350px] md:w-[370px] shrink-0 snap-start bg-black rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between relative border-2 border-gray-800 cursor-pointer group">
+              {shorts.map((video, idx) => (
+                <div key={idx} className="shorts-card w-[300px] sm:w-[350px] md:w-[370px] shrink-0 snap-start bg-black rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between relative border-2 border-gray-800 cursor-pointer group">
                   <div className="relative w-full aspect-[9/16] bg-black">
-                    <iframe src={video.shortsUrl} title={video.title} className="w-full h-full border-0 absolute inset-0 pointer-events-auto" allowFullScreen></iframe>
+                    <iframe src={youtubeEmbedUrl(video.url)} title={video.title || video.productName} className="w-full h-full border-0 absolute inset-0 pointer-events-auto" allowFullScreen></iframe>
                   </div>
-                  <div className="bg-red-600 text-white font-extrabold text-xs sm:text-sm py-3.5 text-center flex items-center justify-center gap-1.5 shadow-inner group-hover:bg-red-700 transition-colors">
-                    <span>🛒</span> {idx === 4 ? 'Xem thêm trên YouTube ➔' : 'Mua ngay'}
-                  </div>
+                  <a
+                    href={video.productLink || video.url}
+                    target={video.productLink?.startsWith('/') ? undefined : '_blank'}
+                    rel="noopener noreferrer"
+                    className="bg-red-600 text-white font-extrabold text-xs sm:text-sm py-3.5 text-center flex items-center justify-center gap-1.5 shadow-inner hover:bg-red-700 transition-colors"
+                  >
+                    <span>🛒</span> {video.productLink ? 'Mua ngay' : 'Xem trên YouTube ➔'}
+                  </a>
+                  {video.productName && (
                   <div className="bg-white p-4 flex items-center gap-3 border-t border-gray-800">
-                    <img src={video.productImage} alt={video.productName} className="w-12 h-12 object-contain rounded-2xl bg-gray-50 p-1 shrink-0 border border-gray-100 shadow-sm" />
+                    {video.productImage && <img src={assetUrl(video.productImage)} alt={video.productName} className="w-12 h-12 object-contain rounded-2xl bg-gray-50 p-1 shrink-0 border border-gray-100 shadow-sm" />}
                     <div className="flex-1 min-w-0">
                       <h4 className="text-xs sm:text-sm font-bold text-gray-800 truncate">{video.productName}</h4>
-                      <p className="text-xs sm:text-sm font-black text-red-600 leading-none mt-1.5">{video.price.toLocaleString('vi-VN')}đ</p>
+                      {video.price > 0 && (
+                        <p className="text-xs sm:text-sm font-black text-red-600 leading-none mt-1.5">
+                          {video.price.toLocaleString('vi-VN')}đ
+                          {video.oldPrice > video.price && <span className="ml-1.5 text-[11px] font-normal text-gray-400 line-through">{video.oldPrice.toLocaleString('vi-VN')}đ</span>}
+                        </p>
+                      )}
                     </div>
                   </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -422,7 +444,7 @@ export default function HomePage() {
             <div className="flex flex-col items-center gap-2 mt-1">
               <span className="text-[11px] font-bold text-gray-400 tracking-wider uppercase animate-pulse">← Vuốt ngang để xem thêm video →</span>
               <div className="flex justify-center gap-2">
-                {youtubeShortsVideos.map((_, i) => (
+                {shorts.map((_, i) => (
                   <span key={i} className={`h-2 rounded-full transition-all duration-300 ${activeVideoIndex === i ? 'w-8 bg-red-600 shadow-sm' : 'w-2 bg-gray-300'}`}></span>
                 ))}
               </div>
