@@ -1,5 +1,6 @@
 import { Link, NavLink, Navigate, useParams } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
+import useSeo from '../hooks/useSeo';
 
 // Nội dung các trang chính sách – sửa trực tiếp tại đây cho đúng quy định của shop
 const POLICIES = {
@@ -50,6 +51,7 @@ const POLICIES = {
 
 export default function PolicyPage() {
   const { slug } = useParams();
+  useSeo({ title: POLICIES[slug]?.title || 'Chính sách' });
   const policy = POLICIES[slug];
   if (!policy) return <Navigate to="/chinh-sach/chinh-sach-chung" replace />;
 

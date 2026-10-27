@@ -4,6 +4,7 @@ import { Sparkles, ChevronRight, Home, Loader2 } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
+import useSeo from '../hooks/useSeo';
 
 // Tab ưu đãi -> điều kiện lọc sản phẩm đang giảm giá
 const TABS = {
@@ -25,6 +26,7 @@ function ProductGrid({ items, loading, empty }) {
 }
 
 export default function Promotions() {
+  useSeo({ title: 'Khuyến mãi hot', description: 'Tổng hợp chương trình khuyến mãi, mã giảm giá và sản phẩm đang giảm giá tại TriTech Channel.' });
   const [activeTab, setActiveTab] = useState('android');
   const tab = TABS[activeTab];
 

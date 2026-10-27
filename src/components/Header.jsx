@@ -300,7 +300,7 @@ export default function Header() {
                         key={prod.id}
                         onClick={() => {
                           setIsOpen(false);
-                          navigate(`/product/${prod.id}`);
+                          navigate(`/product/${prod.slug || prod.id}`);
                         }}
                         className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
                       >

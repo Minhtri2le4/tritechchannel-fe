@@ -7,6 +7,7 @@ import {
 import { useCart } from '../context/CartContext'; // Dynamic import Context
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
+import useSeo from '../hooks/useSeo';
 
 // Tính tiền giảm theo mã đã áp dụng (server sẽ tính lại khi đặt hàng)
 const calcCouponDiscount = (coupon, subtotal) => {
@@ -17,6 +18,7 @@ const calcCouponDiscount = (coupon, subtotal) => {
 };
 
 export default function CartPage() {
+  useSeo({ title: 'Giỏ hàng', noindex: true });
   const {
     cartItems,
     updateQuantity,
