@@ -7,9 +7,9 @@ const POLICIES = {
   'chinh-sach-chung': {
     title: 'Chính sách chung',
     sections: [
-      ['Phạm vi áp dụng', 'Áp dụng cho mọi đơn hàng đặt tại website tritechchannel.com, qua hotline, Zalo và mua trực tiếp tại cửa hàng TriTech Channel.'],
-      ['Sản phẩm', 'Tất cả sản phẩm là hàng chính hãng, có nguồn gốc rõ ràng, xuất hóa đơn VAT theo yêu cầu. Hình ảnh trên website mang tính minh họa, màu sắc thực tế có thể chênh lệch nhẹ.'],
-      ['Giá bán', 'Giá niêm yết đã bao gồm VAT (nếu có). Giá và chương trình khuyến mãi có thể thay đổi theo thời gian; đơn đã xác nhận được giữ nguyên giá tại thời điểm đặt.'],
+      ['Phạm vi áp dụng', 'Áp dụng cho mọi đơn hàng đặt tại website tritechchannel.com, qua hotline, Zalo và đơn nhận trực tiếp tại Thanh Đa, Bình Thạnh. TriTech Channel bán hàng online, không có cửa hàng trưng bày.'],
+      ['Sản phẩm', 'Tất cả sản phẩm là hàng chính hãng, có nguồn gốc rõ ràng. Hình ảnh trên website mang tính minh họa, màu sắc thực tế có thể chênh lệch nhẹ.'],
+      ['Giá bán', 'Giá niêm yết là giá bán cuối cùng. Giá và chương trình khuyến mãi có thể thay đổi theo thời gian; đơn đã xác nhận được giữ nguyên giá tại thời điểm đặt.'],
       ['Xác nhận đơn hàng', 'Sau khi đặt hàng, nhân viên sẽ gọi điện xác nhận trong giờ làm việc. Đơn chỉ được giao sau khi xác nhận thành công.'],
     ],
   },
@@ -36,7 +36,7 @@ const POLICIES = {
     sections: [
       ['Trường hợp được trả hàng', 'Giao sai sản phẩm, sản phẩm lỗi do nhà sản xuất hoặc hư hỏng do vận chuyển (có video mở hộp).'],
       ['Thời hạn', 'Liên hệ hotline trong vòng 7 ngày kể từ khi nhận hàng. Sản phẩm trả lại cần còn đầy đủ hộp, phụ kiện và quà tặng kèm.'],
-      ['Hoàn tiền', 'Hoàn tiền qua chuyển khoản trong 3–5 ngày làm việc sau khi cửa hàng nhận lại và kiểm tra sản phẩm.'],
+      ['Hoàn tiền', 'Hoàn tiền qua chuyển khoản trong 3–5 ngày làm việc sau khi TriTech nhận lại và kiểm tra sản phẩm.'],
     ],
   },
   'bao-mat': {

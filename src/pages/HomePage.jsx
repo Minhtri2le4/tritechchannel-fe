@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext'; 
 import ProductCard from '../components/ProductCard.jsx';
+import QuickCategories from '../components/QuickCategories';
 import { Link, useNavigate } from 'react-router-dom';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
@@ -194,7 +195,7 @@ export default function HomePage() {
           </a>
 
           <div className="bg-[#FFF8D6] rounded-xl p-2 mb-3 flex items-center justify-between text-[10px] md:text-xs font-semibold text-gray-800 border border-yellow-200 overflow-x-auto whitespace-nowrap gap-4 md:gap-0 scrollbar-hide">
-            <div className="flex items-center gap-1.5 shrink-0"><ShieldCheck size={16} className="text-black shrink-0" /><span>CHÍNH HÃNG - XUẤT VAT ĐẦY ĐỦ</span></div>
+            <div className="flex items-center gap-1.5 shrink-0"><ShieldCheck size={16} className="text-black shrink-0" /><span>HÀNG CHÍNH HÃNG 100%</span></div>
             <div className="flex items-center gap-1.5 shrink-0"><RefreshCw size={16} className="text-black shrink-0" /><span>THU CŨ LÊN ĐỜI - TRẢ GÓP 0%</span></div>
             <div className="flex items-center gap-1.5 shrink-0"><Truck size={16} className="text-black shrink-0" /><span>GIAO NHANH - FREESHIP ĐƠN 500K</span></div>
             <div className="flex items-center gap-1.5 shrink-0"><RotateCcw size={16} className="text-black shrink-0" /><span>45 NGÀY MIỄN PHÍ 1 ĐỔI 1</span></div>
@@ -240,23 +241,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* ICON TRÒN DƯỚI BANNER */}
-        <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm mb-4 md:mb-6 mt-4">
-          <div className="flex md:grid md:grid-cols-9 gap-3 md:gap-2 overflow-x-auto scrollbar-hide text-center">
-            {quickCategories && quickCategories.map((item) => (
-              <Link 
-                key={item.id} 
-                to={item.path || `/category/${item.id}`} 
-                className="flex flex-col items-center gap-1.5 shrink-0 w-16 md:w-auto group cursor-pointer"
-              >
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-100 p-1 flex items-center justify-center border border-gray-100 group-hover:border-yellow-400 transition-all shadow-sm">
-                  <img onError={imgFallback} src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-cover rounded-full" />
-                </div>
-                <span className="text-[10px] md:text-[11px] font-semibold text-gray-700 group-hover:text-red-600 line-clamp-1">{item.name}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
+        {/* LƯỚI DANH MỤC DƯỚI BANNER */}
+        <QuickCategories items={quickCategories} />
 
         {/* ĐẠI LÝ ỦY QUYỀN CHÍNH HÃNG */}
         <div className="mb-10 mt-12">

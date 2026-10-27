@@ -2,7 +2,7 @@
 export const SHOP = {
   name: 'TRITECH CHANNEL',
   hotline: '0325 477 841',
-  address: 'Lô 7 Cư Xá Thanh Đa, Bình Thạnh, TP.HCM',
+  address: 'Thanh Đa, Bình Thạnh, TP.HCM',
   carrier: 'Viettel Post',
 };
 
