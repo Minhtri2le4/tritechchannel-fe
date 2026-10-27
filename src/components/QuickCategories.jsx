@@ -10,17 +10,25 @@ const isCutout = (src) => /\.(png|webp|svg)(\?|$)/i.test(src || '');
 
 const ICONS = { Smartphone, Tablet, Percent, RefreshCw, Headphones, Speaker, Watch, Laptop, Home, Gift, Newspaper, PlugZap };
 
-// Một ô danh mục: ảnh sản phẩm (nên dùng ảnh PNG nền trong suốt) trên nền xám nhạt bo góc.
+// Một ô danh mục: ảnh PNG tách nền hiện trực tiếp không khung; ảnh có nền thì nằm trong ô xám nhạt bo góc.
 // Chưa có ảnh hoặc ảnh lỗi thì hiện icon cùng kiểu, không hiện khung "no image".
 function CategoryTile({ item }) {
   const [broken, setBroken] = useState(false);
   const Icon = ICONS[item.icon] || Smartphone;
   const showImage = item.image && !broken;
   const cutout = isCutout(item.image);
+  // Ảnh tách nền: bỏ khung nền/viền, để sản phẩm "nổi" tự nhiên như các shop lớn
+  const bare = showImage && cutout;
 
   return (
     <Link to={item.path || `/category/${item.id}`} className="group flex flex-col items-center gap-1.5 text-center">
-      <div className="relative w-full aspect-square max-w-[84px] rounded-2xl bg-gradient-to-b from-gray-50 to-gray-100 border border-gray-100 flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-yellow-400 group-hover:shadow-md group-hover:-translate-y-0.5">
+      <div
+        className={`relative w-full aspect-square max-w-[84px] flex items-center justify-center transition-all duration-300 group-hover:-translate-y-0.5 ${
+          bare
+            ? ''
+            : 'rounded-2xl bg-gradient-to-b from-gray-50 to-gray-100 border border-gray-100 overflow-hidden group-hover:border-yellow-400 group-hover:shadow-md'
+        }`}
+      >
         {showImage ? (
           <img
             src={assetUrl(item.image)}
@@ -28,7 +36,7 @@ function CategoryTile({ item }) {
             loading="lazy"
             onError={() => setBroken(true)}
             className={`transition-transform duration-300 group-hover:scale-110 ${
-              cutout ? 'w-[82%] h-[82%] object-contain drop-shadow-sm' : 'w-full h-full object-cover'
+              cutout ? 'w-full h-full object-contain drop-shadow-md' : 'w-full h-full object-cover'
             }`}
           />
         ) : (
