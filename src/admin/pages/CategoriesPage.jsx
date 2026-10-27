@@ -5,6 +5,7 @@ import { assetUrl, imgFallback } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import { useAuth } from '../AuthContext';
 import { Badge, Button, Card, Checkbox, ErrorBox, Field, Input, Modal, PageHeader, Table, errorText } from '../ui';
+import ImageField from '../ImageField';
 
 export default function CategoriesPage() {
   const { isAdmin } = useAuth();
@@ -144,7 +145,9 @@ function CategoryModal({ category, nextOrder, onClose, onSaved }) {
         <Field label="Thứ tự"><Input type="number" {...text('sortOrder')} /></Field>
         <Field label="Icon (lucide)" hint="VD: Smartphone, Laptop, Watch"><Input {...text('icon')} /></Field>
         <Field label="Nhãn" hint="VD: HOT"><Input {...text('badge')} /></Field>
-        <Field label="Ảnh icon tròn (URL)" className="col-span-2"><Input {...text('image')} placeholder="https://..." /></Field>
+        <Field label="Ảnh icon trang chủ" className="col-span-2">
+          <ImageField value={form.image} onChange={(v) => set('image', v)} hint="Nên dùng ảnh PNG đã tách nền (vuông, ~300×300px) – sẽ hiện trên vệt sơn vàng" />
+        </Field>
         <Field label="Đường dẫn riêng" hint="Để trống = /category/:id" className="col-span-2"><Input {...text('path')} placeholder="/thu-cu-doi-moi" /></Field>
         <div className="col-span-2 flex flex-col gap-2">
           <Checkbox label="Hiện trong menu danh mục" checked={form.showInSidebar} onChange={(e) => set('showInSidebar', e.target.checked)} />

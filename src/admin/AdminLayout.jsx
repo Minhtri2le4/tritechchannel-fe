@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, RefreshCw, ShieldCheck, Ticket, FolderTree, Users,
-  LogOut, Menu, X, ExternalLink, KeyRound,
+  LogOut, Menu, X, ExternalLink, KeyRound, LayoutTemplate,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import ChangePasswordModal from './pages/ChangePasswordModal';
@@ -25,6 +25,7 @@ const NAV = [
       { to: '/admin/categories', label: 'Danh mục', icon: FolderTree },
     ],
   },
+  { group: 'Website', items: [{ to: '/admin/home-content', label: 'Giao diện trang chủ', icon: LayoutTemplate }] },
   { group: 'Hệ thống', items: [{ to: '/admin/users', label: 'Nhân viên', icon: Users, adminOnly: true }] },
 ];
 
