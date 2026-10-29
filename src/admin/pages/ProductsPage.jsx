@@ -41,10 +41,10 @@ export default function ProductsPage() {
 
   const nameOf = (id) => data?.find((p) => p.id === id)?.name;
 
-  const runBulk = async (ids, action) => {
+  const runBulk = async (ids, action, categoryId) => {
     setBusy(true);
     try {
-      await adminApi.products.bulk(ids, action);
+      await adminApi.products.bulk(ids, action, categoryId);
       setSelected((sel) => sel.filter((id) => !ids.includes(id)));
       setConfirm(null);
       reload();
@@ -93,6 +93,19 @@ export default function ProductsPage() {
             <Button size="sm" variant="outline" disabled={busy} onClick={() => runBulk(selected, 'hide')}>
               <EyeOff size={14} /> Ẩn
             </Button>
+            {/* Chuyển sang danh mục khác: chọn là chuyển ngay */}
+            <Select
+              className="w-auto text-xs py-1.5 text-gray-900"
+              value=""
+              disabled={busy}
+              onChange={(e) => {
+                const cat = categories?.find((c) => String(c.id) === e.target.value);
+                if (cat && confirm(`Chuyển ${selected.length} sản phẩm sang danh mục "${cat.name}"?`)) runBulk(selected, 'move', cat.id);
+              }}
+            >
+              <option value="">Chuyển danh mục…</option>
+              {categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
             <Button size="sm" variant="danger" disabled={busy} onClick={() => setConfirm({ ids: selected, names: selected.map(nameOf).filter(Boolean) })}>
               <Trash2 size={14} /> Xóa
             </Button>
