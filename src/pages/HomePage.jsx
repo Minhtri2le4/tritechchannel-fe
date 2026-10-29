@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext'; 
 import ProductCard from '../components/ProductCard.jsx';
 import QuickCategories from '../components/QuickCategories';
+import AnkerShowcase from '../components/AnkerShowcase';
 import { Link, useNavigate } from 'react-router-dom';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
@@ -519,10 +520,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* BANNER 100 NGÀY ĐỔI TRẢ */}
-        <div className="mb-10 w-full rounded-2xl overflow-hidden shadow-sm cursor-pointer hover:opacity-95 transition-opacity">
-           <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&h=200&fit=crop" alt="100 Ngày Đổi Trả" className="w-full h-[120px] md:h-[160px] object-cover" />
-        </div>
+        {/* TRƯNG BÀY SẠC DỰ PHÒNG ANKER A1695 */}
+        <AnkerShowcase />
 
         {/* BLOG – BÀI VIẾT MỚI NHẤT (đăng trong Admin → Blog) */}
         {latestPosts?.length > 0 && (
