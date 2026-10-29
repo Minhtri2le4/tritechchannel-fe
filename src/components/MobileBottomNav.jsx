@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Home, LayoutGrid, RefreshCw, Headset, Gift } from 'lucide-react';
 
 // Sự kiện để Header mở menu DANH MỤC từ thanh dưới đáy
@@ -23,10 +23,14 @@ function Item({ icon: Icon, label, active, hot }) {
 
 // Thanh điều hướng cố định dưới đáy, chỉ hiện trên điện thoại (giống app bán hàng)
 export default function MobileBottomNav() {
+  const { pathname } = useLocation();
   const openMenu = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     window.dispatchEvent(new Event(OPEN_CATEGORY_MENU));
   };
+
+  // Trang sản phẩm có thanh "Thêm vào giỏ / Mua ngay" riêng ở vị trí này
+  if (pathname.startsWith('/product/')) return null;
 
   return (
     <nav
