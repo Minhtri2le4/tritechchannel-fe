@@ -4,7 +4,7 @@ import { adminApi } from '../adminApi';
 import ImageField from '../ImageField';
 import { shopApi } from '../../services/shop';
 import { assetUrl, formatPrice, imgFallback } from '../../lib/api';
-import { Button, Card, ErrorBox, Field, Input, PageHeader, Spinner, errorText, useDebounced } from '../ui';
+import { Button, Card, ErrorBox, Field, Input, PageHeader, Select, Spinner, errorText, useDebounced } from '../ui';
 
 // Ô datetime-local cần dạng "YYYY-MM-DDTHH:mm" theo giờ máy
 const toLocalInput = (d) => (d ? new Date(new Date(d).getTime() - new Date(d).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
@@ -18,6 +18,7 @@ const emptyCampaign = () => ({
   bannerImage: '',
   bannerImageMobile: '',
   bgColor: '#7a1f0e',
+  theme: 'none',
   startsAt: toLocalInput(new Date()),
   endsAt: '',
   productIds: [],
@@ -136,6 +137,13 @@ function CampaignEditor({ c, index, total, products, onChange, onMove, onRemove,
               <input type="color" value={c.bgColor} onChange={(e) => set({ bgColor: e.target.value })} className="h-10 w-14 cursor-pointer rounded border border-gray-200" />
               <Input value={c.bgColor} onChange={(e) => set({ bgColor: e.target.value.trim() })} className="font-mono" />
             </div>
+          </Field>
+          <Field label="Hoạ tiết trang trí nền" hint="Vẽ thêm lên nền khối, phía sau sản phẩm" className="md:col-span-2">
+            <Select value={c.theme || 'none'} onChange={(e) => set({ theme: e.target.value })}>
+              <option value="none">Không hoạ tiết (chỉ màu nền có ánh sáng)</option>
+              <option value="halloween">Halloween – mạng nhện, dơi bay, trăng, ánh cam</option>
+              <option value="tet">Tết – chấm vàng lấp lánh</option>
+            </Select>
           </Field>
           <Field label="Bắt đầu" hint="Trống = chạy ngay">
             <Input type="datetime-local" value={c.startsAt} onChange={(e) => set({ startsAt: e.target.value })} />

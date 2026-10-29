@@ -4,6 +4,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Star, Truck } from 'lucide-react
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
 import { assetUrl, formatPrice, imgFallback } from '../lib/api';
+import CampaignBackdrop from './CampaignBackdrop';
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -138,19 +139,25 @@ export default function CampaignSection() {
   const c = campaigns.find((x) => x.id === activeId) || campaigns[0];
 
   return (
-    <section className="mb-10 overflow-hidden rounded-2xl md:rounded-[20px] shadow-md" style={{ backgroundColor: c.bgColor }}>
+    <section className="relative isolate mb-10 overflow-hidden rounded-2xl md:rounded-[20px] shadow-md" style={{ backgroundColor: c.bgColor }}>
+      <CampaignBackdrop theme={c.theme} />
       {c.bannerImage ? (
-        <MaybeLink to={c.link} className="block">
+        <MaybeLink to={c.link} className="relative block">
           <picture>
             {c.bannerImageMobile && <source media="(max-width: 767px)" srcSet={assetUrl(c.bannerImageMobile)} />}
             <img src={assetUrl(c.bannerImage)} alt={c.name} className="block h-auto w-full" />
           </picture>
         </MaybeLink>
       ) : (
-        <h2 className="px-4 pt-6 pb-2 text-center text-2xl md:text-4xl font-black uppercase tracking-wide text-white drop-shadow">{c.name}</h2>
+        <h2
+          className="relative px-4 pt-8 pb-3 md:pt-12 md:pb-5 text-center text-3xl md:text-6xl font-black uppercase tracking-wide"
+          style={{ color: c.theme === 'halloween' ? '#ff9a1f' : c.theme === 'tet' ? '#ffd84a' : '#fff', textShadow: '0 3px 0 rgba(0,0,0,0.35), 0 0 28px rgba(255,170,60,0.45)' }}
+        >
+          {c.name}
+        </h2>
       )}
 
-      <div className="px-2.5 pb-3 pt-3 md:px-4 md:pb-4">
+      <div className="relative px-2.5 pb-3 pt-3 md:px-4 md:pb-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2.5">
           {c.endsAt ? <Countdown endsAt={c.endsAt} /> : <span />}
           <div className="flex flex-wrap gap-1.5 md:gap-2">
