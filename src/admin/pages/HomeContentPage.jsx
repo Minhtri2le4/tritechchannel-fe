@@ -4,7 +4,7 @@ import { adminApi } from '../adminApi';
 import ImageField from '../ImageField';
 import { mergeHome } from '../../lib/homeContent';
 import { youtubeEmbedUrl, youtubeId } from '../../lib/youtube';
-import { Button, Card, ErrorBox, Field, Input, MoneyInput, PageHeader, Spinner, errorText } from '../ui';
+import { Button, Card, ErrorBox, Field, Input, MoneyInput, PageHeader, Select, Spinner, errorText } from '../ui';
 
 const emptyBanner = () => ({ image: '', imageMobile: '', link: '', alt: '' });
 const emptyShort = () => ({ url: '', title: '', productName: '', productImage: '', productLink: '', price: null, oldPrice: null });
@@ -73,9 +73,11 @@ export default function HomeContentPage() {
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
   const setItem = (key, i, patch) => set(key, form[key].map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
+  const setPopup = (patch) => set('popup', { ...form.popup, ...patch });
   const setSide = (side, patch) => set('sideBanners', { ...form.sideBanners, [side]: { ...(form.sideBanners?.[side] || {}), ...patch } });
 
   const save = async () => {
+    if (form.popup.enabled && !form.popup.image) return setMessage('❌ Popup voucher đang bật nhưng chưa có ảnh');
     const missing = form.banners.findIndex((b) => !b.image);
     if (missing >= 0) return setMessage(`❌ Banner ${missing + 1} chưa có ảnh`);
     const badVideo = form.shorts.findIndex((v) => !youtubeId(v.url));
@@ -102,6 +104,35 @@ export default function HomeContentPage() {
     <>
       <PageHeader title="Giao diện trang chủ" subtitle="Đổi banner và video review mà không cần sửa code" actions={saveButton} />
       {message && <p className={`mb-4 text-sm font-semibold ${message.startsWith('❌') ? 'text-red-600' : 'text-emerald-700'}`}>{message}</p>}
+
+      <Section
+        title="Popup voucher khi vào web"
+        subtitle="Ảnh hiện giữa màn hình khi khách mở web (giống Thế Giới Di Động). Ảnh dọc hoặc vuông, rộng khoảng 600–1000px. Đổi ảnh mới thì khách đã xem cũng thấy lại."
+        action={
+          <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer select-none whitespace-nowrap">
+            <input type="checkbox" className="w-4 h-4 accent-amber-500" checked={!!form.popup.enabled} onChange={(e) => setPopup({ enabled: e.target.checked })} />
+            {form.popup.enabled ? 'Đang bật' : 'Đang tắt'}
+          </label>
+        }
+      >
+        <div className="grid gap-4 md:grid-cols-[auto_1fr]">
+          <Field label="Ảnh voucher" required={form.popup.enabled}>
+            <ImageField value={form.popup.image || ''} onChange={(v) => setPopup({ image: v })} aspect="aspect-[4/5]" previewClass="w-36" />
+          </Field>
+          <div className="space-y-3">
+            <Field label="Bấm vào ảnh thì mở" hint="VD: /promotions, /category/12 hoặc link https:// (Zalo, Shopee…). Trống = bấm không đi đâu">
+              <Input value={form.popup.link || ''} onChange={(e) => setPopup({ link: e.target.value })} placeholder="/promotions" />
+            </Field>
+            <Field label="Bao lâu hiện lại">
+              <Select value={form.popup.frequency} onChange={(e) => setPopup({ frequency: e.target.value })}>
+                <option value="session">Mỗi lần khách mở web (đóng tab mở lại mới hiện)</option>
+                <option value="day">Mỗi ngày 1 lần</option>
+                <option value="always">Mỗi lần tải trang (dễ gây khó chịu)</option>
+              </Select>
+            </Field>
+          </div>
+        </div>
+      </Section>
 
       <Section
         title="Banner chạy đầu trang"
