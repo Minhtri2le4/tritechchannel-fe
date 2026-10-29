@@ -21,6 +21,7 @@ const AdminApp = lazy(() => import('./admin/AdminApp'));
 // Import CartProvider
 import { CartProvider } from './context/CartContext';
 import MobileBottomNav from './components/MobileBottomNav';
+import VoucherPopup from './components/VoucherPopup';
 
 function AppContent() {
   return (
@@ -52,6 +53,7 @@ function AppContent() {
 
       <Footer />
       <MobileBottomNav />
+      <VoucherPopup />
     </div>
   );
 }

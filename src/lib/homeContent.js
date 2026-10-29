@@ -17,6 +17,8 @@ export const DEFAULT_HOME = {
     right: { image: '/assets/bannermini-right.webp', link: '/promotions' },
   },
   reviewVideo: { url: 'https://www.youtube.com/watch?v=RIDVNiNebt4' },
+  // Popup voucher: tắt cho tới khi admin tải ảnh lên và bật
+  popup: { enabled: false, image: '', link: '', frequency: 'session' },
   shorts: [
     { url: 'https://www.youtube.com/shorts/1krdQqyCpbw', title: 'Review tai nghe và thiết bị công nghệ', productName: 'Sạc Dự Phòng Anker Zolo 25.000mAh 165W', price: 1400000, oldPrice: null, productImage: 'https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpfaa59kf8cgc0.webp', productLink: null },
     { url: 'https://www.youtube.com/shorts/79QrqmGRrzk', title: 'Đánh giá chi tiết củ sạc nhanh', productName: 'Bộ sạc nhanh Anker ZoLo 140W (4 cổng, GaN)', price: 900000, oldPrice: null, productImage: 'https://down-vn.img.susercontent.com/file/vn-11134207-81ztc-mpuizoniuiob90.webp', productLink: null },
@@ -32,6 +34,7 @@ export const mergeHome = (saved) => ({
   sideBanners: saved?.sideBanners ?? DEFAULT_HOME.sideBanners,
   reviewVideo: saved?.reviewVideo?.url ? saved.reviewVideo : DEFAULT_HOME.reviewVideo,
   shorts: saved?.shorts?.length ? saved.shorts : DEFAULT_HOME.shorts,
+  popup: { ...DEFAULT_HOME.popup, ...saved?.popup },
 });
 
 // Nội dung trang chủ cho website: hiện mặc định ngay, có dữ liệu từ admin thì thay
