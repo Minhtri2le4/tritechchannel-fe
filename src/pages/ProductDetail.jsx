@@ -344,7 +344,7 @@ function ProductDetailView({ productData }) {
                 type="button"
                 onClick={handleAddToCartOnly}
                 disabled={!inStock}
-                className="flex-1 max-w-[240px] flex items-center justify-center gap-2 border border-red-500 bg-red-50 text-red-600 font-semibold py-3 rounded-lg hover:bg-red-100 disabled:opacity-50 cursor-pointer"
+                className="flex-1 max-w-[260px] flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-500 text-black font-extrabold py-3 rounded-xl shadow transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 <ShoppingCart size={18} /> Thêm vào giỏ hàng
               </button>
@@ -352,9 +352,10 @@ function ProductDetailView({ productData }) {
                 type="button"
                 onClick={handleBuyNow}
                 disabled={!inStock}
-                className="flex-1 max-w-[240px] bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg shadow-sm disabled:opacity-50 cursor-pointer"
+                className="flex-1 max-w-[260px] bg-red-600 hover:bg-red-700 text-white font-black py-2 rounded-xl shadow-lg transition-all active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 cursor-pointer"
               >
-                Mua ngay
+                <span className="text-sm">MUA NGAY</span>
+                <span className="text-[10px] font-normal opacity-90">Giao tận nơi toàn quốc hoặc nhận trực tiếp</span>
               </button>
             </div>
             {productData.installment && (
@@ -442,10 +443,10 @@ function ProductDetailView({ productData }) {
         <a href="https://zalo.me/0325477841" target="_blank" rel="noopener noreferrer" className="w-16 flex flex-col items-center justify-center text-[10px] text-gray-600 border-r border-gray-200">
           <MessageCircle size={20} /> Chat
         </a>
-        <button type="button" onClick={handleAddToCartOnly} disabled={!inStock} className="flex-1 flex flex-col items-center justify-center bg-amber-400 text-black text-[11px] font-semibold disabled:opacity-50">
+        <button type="button" onClick={handleAddToCartOnly} disabled={!inStock} className="flex-1 flex flex-col items-center justify-center bg-amber-400 text-black text-[11px] font-extrabold disabled:opacity-50">
           <ShoppingCart size={18} /> Thêm vào giỏ
         </button>
-        <button type="button" onClick={handleBuyNow} disabled={!inStock} className="flex-[1.4] bg-red-600 text-white text-sm font-bold disabled:opacity-50">
+        <button type="button" onClick={handleBuyNow} disabled={!inStock} className="flex-[1.4] bg-red-600 text-white text-sm font-black uppercase disabled:opacity-50">
           Mua ngay
         </button>
       </div>
