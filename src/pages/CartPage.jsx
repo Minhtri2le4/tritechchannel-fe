@@ -8,6 +8,8 @@ import { useCart } from '../context/CartContext'; // Dynamic import Context
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import useSeo from '../hooks/useSeo';
+import AddressPicker from '../components/AddressPicker';
+import { formatAddress } from '../lib/address';
 
 // Tính tiền giảm theo mã đã áp dụng (server sẽ tính lại khi đặt hàng)
 const calcCouponDiscount = (coupon, subtotal) => {
@@ -43,8 +45,9 @@ export default function CartPage() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [deliveryMethod, setDeliveryMethod] = useState('home'); 
-  const [address, setAddress] = useState('');
-  const [note, setNote] = useState('');
+  const [addr, setAddr] = useState({ province: '', ward: '', street: '' });
+  const [errors, setErrors] = useState({});
+const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('bank'); 
   const [couponCode, setCouponCode] = useState('');
   const [copiedSTK, setCopiedSTK] = useState(false);
@@ -92,13 +95,31 @@ export default function CartPage() {
     }
   };
 
-  const handlePlaceOrder = async () => {
-    if (!fullName.trim() || !phone.trim()) {
-      alert("Vui lòng nhập đầy đủ Họ và Tên và Số điện thoại!");
-      return;
+  // Kiểm tra thông tin khách nhập – trả về { tênÔ: lỗi }, rỗng là hợp lệ
+  const validate = () => {
+    const e = {};
+    const name = fullName.trim();
+    const phoneDigits = phone.replace(/[\s.\-()]/g, '').replace(/^\+?84/, '0');
+    if (!name) e.fullName = 'Vui lòng nhập họ và tên';
+    else if (!/^[\p{L}\s.'-]{2,}$/u.test(name) || !/\p{L}{2,}/u.test(name)) e.fullName = 'Họ tên chỉ gồm chữ, ví dụ: Nguyễn Văn An';
+    if (!phoneDigits) e.phone = 'Vui lòng nhập số điện thoại';
+    else if (!/^(0[35789]\d{8}|02\d{9})$/.test(phoneDigits)) e.phone = 'Số điện thoại không đúng (VD: 0901 234 567)';
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) e.email = 'Email không hợp lệ';
+    if (deliveryMethod === 'home') {
+      if (!addr.province) e.province = 'Chọn Tỉnh / Thành phố';
+      if (!addr.ward) e.ward = 'Chọn Phường / Xã';
+      const street = addr.street.trim();
+      if (!street) e.street = 'Nhập số nhà, tên đường';
+      else if (street.length < 5 || !/\p{L}{2,}/u.test(street)) e.street = 'Ghi rõ số nhà và tên đường (VD: 12 Nguyễn Xí)';
     }
-    if (deliveryMethod === 'home' && !address.trim()) {
-      alert("Vui lòng nhập địa chỉ nhận hàng tận nhà!");
+    return e;
+  };
+
+  const handlePlaceOrder = async () => {
+    const found = validate();
+    setErrors(found);
+    if (Object.keys(found).length) {
+      document.getElementById('checkout-info')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
     setSubmitting(true);
@@ -109,7 +130,7 @@ export default function CartPage() {
         phone,
         email,
         deliveryMethod: deliveryMethod === 'home' ? 'HOME' : 'STORE',
-        address,
+        address: deliveryMethod === 'home' ? formatAddress(addr) : undefined,
         note,
         paymentMethod: paymentMethod === 'bank' ? 'BANK' : 'COD',
         couponCode: appliedCoupon && !couponBelowMin ? appliedCoupon.code : undefined,
@@ -317,7 +338,7 @@ export default function CartPage() {
                 
                 {/* 1. Thông tin khách hàng */}
                 <div>
-                  <h3 className="font-bold text-xs sm:text-sm text-gray-900 mb-2.5 uppercase tracking-wide">
+                  <h3 id="checkout-info" className="font-bold text-xs sm:text-sm text-gray-900 mb-2.5 uppercase tracking-wide scroll-mt-24">
                     Thông tin khách hàng
                   </h3>
                   <div className="flex gap-4 mb-2.5">
@@ -335,28 +356,39 @@ export default function CartPage() {
                     ))}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <input 
-                      type="text" 
-                      placeholder="Họ và Tên (bắt buộc)" 
-                      value={fullName}
-                      onChange={e => setFullName(e.target.value)}
-                      className="w-full text-xs p-2.5 border border-gray-200 rounded-lg outline-none focus:border-amber-400"
-                    />
-                    <input 
-                      type="text" 
-                      placeholder="Số điện thoại (bắt buộc)" 
-                      value={phone}
-                      onChange={e => setPhone(e.target.value)}
-                      className="w-full text-xs p-2.5 border border-gray-200 rounded-lg outline-none focus:border-amber-400"
-                    />
+                    <div>
+                      <input
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Họ và Tên (bắt buộc)"
+                        value={fullName}
+                        onChange={e => { setFullName(e.target.value); setErrors((er) => ({ ...er, fullName: undefined })); }}
+                        className={`w-full text-xs p-2.5 border rounded-lg outline-none focus:border-amber-400 ${errors.fullName ? 'border-red-400' : 'border-gray-200'}`}
+                      />
+                      {errors.fullName && <p className="text-[11px] text-red-600 mt-1">{errors.fullName}</p>}
+                    </div>
+                    <div>
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        placeholder="Số điện thoại (bắt buộc)"
+                        value={phone}
+                        onChange={e => { setPhone(e.target.value); setErrors((er) => ({ ...er, phone: undefined })); }}
+                        className={`w-full text-xs p-2.5 border rounded-lg outline-none focus:border-amber-400 ${errors.phone ? 'border-red-400' : 'border-gray-200'}`}
+                      />
+                      {errors.phone && <p className="text-[11px] text-red-600 mt-1">{errors.phone}</p>}
+                    </div>
                   </div>
-                  <input 
-                    type="email" 
-                    placeholder="Email nhận thông tin xác nhận đơn hàng" 
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="Email (không bắt buộc)"
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="w-full text-xs p-2.5 border border-gray-200 rounded-lg outline-none focus:border-amber-400 mt-2.5"
+                    onChange={e => { setEmail(e.target.value); setErrors((er) => ({ ...er, email: undefined })); }}
+                    className={`w-full text-xs p-2.5 border rounded-lg outline-none focus:border-amber-400 mt-2.5 ${errors.email ? 'border-red-400' : 'border-gray-200'}`}
                   />
+                  {errors.email && <p className="text-[11px] text-red-600 mt-1">{errors.email}</p>}
                 </div>
 
                 {/* 2. Thông tin nhận hàng */}
@@ -398,12 +430,13 @@ export default function CartPage() {
                       </p>
                     </div>
                   ) : (
-                    <input 
-                      type="text" 
-                      placeholder="Nhập địa chỉ cụ thể (Số nhà, đường, phường/xã, quận/huyện)..." 
-                      value={address}
-                      onChange={e => setAddress(e.target.value)}
-                      className="w-full text-xs p-2.5 border border-gray-200 rounded-lg outline-none focus:border-amber-400"
+                    <AddressPicker
+                      value={addr}
+                      errors={errors}
+                      onChange={(next) => {
+                        setAddr(next);
+                        setErrors((er) => ({ ...er, province: undefined, ward: undefined, street: undefined }));
+                      }}
                     />
                   )}
 
