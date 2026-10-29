@@ -23,3 +23,38 @@ div, button, input {
     font-size: 16px !important;
   }
 }
+
+/* Khối trưng bày Anker A1695 trên trang chủ (AnkerShowcase.jsx) */
+.anker-showcase {
+  background-color: #120c0d;
+  background-image:
+    radial-gradient(60% 70% at 72% 40%, rgba(150, 40, 50, 0.45), transparent 70%),
+    radial-gradient(40% 50% at 10% 100%, rgba(255, 212, 0, 0.12), transparent 70%);
+}
+.showcase-serif {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.showcase-stage {
+  --mx: 0;
+  --my: 0;
+  perspective: 1200px;
+}
+.showcase-parallax {
+  transform: translate3d(calc(var(--mx) * var(--depth) * -2), calc(var(--my) * var(--depth) * -2), 0)
+    rotateY(calc(var(--mx) * 18deg)) rotateX(calc(var(--my) * -12deg));
+  transition: transform 0.4s ease-out;
+}
+.showcase-float {
+  animation: showcase-drift 7s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes showcase-drift {
+  0%, 100% { transform: translateY(0) rotate(-4deg) rotateY(-10deg); }
+  50% { transform: translateY(-16px) rotate(3deg) rotateY(12deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .showcase-float { animation: none; }
+  .showcase-parallax { transition: none; }
+}
