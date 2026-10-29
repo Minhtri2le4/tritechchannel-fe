@@ -9,6 +9,7 @@ import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import { useHomeContent } from '../lib/homeContent';
 import { youtubeEmbedUrl } from '../lib/youtube';
+import { videoEmbed } from '../lib/video';
 import useSeo from '../hooks/useSeo';
 
 // Tab "Gợi ý cho bạn" -> tham số lọc gửi lên API
@@ -93,14 +94,6 @@ const ecomStores = [
   }
 ];
 
-const newsArticles = [
-  { id: 1, title: "Có nên dùng củ sạc thay thế cho iPad? Top sạc tương thích an toàn...", img: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400" },
-  { id: 2, title: "4 tính năng đáng tiền của ổ cắm điện đa năng cao cấp hiện nay", img: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=400" },
-  { id: 3, title: "So sánh máy cạo râu thế hệ mới và các dòng máy truyền thống", img: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=400" },
-  { id: 4, title: "Trên tay tai nghe TWS: Giá chỉ 790.000 đồng mà xuyên âm cực đỉnh", img: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?w=400" },
-  { id: 5, title: "Ghi dấu 10 năm huyền thoại âm nhạc bằng bộ sưu tập độc quyền", img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400" }
-];
-
 export default function HomePage() {
   useSeo();
   const { addToCart } = useCart();
@@ -125,6 +118,7 @@ export default function HomePage() {
   // Dữ liệu từ backend
   const { sidebar: sidebarCategories, quick: quickCategories } = useCategories();
   const { data: products } = useFetch(() => shopApi.products({ isHot: true, limit: 8 }), []);
+  const { data: latestPosts } = useFetch(() => shopApi.posts({ limit: 5 }), []);
   const { data: flashSale } = useFetch(() => shopApi.products({ isFlashSale: true, limit: 6 }), []);
   const bestPricesToday = flashSale || [];
   const { data: suggested, meta: suggestMeta, loading: suggestLoading } = useFetch(
@@ -530,22 +524,32 @@ export default function HomePage() {
            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&h=200&fit=crop" alt="100 Ngày Đổi Trả" className="w-full h-[120px] md:h-[160px] object-cover" />
         </div>
 
-        {/* TIN TỨC CÔNG NGHỆ */}
+        {/* BLOG – BÀI VIẾT MỚI NHẤT (đăng trong Admin → Blog) */}
+        {latestPosts?.length > 0 && (
         <div className="mb-10 bg-white rounded-[24px] p-5 md:p-6 shadow-sm border border-gray-100">
            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg md:text-xl font-black text-gray-900 uppercase">Tin tức</h2>
+              <h2 className="text-lg md:text-xl font-black text-gray-900 uppercase">Blog TriTech</h2>
+              <Link to="/blog" className="text-xs md:text-sm font-bold text-red-600 hover:underline flex items-center gap-1">Xem tất cả <ArrowRight size={14} /></Link>
            </div>
            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              {newsArticles.map((article) => (
-                 <a key={article.id} href="/tech-news" className="group cursor-pointer">
-                    <div className="w-full aspect-video rounded-xl overflow-hidden mb-3 bg-gray-50 border border-gray-100">
-                       <img src={article.img} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              {latestPosts.map((post) => {
+                 const cover = post.images?.[0] ? assetUrl(post.images[0]) : videoEmbed(post.videoUrl)?.thumb;
+                 return (
+                 <Link key={post.id} to={`/blog/${post.slug}`} className="group cursor-pointer">
+                    <div className="w-full aspect-video rounded-xl overflow-hidden mb-3 bg-gray-50 border border-gray-100 flex items-center justify-center">
+                       {cover ? (
+                         <img src={cover} onError={imgFallback} alt={post.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                       ) : (
+                         <Newspaper className="text-gray-300" size={32} />
+                       )}
                     </div>
-                    <h3 className="text-xs md:text-sm font-semibold text-gray-800 line-clamp-2 leading-snug group-hover:text-red-600 transition-colors">{article.title}</h3>
-                 </a>
-              ))}
+                    <h3 className="text-xs md:text-sm font-semibold text-gray-800 line-clamp-2 leading-snug group-hover:text-red-600 transition-colors">{post.title}</h3>
+                 </Link>
+                 );
+              })}
            </div>
         </div>
+        )}
 
         {/* ========================================================== */}
         {/* THANH CAM KẾT SẢN PHẨM (Khôi phục) */}

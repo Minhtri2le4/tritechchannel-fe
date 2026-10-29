@@ -39,6 +39,7 @@ export const adminApi = {
     removeRecord: (id, recordId) => api.delete(`/admin/warranties/${id}/records/${recordId}`),
   },
   users: crud('/admin/users'),
+  posts: crud('/admin/posts'),
 
   // Nội dung trang chủ: banner, video review
   settings: {

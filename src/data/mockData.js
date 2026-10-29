@@ -110,7 +110,7 @@ export const sidebarCategories = [
   { id: 8, name: "Macbook", icon: "Laptop", path: "/category/8" },
   { id: 9, name: "Gia Dụng Thông Minh", icon: "Home", path: "/category/9" },
   { id: 10, name: "Khuyến Mãi", icon: "Gift", path: "/category/10" },
-  { id: 11, name: "Tin Công Nghệ", icon: "Newspaper", path: "/category/11" },
+  { id: 11, name: "Blog", icon: "Newspaper", path: "/blog" },
 ];
 
 // 3. Danh mục icon tròn dưới Banner

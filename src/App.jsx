@@ -8,7 +8,8 @@ import CategoryPage from './pages/CategoryPage';
 import WarrantyPage from './pages/WarrantyPage';
 import TradeInPage from './pages/TradeInPage';
 import Promotions from './pages/Promotions';
-import TechNews from './pages/TechNews';
+import BlogPage from './pages/BlogPage';
+import BlogPostPage from './pages/BlogPostPage';
 import CartPage from './pages/CartPage';
 import ProductDetail from './pages/ProductDetail';
 import PolicyPage from './pages/PolicyPage';
@@ -37,8 +38,11 @@ function AppContent() {
           <Route path="/smart-home" element={<Navigate to="/category/9" replace />} />
           <Route path="/category/10" element={<Promotions />} />
           <Route path="/promotions" element={<Promotions />} />
-          <Route path="/category/11" element={<TechNews />} />
-          <Route path="/tech-news" element={<TechNews />} />
+          {/* "Tin công nghệ" cũ nay là Blog – giữ link cũ, tự chuyển sang /blog */}
+          <Route path="/category/11" element={<Navigate to="/blog" replace />} />
+          <Route path="/tech-news" element={<Navigate to="/blog" replace />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/chinh-sach/:slug" element={<PolicyPage />} />

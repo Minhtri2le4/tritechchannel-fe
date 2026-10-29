@@ -19,4 +19,8 @@ export const shopApi = {
 
   // Banner, video review trang chủ chỉnh trong admin (null = chưa cấu hình, dùng mặc định)
   homeSettings: () => api.get('/settings/home'),
+
+  // Blog
+  posts: (params) => api.get('/posts', { params }),
+  post: (slug) => api.get(`/posts/${slug}`),
 };
