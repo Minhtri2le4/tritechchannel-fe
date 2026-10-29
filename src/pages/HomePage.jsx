@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext'; 
 import ProductCard from '../components/ProductCard.jsx';
 import QuickCategories from '../components/QuickCategories';
+import CampaignSection from '../components/CampaignSection';
 import { Link, useNavigate } from 'react-router-dom';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
@@ -317,6 +318,9 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+
+        {/* CHƯƠNG TRÌNH KHUYẾN MÃI (Admin → Chương trình khuyến mãi) */}
+        <CampaignSection />
 
         {/* REVIEW SẢN PHẨM MỚI NHẤT */}
         <div className="mb-10">
