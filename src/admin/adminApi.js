@@ -25,8 +25,8 @@ export const adminApi = {
 
   products: {
     ...crud('/admin/products'),
-    // action: 'delete' | 'hide' | 'show'
-    bulk: (ids, action) => api.post('/admin/products/bulk', { ids, action }),
+    // action: 'delete' | 'hide' | 'show' | 'move' (move cần categoryId)
+    bulk: (ids, action, categoryId) => api.post('/admin/products/bulk', { ids, action, categoryId }),
   },
   categories: crud('/admin/categories'),
   coupons: crud('/admin/coupons'),

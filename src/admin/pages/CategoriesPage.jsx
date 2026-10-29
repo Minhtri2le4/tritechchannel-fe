@@ -141,6 +141,14 @@ function CategoryModal({ category, nextOrder, onClose, onSaved }) {
     >
       <form id="category-form" onSubmit={save} className="grid grid-cols-2 gap-3">
         <Field label="Tên danh mục" required className="col-span-2"><Input required {...text('name')} /></Field>
+        {/* Sản phẩm gắn với danh mục theo mã, không theo tên: đổi tên = đổi cho mọi sản phẩm đang ở đây */}
+        {category && (category._count?.products || 0) > 0 && form.name.trim() !== category.name && (
+          <p className="col-span-2 -mt-1 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-900">
+            ⚠️ Danh mục này đang có <b>{category._count.products} sản phẩm</b>. Đổi tên thì cả {category._count.products} sản phẩm đó sẽ nằm trong
+            danh mục “{form.name.trim() || '…'}”. Muốn có danh mục <b>mới</b> thì bấm Hủy rồi chọn “Thêm danh mục”, sau đó vào
+            Sản phẩm → tick sản phẩm → “Chuyển danh mục”.
+          </p>
+        )}
         <Field label="Slug" hint="Để trống sẽ tự tạo"><Input {...text('slug')} /></Field>
         <Field label="Thứ tự"><Input type="number" {...text('sortOrder')} /></Field>
         <Field label="Icon (lucide)" hint="VD: Smartphone, Laptop, Watch"><Input {...text('icon')} /></Field>
