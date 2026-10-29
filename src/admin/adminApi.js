@@ -45,5 +45,7 @@ export const adminApi = {
   settings: {
     getHome: () => api.get('/admin/settings/home'),
     saveHome: (body) => api.put('/admin/settings/home', body),
+    getCampaigns: () => api.get('/admin/settings/campaigns'),
+    saveCampaigns: (body) => api.put('/admin/settings/campaigns', body),
   },
 };

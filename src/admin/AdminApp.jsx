@@ -16,6 +16,7 @@ import CouponsPage from './pages/CouponsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import UsersPage from './pages/UsersPage';
 import HomeContentPage from './pages/HomeContentPage';
+import CampaignsPage from './pages/CampaignsPage';
 import PostsPage from './pages/PostsPage';
 import PostFormPage from './pages/PostFormPage';
 
@@ -53,6 +54,7 @@ function AdminRoutes() {
         <Route path="coupons" element={<CouponsPage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="home-content" element={<HomeContentPage />} />
+        <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="posts" element={<PostsPage />} />
         <Route path="posts/new" element={<PostFormPage />} />
         <Route path="posts/:id" element={<PostFormPage />} />

@@ -19,6 +19,8 @@ export const shopApi = {
 
   // Banner, video review trang chủ chỉnh trong admin (null = chưa cấu hình, dùng mặc định)
   homeSettings: () => api.get('/settings/home'),
+  // Chương trình khuyến mãi đang chạy (Halloween, 11.11…)
+  campaigns: () => api.get('/settings/campaigns'),
 
   // Blog
   posts: (params) => api.get('/posts', { params }),

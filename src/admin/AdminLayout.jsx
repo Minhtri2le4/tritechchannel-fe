@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, RefreshCw, ShieldCheck, Ticket, FolderTree, Users,
-  LogOut, Menu, X, ExternalLink, KeyRound, LayoutTemplate, Newspaper,
+  LogOut, Menu, X, ExternalLink, KeyRound, LayoutTemplate,
+  PartyPopper, Newspaper,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import ChangePasswordModal from './pages/ChangePasswordModal';
@@ -30,6 +31,7 @@ const NAV = [
     items: [
       { to: '/admin/posts', label: 'Blog', icon: Newspaper },
       { to: '/admin/home-content', label: 'Giao diện trang chủ', icon: LayoutTemplate },
+      { to: '/admin/campaigns', label: 'Chương trình khuyến mãi', icon: PartyPopper },
     ],
   },
   { group: 'Hệ thống', items: [{ to: '/admin/users', label: 'Nhân viên', icon: Users, adminOnly: true }] },
