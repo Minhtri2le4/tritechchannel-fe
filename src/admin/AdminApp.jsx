@@ -16,6 +16,8 @@ import CouponsPage from './pages/CouponsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import UsersPage from './pages/UsersPage';
 import HomeContentPage from './pages/HomeContentPage';
+import PostsPage from './pages/PostsPage';
+import PostFormPage from './pages/PostFormPage';
 
 // Chặn trang khi chưa đăng nhập; adminOnly: chỉ tài khoản ADMIN
 function Protected({ children, adminOnly }) {
@@ -51,6 +53,9 @@ function AdminRoutes() {
         <Route path="coupons" element={<CouponsPage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="home-content" element={<HomeContentPage />} />
+        <Route path="posts" element={<PostsPage />} />
+        <Route path="posts/new" element={<PostFormPage />} />
+        <Route path="posts/:id" element={<PostFormPage />} />
         <Route path="users" element={<Protected adminOnly><UsersPage /></Protected>} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
