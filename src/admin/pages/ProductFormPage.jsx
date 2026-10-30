@@ -21,7 +21,7 @@ const toForm = (p) => ({
   image: p.image || '',
   description: p.description || '',
   variants: p.variants.map(({ label, price, originalPrice, stock }) => ({ label, price, originalPrice, stock })),
-  colors: p.colors.map(({ name, hex, image }) => ({ name, hex: hex || null, image: image || '' })),
+  colors: p.colors.map(({ name, hex, image, price, originalPrice }) => ({ name, hex: hex || null, image: image || '', price: price ?? null, originalPrice: originalPrice ?? null })),
 });
 
 export default function ProductFormPage() {
@@ -115,13 +115,20 @@ function ProductForm({ initial, productId }) {
   // Có phiên bản thì giá/kho chung lấy từ phiên bản: giá thấp nhất hiện ở danh sách, kho = tổng các phiên bản
   const hasVariants = form.variants.length > 0;
   const variantPrices = form.variants.map((v) => v.price).filter((v) => v != null);
-  const cheapest = form.variants.filter((v) => v.price != null).sort((a, b) => a.price - b.price)[0];
   const variantStock = form.variants.reduce((n, v) => n + (Number(v.stock) || 0), 0);
+  // Phân loại có giá riêng: nếu mọi phân loại đều có giá thì không cần nhập giá chung / giá phiên bản
+  const pricedColors = form.colors.filter((c) => c.price != null);
+  const allColorsPriced = form.colors.length > 0 && pricedColors.length === form.colors.length;
+  // Giá hiện ở danh sách sản phẩm = lựa chọn rẻ nhất khách mua được
+  const baseOptions = hasVariants ? form.variants : [{ price: form.price, originalPrice: form.originalPrice }];
+  const cheapestOption = [...(allColorsPriced ? [] : baseOptions), ...pricedColors]
+    .filter((o) => o.price != null)
+    .sort((a, b) => a.price - b.price)[0];
 
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!hasVariants && form.price == null) return setError('Vui lòng nhập giá bán');
+    if (!hasVariants && !allColorsPriced && form.price == null) return setError('Vui lòng nhập giá bán (hoặc nhập giá cho mọi phân loại)');
     if (form.variants.some((v) => !v.label.trim() || v.price == null)) return setError('Phiên bản cần có tên và giá bán');
     if (form.colors.some((c) => !c.name.trim())) return setError('Phân loại cần có tên');
 
@@ -130,8 +137,8 @@ function ProductForm({ initial, productId }) {
       ...(form.slug ? { slug: form.slug } : {}),
       brand: form.brand || null,
       categoryId: form.categoryId ? Number(form.categoryId) : null,
-      price: hasVariants ? cheapest.price : form.price,
-      originalPrice: (hasVariants ? cheapest.originalPrice : form.originalPrice) || null,
+      price: cheapestOption.price,
+      originalPrice: cheapestOption.originalPrice || null,
       stock: hasVariants ? variantStock : Number(form.stock) || 0,
       image: form.image || null,
       images: allImages,
@@ -145,7 +152,14 @@ function ProductForm({ initial, productId }) {
       installment: form.installment,
       status: form.status,
       variants: form.variants.map((v, i) => ({ label: v.label, price: v.price, originalPrice: v.originalPrice || null, stock: Number(v.stock) || 0, sortOrder: i })),
-      colors: form.colors.map((c, i) => ({ name: c.name, hex: c.hex || null, image: c.image || null, sortOrder: i })),
+      colors: form.colors.map((c, i) => ({
+        name: c.name,
+        hex: c.hex || null,
+        image: c.image || null,
+        price: c.price ?? null,
+        originalPrice: c.price != null ? c.originalPrice || null : null,
+        sortOrder: i,
+      })),
     };
 
     setSaving(true);
@@ -285,9 +299,12 @@ function ProductForm({ initial, productId }) {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-bold">Phân loại (màu / mẫu)</h2>
-                <p className="text-[11px] text-gray-500">Như Shopee: mỗi phân loại có tên và ảnh riêng (tuỳ chọn). Khách bấm vào thì ảnh lớn đổi theo.</p>
+                <p className="text-[11px] text-gray-500">
+                  Như Shopee: mỗi phân loại có tên, ảnh và giá riêng (tuỳ chọn). Khách bấm vào thì ảnh lớn đổi theo. Nhập giá thì khách chọn phân loại đó trả
+                  giá này; để trống thì dùng giá phiên bản / giá chung.
+                </p>
               </div>
-              <Button type="button" size="sm" variant="outline" onClick={() => set('colors', [...form.colors, { name: '', hex: null, image: '' }])}>
+              <Button type="button" size="sm" variant="outline" onClick={() => set('colors', [...form.colors, { name: '', hex: null, image: '', price: null, originalPrice: null }])}>
                 <Plus size={14} /> Thêm
               </Button>
             </div>
@@ -313,7 +330,11 @@ function ProductForm({ initial, productId }) {
                   <input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { uploadColorImage(i, e.target.files); e.target.value = ''; }} />
                 </label>
                 <div className="flex-1 min-w-0 space-y-1.5">
-                  <Input value={c.name} placeholder="VD: E18 Trắng Xanh" onChange={(e) => updateItem('colors', i, { name: e.target.value })} />
+                  <div className="grid grid-cols-2 sm:grid-cols-[1fr_150px_150px] gap-2">
+                    <Input className="col-span-2 sm:col-span-1" value={c.name} placeholder="VD: E18 Trắng Xanh" onChange={(e) => updateItem('colors', i, { name: e.target.value })} />
+                    <MoneyInput value={c.price} placeholder="Giá bán (tuỳ chọn)" onChange={(val) => updateItem('colors', i, { price: val })} />
+                    <MoneyInput value={c.originalPrice} placeholder="Giá gốc" onChange={(val) => updateItem('colors', i, { originalPrice: val })} />
+                  </div>
                   <div className="flex flex-wrap items-center gap-1.5">
                     {allImages.length > 0 && <span className="text-[11px] text-gray-500">hoặc chọn ảnh có sẵn:</span>}
                     {allImages.slice(0, 12).map((url) => (
@@ -357,7 +378,7 @@ function ProductForm({ initial, productId }) {
               </div>
             ) : (
               <>
-                <Field label="Giá bán (VND)" required>
+                <Field label="Giá bán (VND)" required={!allColorsPriced} hint={allColorsPriced ? 'Mọi phân loại đã có giá riêng – có thể để trống' : undefined}>
                   <MoneyInput value={form.price} onChange={(v) => set('price', v)} />
                 </Field>
                 <Field label="Giá gốc (gạch ngang)">
@@ -367,6 +388,12 @@ function ProductForm({ initial, productId }) {
                   <Input type="number" min={0} {...bind('stock')} />
                 </Field>
               </>
+            )}
+            {pricedColors.length > 0 && (
+              <p className="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2 text-xs text-sky-800">
+                {pricedColors.length}/{form.colors.length} phân loại có giá riêng ({formatPrice(Math.min(...pricedColors.map((c) => c.price)))}
+                {pricedColors.length > 1 && ` – ${formatPrice(Math.max(...pricedColors.map((c) => c.price)))}`}). Khách chọn các phân loại này sẽ trả giá riêng đó.
+              </p>
             )}
           </Card>
 

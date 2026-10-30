@@ -9,6 +9,7 @@ import useFetch from '../hooks/useFetch';
 import useSeo, { SITE_URL } from '../hooks/useSeo';
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
+import { allPrices, optionPrice } from '../lib/price';
 import ProductCard from '../components/ProductCard';
 import VariantSheet from '../components/VariantSheet';
 import ProductReviews from '../components/ProductReviews';
@@ -74,18 +75,20 @@ function ProductDetailView({ productData }) {
   // Ảnh thumbnail: ảnh đại diện + ảnh phụ (bỏ trùng)
   const productImages = [...new Set([productData.image, ...(productData.images || [])].filter(Boolean))].map(assetUrl);
 
-  // Giá theo phiên bản đã chọn
+  // Giá theo phân loại (nếu có giá riêng) hoặc phiên bản đã chọn
   const selectedVariant = storages.find((v) => v.id === selectedVariantId) || null;
-  const variantPrices = storages.map((v) => v.price);
-  const priceMin = storages.length ? Math.min(...variantPrices) : productData.price;
-  const priceMax = storages.length ? Math.max(...variantPrices) : productData.price;
-  const currentPrice = selectedVariant?.price ?? priceMin;
-  // Chưa chọn phiên bản mà giá các phiên bản khác nhau -> hiện khoảng giá như Shopee
-  const priceText =
-    !selectedVariant && priceMin !== priceMax
-      ? `${priceMin.toLocaleString('vi-VN')}₫ - ${priceMax.toLocaleString('vi-VN')}₫`
-      : `${currentPrice.toLocaleString('vi-VN')}₫`;
-  const originalPrice = selectedVariant ? selectedVariant.originalPrice : storages.length ? null : productData.originalPrice;
+  const prices = allPrices(productData);
+  const priceMin = Math.min(...prices);
+  const priceMax = Math.max(...prices);
+  const colorPriced = colors.find((c) => c.name === selectedColor)?.price != null;
+  const priceDecided = colorPriced || !!selectedVariant || priceMin === priceMax;
+  const chosen = optionPrice(productData, selectedVariant, selectedColor);
+  const currentPrice = priceDecided ? chosen.price : priceMin;
+  // Chưa chọn đủ mà các lựa chọn khác giá nhau -> hiện khoảng giá như Shopee
+  const priceText = priceDecided
+    ? `${currentPrice.toLocaleString('vi-VN')}₫`
+    : `${priceMin.toLocaleString('vi-VN')}₫ - ${priceMax.toLocaleString('vi-VN')}₫`;
+  const originalPrice = priceDecided && (colorPriced || selectedVariant || !storages.length) ? chosen.originalPrice : null;
   const discountPercent = originalPrice > currentPrice ? Math.round((1 - currentPrice / originalPrice) * 100) : 0;
   const stock = selectedVariant ? selectedVariant.stock : storages.length ? storages.reduce((n, v) => n + v.stock, 0) : productData.stock;
   const inStock = stock > 0;
@@ -94,7 +97,7 @@ function ProductDetailView({ productData }) {
 
   const productPath = `/product/${productData.slug || productData.id}`;
   const absImage = (src) => (src && /^https?:/.test(src) ? src : `${SITE_URL}${src || ''}`);
-  const minPrice = storages.length ? Math.min(...storages.map((v) => v.price)) : productData.price;
+  const minPrice = priceMin;
   const anyStock = storages.length ? storages.some((v) => v.stock > 0) : productData.stock > 0;
   useSeo({
     title: `${productData.name} - Giá ${minPrice.toLocaleString('vi-VN')}đ`,
