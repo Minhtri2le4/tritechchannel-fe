@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, LayoutGrid, RefreshCw, Headset, Gift } from 'lucide-react';
+import { Home, LayoutGrid, RefreshCw, Headset, UserRound } from 'lucide-react';
+import { useCustomer } from '../context/CustomerContext';
 
 // Sự kiện để Header mở menu DANH MỤC từ thanh dưới đáy
 export const OPEN_CATEGORY_MENU = 'tritech:open-category-menu';
@@ -24,6 +25,7 @@ function Item({ icon: Icon, label, active, hot }) {
 // Thanh điều hướng cố định dưới đáy, chỉ hiện trên điện thoại (giống app bán hàng)
 export default function MobileBottomNav() {
   const { pathname } = useLocation();
+  const { customer } = useCustomer();
   const openMenu = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     window.dispatchEvent(new Event(OPEN_CATEGORY_MENU));
@@ -50,8 +52,8 @@ export default function MobileBottomNav() {
         <a href="https://zalo.me/0325477841" target="_blank" rel="noopener noreferrer" className={itemClass(false)}>
           <Item icon={Headset} label="Liên hệ" />
         </a>
-        <NavLink to="/promotions" className={({ isActive }) => itemClass(isActive)}>
-          {({ isActive }) => <Item icon={Gift} label="Ưu đãi" active={isActive} />}
+        <NavLink to={customer ? '/tai-khoan' : '/dang-nhap'} className={({ isActive }) => itemClass(isActive)}>
+          {({ isActive }) => <Item icon={UserRound} label={customer ? 'Tài khoản' : 'Đăng nhập'} active={isActive} />}
         </NavLink>
       </div>
     </nav>

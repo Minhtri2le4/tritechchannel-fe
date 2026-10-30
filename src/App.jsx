@@ -14,12 +14,15 @@ import CartPage from './pages/CartPage';
 import ProductDetail from './pages/ProductDetail';
 import PolicyPage from './pages/PolicyPage';
 import NotFound from './pages/NotFound';
+import LoginPage from './pages/LoginPage';
+import AccountPage from './pages/AccountPage';
 
 // Trang quản trị tách bundle riêng, chỉ tải khi vào /admin
 const AdminApp = lazy(() => import('./admin/AdminApp'));
 
 // Import CartProvider
 import { CartProvider } from './context/CartContext';
+import { CustomerProvider } from './context/CustomerContext';
 import MobileBottomNav from './components/MobileBottomNav';
 import VoucherPopup from './components/VoucherPopup';
 
@@ -47,6 +50,8 @@ function AppContent() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/chinh-sach/:slug" element={<PolicyPage />} />
+          <Route path="/dang-nhap" element={<LoginPage />} />
+          <Route path="/tai-khoan" element={<AccountPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
@@ -74,8 +79,10 @@ export default function App() {
   }
 
   return (
-    <CartProvider>
-      <AppContent />
-    </CartProvider>
+    <CustomerProvider>
+      <CartProvider>
+        <AppContent />
+      </CartProvider>
+    </CustomerProvider>
   );
 }
