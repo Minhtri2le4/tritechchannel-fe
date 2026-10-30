@@ -8,6 +8,8 @@ import { assetUrl, formatDate, imgFallback } from '../lib/api';
 import { useCustomer } from '../context/CustomerContext';
 import AddressPicker from '../components/AddressPicker';
 import ReviewForm from '../components/ReviewForm';
+import CancelOrderSheet from '../components/CancelOrderSheet';
+import ProductCard from '../components/ProductCard';
 
 const ORDER_STATUS = {
   PENDING: ['Chờ xác nhận', 'bg-amber-100 text-amber-800'],
@@ -26,6 +28,8 @@ function Orders() {
   const { data: orders, loading, error, reload } = useFetch(() => shopApi.myOrders(), []);
   const [reviewing, setReviewing] = useState(null); // sản phẩm đang viết đánh giá
   const [thanks, setThanks] = useState(false);
+  const [cancelling, setCancelling] = useState(null); // đơn đang chọn lý do huỷ
+  const [cancelled, setCancelled] = useState('');
   if (loading && !orders) return <div className="flex justify-center py-10 text-gray-400"><Loader2 className="animate-spin" /></div>;
   if (error) return <p className="py-6 text-center text-sm text-red-600">{error.message}</p>;
   if (!orders?.length) {
@@ -41,6 +45,20 @@ function Orders() {
     <div className="space-y-3">
       {thanks && (
         <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">✅ Cảm ơn bạn đã đánh giá! Đánh giá đã hiện trên trang sản phẩm.</p>
+      )}
+      {cancelled && (
+        <p className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700">Đã huỷ đơn {cancelled}.</p>
+      )}
+      {cancelling && (
+        <CancelOrderSheet
+          order={cancelling}
+          onClose={() => setCancelling(null)}
+          onDone={() => {
+            setCancelled(cancelling.code);
+            setCancelling(null);
+            reload();
+          }}
+        />
       )}
       {reviewing && (
         <ReviewForm
@@ -99,6 +117,17 @@ function Orders() {
                 Thành tiền: <b className="text-base text-red-600">{vnd(o.total)}</b>
               </span>
             </div>
+            {/* Shop chưa xác nhận thì khách được tự huỷ (như Shopee) */}
+            {o.status === 'PENDING' && (
+              <div className="flex justify-end gap-2 border-t border-gray-100 px-3 py-2.5">
+                <a href="https://zalo.me/0325477841" target="_blank" rel="noreferrer" className="rounded-md border border-gray-300 px-4 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                  Liên hệ shop
+                </a>
+                <button type="button" onClick={() => setCancelling(o)} className="rounded-md border border-red-500 px-4 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50">
+                  Huỷ đơn hàng
+                </button>
+              </div>
+            )}
           </div>
         );
       })}
@@ -218,6 +247,38 @@ function Password({ customer, onSaved }) {
   );
 }
 
+// "Có thể bạn cũng thích" cuối trang Tài khoản (như Shopee): sản phẩm bán chạy, bấm Xem thêm để tải tiếp
+const SUGGEST_PAGE = 10;
+function Suggestions() {
+  const [limit, setLimit] = useState(SUGGEST_PAGE);
+  const { data: products, meta, loading } = useFetch(() => shopApi.products({ sort: 'best_selling', limit }), [limit]);
+  if (!products?.length) return null;
+  return (
+    <div className="pt-3">
+      <div className="mb-3 flex items-center gap-3">
+        <span className="h-px flex-1 bg-gray-300" />
+        <h2 className="text-sm md:text-base font-semibold text-gray-700">Có thể bạn cũng thích</h2>
+        <span className="h-px flex-1 bg-gray-300" />
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 md:gap-3">
+        {products.map((p) => <ProductCard key={p.id} product={p} />)}
+      </div>
+      {meta && meta.total > products.length && (
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => setLimit((n) => n + SUGGEST_PAGE)}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            {loading && <Loader2 size={14} className="animate-spin" />} Xem thêm
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const TABS = [
   ['orders', 'Đơn hàng của tôi', Package],
   ['profile', 'Thông tin & địa chỉ', UserRound],
@@ -303,6 +364,8 @@ export default function AccountPage() {
             {tab === 'password' && <Password customer={customer} onSaved={setCustomer} />}
           </div>
         </div>
+
+        <Suggestions />
       </div>
     </div>
   );
