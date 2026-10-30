@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Trash2, Plus, Minus, MapPin, QrCode,
-  ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2, Zap
+  ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2, Zap, X
 } from 'lucide-react';
 import { useCart } from '../context/CartContext'; // Dynamic import Context
 import { shopApi } from '../services/shop';
@@ -42,6 +42,8 @@ export default function CartPage() {
   const [editingItem, setEditingItem] = useState(null);
   const navigate = useNavigate();
   const [express, setExpress] = useState(false);
+  // Form sửa thông tin nhận hàng (như Shopee: thẻ địa chỉ gọn, bấm vào mới mở form)
+  const [addrOpen, setAddrOpen] = useState(false);
 
   // State gọi API
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -142,11 +144,13 @@ const [note, setNote] = useState('');
     return e;
   };
 
+  const contactReady = Object.keys(validate()).length === 0;
+
   const handlePlaceOrder = async () => {
     const found = validate();
     setErrors(found);
     if (Object.keys(found).length) {
-      document.getElementById('checkout-info')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setAddrOpen(true);
       return;
     }
     setSubmitting(true);
@@ -257,7 +261,7 @@ const [note, setNote] = useState('');
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen pb-12 pt-2 md:pt-4">
+    <div className="bg-gray-100 min-h-screen pb-24 lg:pb-12 pt-2 md:pt-4">
       <div className="max-w-[1200px] mx-auto px-2 sm:px-4">
 
         {/* Breadcrumb */}
@@ -401,115 +405,65 @@ const [note, setNote] = useState('');
               /* FORM ĐIỀN THÔNG TIN CHEKOUT */
               <div className="bg-white p-3.5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 space-y-5">
 
-                {/* 1. Thông tin khách hàng */}
+                {/* 1. Địa chỉ nhận hàng: thẻ gọn kiểu Shopee, bấm để sửa */}
+                <button
+                  type="button"
+                  id="checkout-info"
+                  onClick={() => setAddrOpen(true)}
+                  className={`w-full text-left rounded-xl border p-3 flex items-start gap-2.5 scroll-mt-24 transition-colors ${
+                    contactReady ? 'border-gray-200 hover:border-amber-400' : 'border-dashed border-red-300 bg-red-50/40 hover:border-red-400'
+                  }`}
+                >
+                  <MapPin size={18} className="text-red-500 shrink-0 mt-0.5" />
+                  {contactReady ? (
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm">
+                        <b className="text-gray-900">{fullName.trim()}</b>
+                        <span className="text-gray-500"> | {phone.trim()}</span>
+                      </span>
+                      <span className="block text-xs text-gray-600 mt-0.5 leading-relaxed">
+                        {deliveryMethod === 'home' ? formatAddress(addr) : `Nhận trực tiếp: ${bankInfo.storeAddress}`}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="flex-1 text-sm font-semibold text-red-600">Thêm thông tin nhận hàng (họ tên, số điện thoại, địa chỉ)</span>
+                  )}
+                  <ChevronRight size={18} className="text-gray-400 shrink-0 mt-0.5" />
+                </button>
+
+                {/* 2. Sản phẩm đặt mua */}
                 <div>
-                  <h3 id="checkout-info" className="font-bold text-xs sm:text-sm text-gray-900 mb-2.5 uppercase tracking-wide scroll-mt-24">
-                    Thông tin khách hàng
-                  </h3>
-                  <div className="flex gap-4 mb-2.5">
-                    {['Anh', 'Chị'].map((g) => (
-                      <label key={g} className="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
-                        <input
-                          type="radio"
-                          name="gender"
-                          checked={gender === g}
-                          onChange={() => setGender(g)}
-                          className="accent-amber-400"
-                        />
-                        {g}
-                      </label>
+                  <h3 className="font-bold text-xs sm:text-sm text-gray-900 mb-2 uppercase tracking-wide">Sản phẩm ({selectedItems.length})</h3>
+                  <div className="divide-y divide-gray-100 rounded-xl border border-gray-100">
+                    {selectedItems.map((i) => (
+                      <div key={`${i.id}-${i.color}`} className="flex items-center gap-3 p-2.5">
+                        <img src={assetUrl(i.image)} onError={imgFallback} alt="" className="w-14 h-14 rounded-lg border border-gray-100 bg-gray-50 object-contain shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm text-gray-800 line-clamp-1">{i.name}</p>
+                          {i.color && <p className="text-[11px] text-gray-500">Phân loại: {i.color}</p>}
+                          <p className="text-xs mt-0.5">
+                            <span className="font-bold text-red-600">{i.price.toLocaleString('vi-VN')}đ</span>
+                            {i.oldPrice > i.price && <span className="ml-1.5 text-[10px] text-gray-400 line-through">{i.oldPrice.toLocaleString('vi-VN')}đ</span>}
+                          </p>
+                        </div>
+                        <span className="text-xs text-gray-500 shrink-0">x{i.quantity}</span>
+                      </div>
                     ))}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                      <input
-                        type="text"
-                        autoComplete="name"
-                        placeholder="Họ và Tên (bắt buộc)"
-                        value={fullName}
-                        onChange={e => { setFullName(e.target.value); setErrors((er) => ({ ...er, fullName: undefined })); }}
-                        className={`w-full text-xs p-2.5 border rounded-lg outline-none focus:border-amber-400 ${errors.fullName ? 'border-red-400' : 'border-gray-200'}`}
-                      />
-                      {errors.fullName && <p className="text-[11px] text-red-600 mt-1">{errors.fullName}</p>}
-                    </div>
-                    <div>
-                      <input
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        placeholder="Số điện thoại (bắt buộc)"
-                        value={phone}
-                        onChange={e => { setPhone(e.target.value); setErrors((er) => ({ ...er, phone: undefined })); }}
-                        className={`w-full text-xs p-2.5 border rounded-lg outline-none focus:border-amber-400 ${errors.phone ? 'border-red-400' : 'border-gray-200'}`}
-                      />
-                      {errors.phone && <p className="text-[11px] text-red-600 mt-1">{errors.phone}</p>}
-                    </div>
-                  </div>
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    placeholder="Email (không bắt buộc)"
-                    value={email}
-                    onChange={e => { setEmail(e.target.value); setErrors((er) => ({ ...er, email: undefined })); }}
-                    className={`w-full text-xs p-2.5 border rounded-lg outline-none focus:border-amber-400 mt-2.5 ${errors.email ? 'border-red-400' : 'border-gray-200'}`}
-                  />
-                  {errors.email && <p className="text-[11px] text-red-600 mt-1">{errors.email}</p>}
                 </div>
 
-                {/* 2. Thông tin nhận hàng */}
+                {/* 3. Phương thức vận chuyển */}
                 <div>
-                  <h3 className="font-bold text-xs sm:text-sm text-gray-900 mb-2.5 uppercase tracking-wide">
-                    Thông tin nhận hàng
-                  </h3>
-                  <div className="flex flex-wrap gap-4 mb-2.5">
-                    <label className="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
-                      <input
-                        type="radio"
-                        name="delivery"
-                        checked={deliveryMethod === 'home'}
-                        onChange={() => setDeliveryMethod('home')}
-                        className="accent-amber-400"
-                      />
-                      Giao hàng tận nơi
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
-                      <input
-                        type="radio"
-                        name="delivery"
-                        checked={deliveryMethod === 'store'}
-                        onChange={() => setDeliveryMethod('store')}
-                        className="accent-amber-400"
-                      />
-                      Nhận trực tiếp tại Thanh Đa (Bình Thạnh)
-                    </label>
-                  </div>
-
+                  <h3 className="font-bold text-xs sm:text-sm text-gray-900 mb-2 uppercase tracking-wide">Phương thức vận chuyển</h3>
                   {deliveryMethod === 'store' ? (
-                    <div className="p-3 rounded-xl border border-amber-400 bg-amber-50/40 text-xs space-y-1">
-                      <p className="font-bold text-gray-900 flex items-center gap-1">
-                        <MapPin size={14} className="text-amber-600 shrink-0" /> Điểm nhận hàng trực tiếp:
-                      </p>
-                      <p className="text-gray-700 pl-5 font-medium leading-relaxed">{bankInfo.storeAddress}</p>
-                      <p className="text-gray-500 pl-5 leading-relaxed">
-                        TriTech bán hàng online, không có cửa hàng trưng bày. Vui lòng gọi/Zalo 0325 477 841 hẹn giờ trước khi qua nhận.
-                      </p>
+                    <div className="p-3 rounded-xl border border-emerald-300 bg-emerald-50/40 text-xs">
+                      <p className="font-bold text-gray-900">Nhận trực tiếp tại Thanh Đa – <span className="text-emerald-600">Miễn phí</span></p>
+                      <p className="text-gray-500 mt-0.5">Gọi/Zalo 0325 477 841 hẹn giờ trước khi qua nhận.</p>
                     </div>
                   ) : (
-                    <AddressPicker
-                      value={addr}
-                      errors={errors}
-                      onChange={(next) => {
-                        setAddr(next);
-                        setErrors((er) => ({ ...er, province: undefined, ward: undefined, street: undefined }));
-                      }}
-                    />
-                  )}
-
-                  {/* Hình thức giao: tiêu chuẩn (miễn phí) hoặc hỏa tốc nội thành TP.HCM */}
-                  {deliveryMethod === 'home' && (
-                    <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
-                      <label className={`flex cursor-pointer items-start gap-2 rounded-xl border p-2.5 text-xs ${!expressActive ? 'border-amber-400 bg-amber-50/40' : 'border-gray-200'}`}>
-                        <input type="radio" name="ship" checked={!expressActive} onChange={() => setExpress(false)} className="mt-0.5 accent-amber-400" />
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <label className={`flex cursor-pointer items-start gap-2 rounded-xl border p-2.5 text-xs ${!expressActive ? 'border-emerald-400 bg-emerald-50/40' : 'border-gray-200'}`}>
+                        <input type="radio" name="ship" checked={!expressActive} onChange={() => setExpress(false)} className="mt-0.5 accent-emerald-500" />
                         <span>
                           <span className="flex items-center gap-1 font-bold text-gray-900"><Truck size={13} /> Giao tiêu chuẩn</span>
                           <span className="text-emerald-600 font-semibold">Miễn phí</span> · toàn quốc
@@ -520,21 +474,22 @@ const [note, setNote] = useState('');
                         <span>
                           <span className="flex items-center gap-1 font-bold text-gray-900"><Zap size={13} className="text-red-500 fill-red-500" /> Giao hỏa tốc nội thành</span>
                           <span className="font-semibold text-red-600">+{EXPRESS_FEE.toLocaleString('vi-VN')}đ</span> · nhận trong ngày
-                          {!isHcm && <span className="block text-[10px] text-gray-500">Chỉ áp dụng khi chọn TP. Hồ Chí Minh</span>}
+                          {!isHcm && <span className="block text-[10px] text-gray-500">Chỉ áp dụng khi giao tới TP. Hồ Chí Minh</span>}
                         </span>
                       </label>
                     </div>
                   )}
+                </div>
 
-                  <div className="mt-2.5">
-                    <textarea
-                      rows={2}
-                      placeholder="Ghi chú thêm yêu cầu khác (nếu có)..."
-                      value={note}
-                      onChange={e => setNote(e.target.value)}
-                      className="w-full text-xs p-2.5 border border-gray-200 rounded-lg outline-none focus:border-amber-400"
-                    ></textarea>
-                  </div>
+                {/* 4. Lời nhắn cho Shop */}
+                <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2">
+                  <span className="text-xs sm:text-sm text-gray-700 shrink-0">Lời nhắn cho Shop</span>
+                  <input
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Để lại lời nhắn…"
+                    className="flex-1 min-w-0 text-right text-xs sm:text-sm outline-none placeholder:text-gray-400"
+                  />
                 </div>
 
                 {/* 3. Hình thức thanh toán */}
@@ -683,7 +638,7 @@ const [note, setNote] = useState('');
                 <button
                   disabled={selectedItems.length === 0}
                   onClick={() => setStep('checkout')}
-                  className="w-full bg-[#FFD400] hover:bg-amber-400 disabled:opacity-50 text-black font-black py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-[0.98] uppercase cursor-pointer"
+                  className="hidden lg:block w-full bg-[#FFD400] hover:bg-amber-400 disabled:opacity-50 text-black font-black py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-[0.98] uppercase cursor-pointer"
                 >
                   ĐẶT HÀNG NGAY ({selectedItems.length})
                 </button>
@@ -691,7 +646,7 @@ const [note, setNote] = useState('');
                 <button
                   onClick={handlePlaceOrder}
                   disabled={submitting || selectedItems.length === 0}
-                  className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-black py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-[0.98] uppercase cursor-pointer flex items-center justify-center gap-2"
+                  className="hidden lg:flex w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-black py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-[0.98] uppercase cursor-pointer items-center justify-center gap-2"
                 >
                   {submitting && <Loader2 size={16} className="animate-spin" />}
                   XÁC NHẬN ĐẶT HÀNG
@@ -709,6 +664,123 @@ const [note, setNote] = useState('');
         </div>
 
       </div>
+      {/* Form thông tin nhận hàng – trượt từ dưới lên trên điện thoại */}
+      {addrOpen && (
+        <div className="fixed inset-0 z-[80] flex items-end md:items-center justify-center bg-black/50" onClick={() => setAddrOpen(false)}>
+          <div className="sheet-up flex max-h-[92vh] w-full md:max-w-[560px] flex-col rounded-t-2xl md:rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+              <h2 className="font-bold text-gray-900">Thông tin nhận hàng</h2>
+              <button type="button" aria-label="Đóng" onClick={() => setAddrOpen(false)} className="p-1 text-gray-500 hover:text-black"><X size={22} /></button>
+            </div>
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              <div className="flex gap-4">
+                {['Anh', 'Chị'].map((g) => (
+                  <label key={g} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <input type="radio" name="gender" checked={gender === g} onChange={() => setGender(g)} className="accent-amber-400" /> {g}
+                  </label>
+                ))}
+              </div>
+              <div>
+                <input
+                  type="text" autoComplete="name" placeholder="Họ và tên"
+                  value={fullName}
+                  onChange={(e) => { setFullName(e.target.value); setErrors((er) => ({ ...er, fullName: undefined })); }}
+                  className={`w-full text-sm p-2.5 border rounded-lg outline-none focus:border-amber-400 ${errors.fullName ? 'border-red-400' : 'border-gray-200'}`}
+                />
+                {errors.fullName && <p className="text-[11px] text-red-600 mt-1">{errors.fullName}</p>}
+              </div>
+              <div>
+                <input
+                  type="tel" inputMode="tel" autoComplete="tel" placeholder="Số điện thoại"
+                  value={phone}
+                  onChange={(e) => { setPhone(e.target.value); setErrors((er) => ({ ...er, phone: undefined })); }}
+                  className={`w-full text-sm p-2.5 border rounded-lg outline-none focus:border-amber-400 ${errors.phone ? 'border-red-400' : 'border-gray-200'}`}
+                />
+                {errors.phone && <p className="text-[11px] text-red-600 mt-1">{errors.phone}</p>}
+              </div>
+              <div>
+                <input
+                  type="email" autoComplete="email" placeholder="Email (không bắt buộc)"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setErrors((er) => ({ ...er, email: undefined })); }}
+                  className={`w-full text-sm p-2.5 border rounded-lg outline-none focus:border-amber-400 ${errors.email ? 'border-red-400' : 'border-gray-200'}`}
+                />
+                {errors.email && <p className="text-[11px] text-red-600 mt-1">{errors.email}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {[['home', 'Giao tận nơi'], ['store', 'Nhận tại Thanh Đa']].map(([v, label]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setDeliveryMethod(v)}
+                    className={`rounded-lg border px-3 py-2 text-sm font-semibold ${deliveryMethod === v ? 'border-red-500 text-red-600 bg-red-50/40' : 'border-gray-200 text-gray-700'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {deliveryMethod === 'store' ? (
+                <p className="rounded-xl border border-amber-300 bg-amber-50/40 p-3 text-xs text-gray-700">
+                  <b>{bankInfo.storeAddress}</b>. TriTech bán online, không có cửa hàng trưng bày – vui lòng gọi/Zalo 0325 477 841 hẹn giờ trước khi qua nhận.
+                </p>
+              ) : (
+                <AddressPicker
+                  value={addr}
+                  errors={errors}
+                  onChange={(next) => {
+                    setAddr(next);
+                    setErrors((er) => ({ ...er, province: undefined, ward: undefined, street: undefined }));
+                  }}
+                />
+              )}
+            </div>
+            <div className="border-t border-gray-100 p-3" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const found = validate();
+                  setErrors(found);
+                  if (!Object.keys(found).length) setAddrOpen(false);
+                }}
+                className="h-11 w-full rounded-lg bg-red-600 text-sm font-bold uppercase text-white hover:bg-red-700"
+              >
+                Hoàn thành
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thanh tổng tiền + nút mua dính đáy màn hình trên điện thoại (như Shopee) */}
+      <div className="lg:hidden fixed inset-x-0 bottom-0 z-[60] flex items-center gap-3 border-t border-gray-200 bg-white pl-3" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex-1 min-w-0 text-right py-2">
+          <p className="text-xs text-gray-600">
+            Tổng cộng <b className="text-base text-red-600">{total.toLocaleString('vi-VN')}đ</b>
+          </p>
+          {discount > 0 && <p className="text-[11px] text-red-500">Tiết kiệm {discount.toLocaleString('vi-VN')}đ</p>}
+        </div>
+        {step === 'cart' ? (
+          <button
+            type="button"
+            disabled={selectedItems.length === 0}
+            onClick={() => { setStep('checkout'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            className="h-14 min-w-[130px] bg-red-600 px-4 text-sm font-bold text-white disabled:opacity-50"
+          >
+            Mua hàng ({selectedItems.length})
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handlePlaceOrder}
+            disabled={submitting || selectedItems.length === 0}
+            className="h-14 min-w-[130px] bg-red-600 px-4 text-sm font-bold text-white disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {submitting && <Loader2 size={16} className="animate-spin" />} Đặt hàng
+          </button>
+        )}
+      </div>
+
       {editingItem && (
         <CartOptionPicker
           item={editingItem}
