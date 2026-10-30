@@ -3,7 +3,8 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, RefreshCw, ShieldCheck, Ticket, FolderTree, Users,
   LogOut, Menu, X, ExternalLink, KeyRound, LayoutTemplate,
-  PartyPopper, Newspaper,
+  PartyPopper,
+  UserRound, Newspaper,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import ChangePasswordModal from './pages/ChangePasswordModal';
@@ -17,6 +18,7 @@ const NAV = [
       { to: '/admin/trade-ins', label: 'Thu cũ đổi mới', icon: RefreshCw },
       { to: '/admin/warranties', label: 'Bảo hành', icon: ShieldCheck },
       { to: '/admin/coupons', label: 'Mã giảm giá', icon: Ticket },
+      { to: '/admin/customers', label: 'Khách hàng', icon: UserRound },
     ],
   },
   {

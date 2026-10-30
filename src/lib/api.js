@@ -5,15 +5,21 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/ap
 const API_ORIGIN = new URL(API_URL).origin;
 
 export const ADMIN_TOKEN_KEY = 'tritech_admin_token';
+export const CUSTOMER_TOKEN_KEY = 'tritech_customer_token';
 
 export const api = axios.create({ baseURL: API_URL, timeout: 20000 });
 
-// Tự gắn token cho các API quản trị
+// Tự gắn token: API quản trị dùng token admin; tài khoản khách & đặt hàng dùng token khách (nếu đã đăng nhập)
 api.interceptors.request.use((config) => {
-  if (config.url?.startsWith('/admin')) {
-    const token = localStorage.getItem(ADMIN_TOKEN_KEY);
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+  const url = config.url || '';
+  let token = null;
+  try {
+    if (url.startsWith('/admin')) token = localStorage.getItem(ADMIN_TOKEN_KEY);
+    else if (url.startsWith('/customers/me') || url === '/orders') token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
+  } catch {
+    token = null;
   }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
@@ -33,6 +39,10 @@ api.interceptors.response.use(
     // Phiên admin hết hạn -> báo cho AdminAuth đăng xuất
     if (error.status === 401 && err.config?.url?.startsWith('/admin') && !err.config.url.includes('/auth/login')) {
       window.dispatchEvent(new Event('tritech:admin-unauthorized'));
+    }
+    // Phiên khách hết hạn -> CustomerContext đăng xuất
+    if (error.status === 401 && err.config?.url?.startsWith('/customers/me')) {
+      window.dispatchEvent(new Event('tritech:customer-unauthorized'));
     }
     return Promise.reject(error);
   },

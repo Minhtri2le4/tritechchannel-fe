@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { 
+import {
   Search, ShoppingBag, Grid3X3, Phone, ShieldCheck, Trash2, TrendingUp,
   Smartphone, Tablet, Percent, RefreshCw, Headphones, Speaker, Watch, Laptop, Home, Gift, Newspaper,
-  Headset, Wrench, Copy, Check, MessageCircle, ChevronDown
+  Headset, Wrench, Copy, Check, MessageCircle, ChevronDown, UserRound
 } from 'lucide-react';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import { useCart } from '../context/CartContext'; // Lấy hook Context
+import { useCustomer } from '../context/CustomerContext';
 import { OPEN_CATEGORY_MENU } from './MobileBottomNav';
 
 const iconMap = {
@@ -29,14 +30,15 @@ const iconMap = {
 export default function Header() {
   // Lấy dữ liệu giỏ hàng trực tiếp từ Context
   const { cartItems } = useCart();
-  
+  const { customer } = useCustomer();
+
   // Tính tổng số lượng item trong giỏ (tính cả thuộc tính quantity)
   const totalCartCount = cartItems ? cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0) : 0;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState(['iphone', 'samsung', 'macbook']);
-  
+
   // State quản lý Popover Hotline Liên Hệ
   const [showContact, setShowContact] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
@@ -158,13 +160,13 @@ export default function Header() {
       {/* Main Header Vàng */}
       <div className="bg-[#FFD400] px-2 md:px-4 py-2 relative z-50">
         <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-1.5 md:gap-4">
-          
+
           {/* Logo & Cụm DANH MỤC */}
           <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
             <Link to="/" className="flex items-center gap-1 hover:opacity-90 transition-opacity shrink-0">
-              <img 
-                src="/assets/logo.png" 
-                alt="TriTech Logo" 
+              <img
+                src="/assets/logo.png"
+                alt="TriTech Logo"
                 className="h-8 md:h-12 w-auto object-contain drop-shadow-sm"
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
@@ -191,7 +193,7 @@ export default function Header() {
                 onClick={() => setMenuOpen((o) => !o)}
                 className={`flex items-center gap-1 ${menuOpen ? 'bg-[#D4AF00]' : 'bg-[#E6BF00]'} text-black px-2 py-1.5 md:px-2.5 rounded-lg font-bold text-[10px] md:text-xs transition-colors cursor-pointer relative z-50`}
               >
-                <Grid3X3 size={14} className="md:w-4 md:h-4" /> 
+                <Grid3X3 size={14} className="md:w-4 md:h-4" />
                 <span className="hidden xs:inline sm:inline">DANH MỤC</span>
               </button>
 
@@ -201,8 +203,8 @@ export default function Header() {
                 <div className="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col p-2">
                   {sidebarCategories && sidebarCategories.map((cat) => {
                     // Xử lý điều hướng riêng cho mục Thu Cũ Đổi Mới (id = 4 hoặc theo tên)
-                    const categoryPath = cat.path || ((cat.id === 4 || cat.name?.toLowerCase().includes('thu cũ')) 
-                      ? '/thu-cu-doi-moi' 
+                    const categoryPath = cat.path || ((cat.id === 4 || cat.name?.toLowerCase().includes('thu cũ'))
+                      ? '/thu-cu-doi-moi'
                       : `/category/${cat.id}`);
 
                     return (
@@ -239,8 +241,8 @@ export default function Header() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-white text-black px-3 py-2 pr-8 rounded-lg text-xs outline-none shadow-inner focus:ring-2 focus:ring-black/20 transition-all"
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-black transition-colors"
               >
                 <Search size={15} />
@@ -272,8 +274,8 @@ export default function Header() {
                   <div className="p-3 border-b border-gray-100">
                     <div className="flex items-center justify-between text-gray-500 mb-2">
                       <span className="font-bold text-[11px]">Tìm kiếm gần đây</span>
-                      <button 
-                        onClick={clearHistory} 
+                      <button
+                        onClick={clearHistory}
                         className="flex items-center gap-1 hover:text-red-600 text-[10px] font-medium"
                       >
                         Xóa lịch sử <Trash2 size={11} />
@@ -301,7 +303,7 @@ export default function Header() {
                     <TrendingUp size={14} />
                     <span>Xu hướng tìm kiếm 🔥</span>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-2">
                     {trendingProducts.map((prod) => (
                       <div
@@ -312,9 +314,9 @@ export default function Header() {
                         }}
                         className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
                       >
-                        <img 
-                          onError={imgFallback} src={assetUrl(prod.image)} 
-                          alt={prod.name} 
+                        <img
+                          onError={imgFallback} src={assetUrl(prod.image)}
+                          alt={prod.name}
                           className="w-9 h-9 object-cover rounded-md border border-gray-100 shrink-0"
                         />
                         <div className="overflow-hidden">
@@ -336,10 +338,10 @@ export default function Header() {
 
           {/* Tiện ích */}
           <div className="flex items-center gap-1.5 md:gap-4 text-black text-xs font-bold shrink-0">
-            
+
             {/* HOTLINE */}
             <div className="hidden lg:block relative" ref={contactRef}>
-              <div 
+              <div
                 onClick={() => setShowContact(!showContact)}
                 className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity select-none py-1"
               >
@@ -369,8 +371,8 @@ export default function Header() {
 
                   <div className="space-y-2.5">
                     {contactList.map((item, idx) => (
-                      <div 
-                        key={idx} 
+                      <div
+                        key={idx}
                         className="p-2.5 rounded-xl bg-gray-50 hover:bg-yellow-50/70 border border-gray-200/80 hover:border-yellow-400 transition-all"
                       >
                         <div className="flex items-start justify-between mb-1">
@@ -385,8 +387,8 @@ export default function Header() {
 
                         <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-gray-200/60">
                           <div>
-                            <a 
-                              href={`tel:${item.rawPhone}`} 
+                            <a
+                              href={`tel:${item.rawPhone}`}
                               className="text-sm font-black text-gray-900 hover:text-amber-600 transition-colors tracking-wide"
                             >
                               {item.phone}
@@ -439,9 +441,28 @@ export default function Header() {
                </div>
             </Link>
 
+            {/* 👤 TÀI KHOẢN KHÁCH HÀNG */}
+            <Link
+              to={customer ? '/tai-khoan' : '/dang-nhap'}
+              title={customer ? 'Tài khoản của tôi' : 'Đăng nhập / Đăng ký'}
+              className="hidden md:flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+            >
+              {customer?.avatar ? (
+                <img src={customer.avatar} alt="" referrerPolicy="no-referrer" className="h-7 w-7 rounded-full object-cover border border-black/10" />
+              ) : (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/10">
+                  <UserRound size={16} />
+                </span>
+              )}
+              <div className="hidden lg:block leading-tight max-w-[90px]">
+                <p className="truncate">{customer ? customer.fullName.trim().split(/\s+/).pop() : 'Đăng nhập'}</p>
+                <p className="text-[9px] font-normal">{customer ? 'Tài khoản' : 'Đăng ký'}</p>
+              </div>
+            </Link>
+
             {/* 🛒 NÚT GIỎ HÀNG */}
-            <Link 
-              to="/cart" 
+            <Link
+              to="/cart"
               className="relative cursor-pointer flex items-center gap-1 bg-black text-white px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg hover:bg-gray-800 transition-colors"
             >
               <ShoppingBag size={16} className="text-[#FFD400]" />

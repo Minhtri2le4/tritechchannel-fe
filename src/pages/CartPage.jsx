@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Trash2, Plus, Minus, MapPin, QrCode, 
+import {
+  Trash2, Plus, Minus, MapPin, QrCode,
   ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2, Zap
 } from 'lucide-react';
 import { useCart } from '../context/CartContext'; // Dynamic import Context
@@ -11,6 +11,7 @@ import useSeo from '../hooks/useSeo';
 import AddressPicker from '../components/AddressPicker';
 import CartOptionPicker from '../components/CartOptionPicker';
 import SwipeRow from '../components/SwipeRow';
+import { useCustomer } from '../context/CustomerContext';
 
 // Giao hỏa tốc: chỉ trong TP. Hồ Chí Minh, cộng phí này (server tính lại khi đặt hàng)
 const HCM = 'Thành phố Hồ Chí Minh';
@@ -55,13 +56,25 @@ export default function CartPage() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [deliveryMethod, setDeliveryMethod] = useState('home'); 
+  const [deliveryMethod, setDeliveryMethod] = useState('home');
   const [addr, setAddr] = useState({ province: '', ward: '', street: '' });
   const [errors, setErrors] = useState({});
 const [note, setNote] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('bank'); 
+  const [paymentMethod, setPaymentMethod] = useState('bank');
   const [couponCode, setCouponCode] = useState('');
   const [copiedSTK, setCopiedSTK] = useState(false);
+
+  // Đã đăng nhập: tự điền thông tin & địa chỉ đã lưu (chỉ điền ô còn trống, 1 lần cho mỗi tài khoản)
+  const { customer, setCustomer } = useCustomer();
+  const [prefilledFor, setPrefilledFor] = useState(null);
+  if (customer && prefilledFor !== customer.id) {
+    setPrefilledFor(customer.id);
+    setFullName((v) => v || customer.fullName || '');
+    setPhone((v) => v || customer.phone || '');
+    setEmail((v) => v || customer.email || '');
+    if (customer.gender) setGender(customer.gender);
+    if (customer.address?.province) setAddr((a) => (a.province ? a : { ward: '', street: '', ...customer.address }));
+  }
 
   // Thông tin Chuyển khoản của Shop
   const bankInfo = {
@@ -158,6 +171,16 @@ const [note, setNote] = useState('');
       });
       setPlacedOrder(data);
       removeSelected();
+      // Lưu lại thông tin cho lần sau nếu tài khoản chưa có (không chặn khi lỗi)
+      if (customer && (!customer.phone || (!customer.address?.province && deliveryMethod === 'home'))) {
+        shopApi
+          .updateMe({
+            ...(customer.phone ? {} : { phone }),
+            ...(!customer.address?.province && deliveryMethod === 'home' ? { address: addr } : {}),
+          })
+          .then(({ data: me }) => setCustomer(me))
+          .catch(() => {});
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       // Lỗi dữ liệu từ server: hiện chi tiết từng trường
@@ -194,6 +217,15 @@ const [note, setNote] = useState('');
             </div>
           )}
           <p className="text-[11px] text-gray-500">TriTech sẽ gọi xác nhận qua SĐT <strong>{placedOrder.phone}</strong> trong ít phút.</p>
+          {customer ? (
+            <p className="text-[11px] text-gray-500">
+              Theo dõi đơn trong <Link to="/tai-khoan" className="font-semibold text-red-600 underline">Tài khoản của tôi</Link>
+            </p>
+          ) : (
+            <p className="text-[11px] text-gray-500">
+              <Link to="/dang-nhap?tab=register" className="font-semibold text-red-600 underline">Tạo tài khoản</Link> để lần sau đặt nhanh hơn và xem lại đơn hàng
+            </p>
+          )}
           <Link
             to="/"
             className="inline-block bg-[#FFD400] hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs uppercase transition-all shadow"
@@ -213,8 +245,8 @@ const [note, setNote] = useState('');
           <ShoppingBag size={64} className="mx-auto text-gray-300 mb-4" />
           <h2 className="text-lg font-bold text-gray-800 mb-1">Giỏ hàng của bạn đang trống</h2>
           <p className="text-xs text-gray-500 mb-6">Hãy chọn thêm sản phẩm để tiếp tục mua sắm nhé!</p>
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-block bg-[#FFD400] hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs uppercase transition-all shadow"
           >
             Quay lại trang chủ
@@ -227,13 +259,13 @@ const [note, setNote] = useState('');
   return (
     <div className="bg-gray-100 min-h-screen pb-12 pt-2 md:pt-4">
       <div className="max-w-[1200px] mx-auto px-2 sm:px-4">
-        
+
         {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-xs text-gray-500 mb-3 md:mb-4 overflow-x-auto whitespace-nowrap">
           <Link to="/" className="hover:text-black">Trang chủ</Link>
           <ChevronRight size={12} className="shrink-0" />
-          <span 
-            className={step === 'cart' ? 'font-bold text-black' : 'hover:text-black cursor-pointer'} 
+          <span
+            className={step === 'cart' ? 'font-bold text-black' : 'hover:text-black cursor-pointer'}
             onClick={() => setStep('cart')}
           >
             Giỏ hàng ({cartItems.length})
@@ -248,24 +280,24 @@ const [note, setNote] = useState('');
 
         {/* Layout Responsive */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
-          
+
           {/* CỘT BÊN TRÁI */}
           <div className="lg:col-span-8 space-y-3 md:space-y-4">
-            
+
             {step === 'cart' ? (
               <>
                 {/* Header Chọn tất cả */}
                 <div className="bg-white p-3 md:p-3.5 rounded-xl shadow-sm flex items-center justify-between text-xs font-medium">
                   <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input 
-                      type="checkbox" 
-                      checked={cartItems.length > 0 && cartItems.every((i) => i.selected)} 
+                    <input
+                      type="checkbox"
+                      checked={cartItems.length > 0 && cartItems.every((i) => i.selected)}
                       onChange={toggleSelectAll}
                       className="w-4 h-4 accent-amber-400 rounded cursor-pointer"
                     />
                     <span className="text-xs">Chọn tất cả ({cartItems.length} sản phẩm)</span>
                   </label>
-                  <button 
+                  <button
                     onClick={clearCart}
                     className="text-gray-400 hover:text-red-600 flex items-center gap-1 transition-colors text-xs"
                   >
@@ -281,8 +313,8 @@ const [note, setNote] = useState('');
                       onSimilar={() => navigate(`/product/${item.productId}#similar`)}
                     >
                     <div className="p-3 sm:p-4 flex items-start gap-2.5 sm:gap-4">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={item.selected}
                         onChange={() => toggleSelect(item.id, item.color)}
                         className="w-4 h-4 accent-amber-400 rounded cursor-pointer mt-1 sm:mt-2 shrink-0"
@@ -324,21 +356,21 @@ const [note, setNote] = useState('');
                         {/* Nút tăng giảm số lượng & Xóa */}
                         <div className="flex items-center justify-between mt-2.5 sm:mt-3 pt-2 border-t sm:border-t-0 border-gray-50">
                           <div className="flex items-center border border-gray-200 rounded-md bg-white">
-                            <button 
+                            <button
                               onClick={() => updateQuantity(item.id, item.color, -1)}
                               className="w-6 h-6 sm:w-7 sm:h-6 flex items-center justify-center text-gray-500 hover:bg-gray-100 active:bg-gray-200"
                             >
                               <Minus size={11} />
                             </button>
                             <span className="w-7 sm:w-8 text-center text-xs font-bold">{item.quantity}</span>
-                            <button 
+                            <button
                               onClick={() => updateQuantity(item.id, item.color, 1)}
                               className="w-6 h-6 sm:w-7 sm:h-6 flex items-center justify-center text-gray-500 hover:bg-gray-100 active:bg-gray-200"
                             >
                               <Plus size={11} />
                             </button>
                           </div>
-                          <button 
+                          <button
                             onClick={() => removeItem(item.id, item.color)}
                             className="text-gray-400 hover:text-red-500 p-1"
                           >
@@ -368,7 +400,7 @@ const [note, setNote] = useState('');
             ) : (
               /* FORM ĐIỀN THÔNG TIN CHEKOUT */
               <div className="bg-white p-3.5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 space-y-5">
-                
+
                 {/* 1. Thông tin khách hàng */}
                 <div>
                   <h3 id="checkout-info" className="font-bold text-xs sm:text-sm text-gray-900 mb-2.5 uppercase tracking-wide scroll-mt-24">
@@ -377,10 +409,10 @@ const [note, setNote] = useState('');
                   <div className="flex gap-4 mb-2.5">
                     {['Anh', 'Chị'].map((g) => (
                       <label key={g} className="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name="gender" 
-                          checked={gender === g} 
+                        <input
+                          type="radio"
+                          name="gender"
+                          checked={gender === g}
                           onChange={() => setGender(g)}
                           className="accent-amber-400"
                         />
@@ -431,20 +463,20 @@ const [note, setNote] = useState('');
                   </h3>
                   <div className="flex flex-wrap gap-4 mb-2.5">
                     <label className="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="delivery" 
-                        checked={deliveryMethod === 'home'} 
+                      <input
+                        type="radio"
+                        name="delivery"
+                        checked={deliveryMethod === 'home'}
                         onChange={() => setDeliveryMethod('home')}
                         className="accent-amber-400"
                       />
                       Giao hàng tận nơi
                     </label>
                     <label className="flex items-center gap-1.5 text-xs font-medium cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="delivery" 
-                        checked={deliveryMethod === 'store'} 
+                      <input
+                        type="radio"
+                        name="delivery"
+                        checked={deliveryMethod === 'store'}
                         onChange={() => setDeliveryMethod('store')}
                         className="accent-amber-400"
                       />
@@ -495,7 +527,7 @@ const [note, setNote] = useState('');
                   )}
 
                   <div className="mt-2.5">
-                    <textarea 
+                    <textarea
                       rows={2}
                       placeholder="Ghi chú thêm yêu cầu khác (nếu có)..."
                       value={note}
@@ -511,7 +543,7 @@ const [note, setNote] = useState('');
                     Hình thức thanh toán
                   </h3>
                   <div className="space-y-2">
-                    <div 
+                    <div
                       onClick={() => setPaymentMethod('bank')}
                       className={`p-3 rounded-xl border cursor-pointer transition-all ${
                         paymentMethod === 'bank' ? 'border-amber-400 bg-amber-50/30' : 'border-gray-200'
@@ -522,13 +554,13 @@ const [note, setNote] = useState('');
                         <QrCode size={16} className="text-amber-600 shrink-0" />
                         <span>Thanh toán chuyển khoản ngân hàng (Quét mã QR)</span>
                       </div>
-                      
+
                       {paymentMethod === 'bank' && (
                         <div className="mt-3 p-3 sm:p-3.5 bg-white border border-amber-200 rounded-xl text-xs flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4 items-center">
                           <div className="w-full sm:col-span-5 flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 rounded-xl">
-                            <img 
-                              src={qrUrl} 
-                              alt="Mã QR MB Bank" 
+                            <img
+                              src={qrUrl}
+                              alt="Mã QR MB Bank"
                               className="w-32 h-32 sm:w-36 sm:h-36 object-contain rounded-lg shadow-sm"
                             />
                             <p className="text-[10px] text-gray-500 font-semibold mt-1 text-center">Mở App Ngân hàng / Momo quét</p>
@@ -549,7 +581,7 @@ const [note, setNote] = useState('');
                                 <span className="font-extrabold text-red-600 text-sm tracking-wide">
                                   {bankInfo.accountNo}
                                 </span>
-                                <button 
+                                <button
                                   onClick={(e) => { e.stopPropagation(); handleCopySTK(); }}
                                   className="flex items-center gap-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-0.5 rounded border transition-colors shrink-0"
                                 >
@@ -566,7 +598,7 @@ const [note, setNote] = useState('');
                       )}
                     </div>
 
-                    <div 
+                    <div
                       onClick={() => setPaymentMethod('cod')}
                       className={`p-3 rounded-xl border cursor-pointer transition-all ${
                         paymentMethod === 'cod' ? 'border-amber-400 bg-amber-50/30' : 'border-gray-200'
@@ -589,11 +621,11 @@ const [note, setNote] = useState('');
           {/* CỘT BÊN PHẢI: TÓM TẮT ĐƠN HÀNG */}
           <div className="lg:col-span-4">
             <div className="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-gray-100 lg:sticky lg:top-20 space-y-3.5">
-              
+
               <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  placeholder="NHẬP MÃ GIẢM GIÁ" 
+                <input
+                  type="text"
+                  placeholder="NHẬP MÃ GIẢM GIÁ"
                   value={couponCode}
                   onChange={e => setCouponCode(e.target.value)}
                   className="flex-1 min-w-0 text-[11px] sm:text-xs px-2.5 py-2 border border-gray-200 rounded-lg outline-none focus:border-amber-400 uppercase"
@@ -648,7 +680,7 @@ const [note, setNote] = useState('');
               </div>
 
               {step === 'cart' ? (
-                <button 
+                <button
                   disabled={selectedItems.length === 0}
                   onClick={() => setStep('checkout')}
                   className="w-full bg-[#FFD400] hover:bg-amber-400 disabled:opacity-50 text-black font-black py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-[0.98] uppercase cursor-pointer"

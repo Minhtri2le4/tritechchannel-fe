@@ -19,6 +19,17 @@ export const shopApi = {
 
   // Banner, video review trang chủ chỉnh trong admin (null = chưa cấu hình, dùng mặc định)
   homeSettings: () => api.get('/settings/home'),
+
+  // Tài khoản khách hàng
+  customerConfig: () => api.get('/customers/config'),
+  register: (body) => api.post('/customers/register', body),
+  login: (body) => api.post('/customers/login', body),
+  loginGoogle: (credential) => api.post('/customers/google', { credential }),
+  loginFacebook: (accessToken) => api.post('/customers/facebook', { accessToken }),
+  me: () => api.get('/customers/me'),
+  updateMe: (body) => api.patch('/customers/me', body),
+  changeMyPassword: (body) => api.post('/customers/me/password', body),
+  myOrders: () => api.get('/customers/me/orders'),
   // Chương trình khuyến mãi đang chạy (Halloween, 11.11…)
   campaigns: () => api.get('/settings/campaigns'),
 
