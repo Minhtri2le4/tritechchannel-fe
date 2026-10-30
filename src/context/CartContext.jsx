@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
+import { optionPrice } from '../lib/price';
 
 const CartContext = createContext();
 
@@ -45,8 +46,8 @@ export const CartProvider = ({ children }) => {
           variantId: variant?.id ?? null,
           variantLabel: variant?.label ?? '',
           name: variant ? `${product.name} (${variant.label})` : product.name,
-          price: variant?.price ?? product.price,
-          oldPrice: (variant ? variant.originalPrice : product.originalPrice) || null,
+          price: optionPrice(product, variant, color).price,
+          oldPrice: optionPrice(product, variant, color).originalPrice,
           image: product.image || product.images?.[0] || '',
           color,
           quantity,
@@ -73,8 +74,8 @@ export const CartProvider = ({ children }) => {
         variantId: variant?.id ?? null,
         variantLabel: variant?.label ?? '',
         name: variant ? `${product.name} (${variant.label})` : product.name,
-        price: variant?.price ?? product.price,
-        oldPrice: (variant ? variant.originalPrice : product.originalPrice) || null,
+        price: optionPrice(product, variant, color).price,
+        oldPrice: optionPrice(product, variant, color).originalPrice,
         image: product.colors?.find((c) => c.name === color)?.image || product.image || prev[idx].image,
         color,
         quantity,
