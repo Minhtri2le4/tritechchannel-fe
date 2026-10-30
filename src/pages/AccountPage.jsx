@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { KeyRound, Loader2, LogOut, Package, UserRound } from 'lucide-react';
+import { Camera, KeyRound, Loader2, LogOut, Package, Star, UserRound } from 'lucide-react';
 import useSeo from '../hooks/useSeo';
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
 import { assetUrl, formatDate, imgFallback } from '../lib/api';
 import { useCustomer } from '../context/CustomerContext';
 import AddressPicker from '../components/AddressPicker';
+import ReviewForm from '../components/ReviewForm';
 
 const ORDER_STATUS = {
   PENDING: ['Chờ xác nhận', 'bg-amber-100 text-amber-800'],
@@ -22,7 +23,9 @@ const fieldErrors = (err) =>
   Object.fromEntries((err.details || []).map((d) => [String(d.field).replace(/^body\./, ''), d.message]));
 
 function Orders() {
-  const { data: orders, loading, error } = useFetch(() => shopApi.myOrders(), []);
+  const { data: orders, loading, error, reload } = useFetch(() => shopApi.myOrders(), []);
+  const [reviewing, setReviewing] = useState(null); // sản phẩm đang viết đánh giá
+  const [thanks, setThanks] = useState(false);
   if (loading && !orders) return <div className="flex justify-center py-10 text-gray-400"><Loader2 className="animate-spin" /></div>;
   if (error) return <p className="py-6 text-center text-sm text-red-600">{error.message}</p>;
   if (!orders?.length) {
@@ -36,6 +39,20 @@ function Orders() {
   }
   return (
     <div className="space-y-3">
+      {thanks && (
+        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">✅ Cảm ơn bạn đã đánh giá! Đánh giá đã hiện trên trang sản phẩm.</p>
+      )}
+      {reviewing && (
+        <ReviewForm
+          item={reviewing}
+          onClose={() => setReviewing(null)}
+          onDone={() => {
+            setReviewing(null);
+            setThanks(true);
+            reload();
+          }}
+        />
+      )}
       {orders.map((o) => {
         const [label, badge] = ORDER_STATUS[o.status] || [o.status, 'bg-gray-100'];
         return (
@@ -48,16 +65,29 @@ function Orders() {
             </div>
             <div className="divide-y divide-gray-100">
               {o.items.map((it) => (
-                <Link key={it.id} to={`/product/${it.productId}`} className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50">
-                  <img src={assetUrl(it.image)} onError={imgFallback} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
-                  <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm text-gray-800">{it.productName}</p>
-                    <p className="text-xs text-gray-500">
-                      {[it.color, it.variantLabel].filter(Boolean).join(', ')} {it.quantity > 1 && `x${it.quantity}`}
-                    </p>
+                <div key={it.id} className="flex items-center gap-3 px-3 py-2.5">
+                  <Link to={`/product/${it.productId}`} className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80">
+                    <img src={assetUrl(it.image)} onError={imgFallback} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 text-sm text-gray-800">{it.productName}</p>
+                      <p className="text-xs text-gray-500">
+                        {[it.color, it.variantLabel].filter(Boolean).join(', ')} {it.quantity > 1 && `x${it.quantity}`}
+                      </p>
+                    </div>
+                  </Link>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <span className="text-sm font-semibold text-gray-900">{vnd(it.lineTotal)}</span>
+                    {o.status === 'COMPLETED' && it.productId && (
+                      it.reviewed ? (
+                        <span className="flex items-center gap-1 text-[11px] text-emerald-600"><Star size={12} className="fill-emerald-500 text-emerald-500" /> Đã đánh giá</span>
+                      ) : (
+                        <button type="button" onClick={() => setReviewing(it)} className="rounded-md bg-red-600 px-3 py-1 text-xs font-bold text-white hover:bg-red-700">
+                          Đánh giá
+                        </button>
+                      )
+                    )}
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">{vnd(it.lineTotal)}</span>
-                </Link>
+                </div>
               ))}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-3 py-2.5 text-xs text-gray-600">
@@ -199,9 +229,27 @@ export default function AccountPage() {
   useSeo({ title: 'Tài khoản của tôi', noindex: true });
   const { customer, loading, logout, setCustomer } = useCustomer();
   const [tab, setTab] = useState('orders');
+  const avatarRef = useRef(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
 
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center text-gray-400"><Loader2 className="animate-spin" /></div>;
   if (!customer) return <Navigate to="/dang-nhap?next=/tai-khoan" replace />;
+
+  const changeAvatar = async (file) => {
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp|heic)$/.test(file.type)) return alert('Chỉ nhận ảnh JPG, PNG, WEBP');
+    if (file.size > 3 * 1024 * 1024) return alert('Ảnh tối đa 3MB');
+    setAvatarBusy(true);
+    try {
+      const { data } = await shopApi.uploadAvatar(file);
+      setCustomer(data);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setAvatarBusy(false);
+      if (avatarRef.current) avatarRef.current.value = '';
+    }
+  };
 
   const methods = [customer.hasPassword && customer.phone && 'Số điện thoại', customer.googleLinked && 'Google', customer.facebookLinked && 'Facebook'].filter(Boolean);
 
@@ -209,13 +257,24 @@ export default function AccountPage() {
     <div className="bg-gray-100 px-2 py-4 md:px-4 min-h-[70vh]">
       <div className="mx-auto max-w-[1000px] space-y-3">
         <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4">
-          {customer.avatar ? (
-            <img src={customer.avatar} alt="" referrerPolicy="no-referrer" className="h-14 w-14 rounded-full object-cover" />
-          ) : (
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FFD400] text-xl font-black text-black">
-              {customer.fullName.trim().split(/\s+/).pop()?.[0]?.toUpperCase()}
+          <button
+            type="button"
+            title="Đổi ảnh đại diện"
+            onClick={() => avatarRef.current?.click()}
+            className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-full"
+          >
+            {customer.avatar ? (
+              <img src={assetUrl(customer.avatar)} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center bg-[#FFD400] text-xl font-black text-black">
+                {customer.fullName.trim().split(/\s+/).pop()?.[0]?.toUpperCase()}
+              </span>
+            )}
+            <span className={`absolute inset-x-0 bottom-0 flex h-5 items-center justify-center bg-black/55 text-white ${avatarBusy ? '' : 'opacity-80 group-hover:opacity-100'}`}>
+              {avatarBusy ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
             </span>
-          )}
+            <input ref={avatarRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" hidden onChange={(e) => changeAvatar(e.target.files?.[0])} />
+          </button>
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-bold text-gray-900">{customer.fullName}</p>
             <p className="text-xs text-gray-500">{customer.phone || 'Chưa có số điện thoại'}{methods.length > 0 && ` · Đăng nhập bằng ${methods.join(', ')}`}</p>

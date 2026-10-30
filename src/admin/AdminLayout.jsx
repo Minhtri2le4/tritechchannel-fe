@@ -4,7 +4,8 @@ import {
   LayoutDashboard, Package, ShoppingCart, RefreshCw, ShieldCheck, Ticket, FolderTree, Users,
   LogOut, Menu, X, ExternalLink, KeyRound, LayoutTemplate,
   PartyPopper,
-  UserRound, Newspaper,
+  UserRound,
+  MessageSquareText, Newspaper,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import ChangePasswordModal from './pages/ChangePasswordModal';
@@ -26,6 +27,7 @@ const NAV = [
     items: [
       { to: '/admin/products', label: 'Sản phẩm', icon: Package },
       { to: '/admin/categories', label: 'Danh mục', icon: FolderTree },
+      { to: '/admin/reviews', label: 'Đánh giá', icon: MessageSquareText },
     ],
   },
   {

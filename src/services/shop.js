@@ -32,6 +32,28 @@ export const shopApi = {
   updateMe: (body) => api.patch('/customers/me', body),
   changeMyPassword: (body) => api.post('/customers/me/password', body),
   myOrders: () => api.get('/customers/me/orders'),
+  uploadAvatar: (file) => {
+    const body = new FormData();
+    body.append('file', file);
+    return api.post('/customers/me/avatar', body);
+  },
+  uploadReviewImages: (files) => {
+    const body = new FormData();
+    [...files].forEach((f) => body.append('files', f));
+    return api.post('/customers/me/uploads', body);
+  },
+  uploadReviewVideo: (file, onProgress) => {
+    const body = new FormData();
+    body.append('file', file);
+    return api.post('/customers/me/uploads/video', body, {
+      timeout: 0,
+      onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
+    });
+  },
+
+  // Đánh giá sản phẩm
+  reviews: (params) => api.get('/reviews', { params }),
+  createReview: (body) => api.post('/reviews', body),
   // Chương trình khuyến mãi đang chạy (Halloween, 11.11…)
   campaigns: () => api.get('/settings/campaigns'),
 
