@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard.jsx';
 import QuickCategories from '../components/QuickCategories';
 import CampaignSection from '../components/CampaignSection';
-import Reveal from '../components/Reveal';
+import DealerCards from '../components/DealerCards';
 import { Link, useNavigate } from 'react-router-dom';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
@@ -41,60 +41,6 @@ const iconMap = {
   Gift: <Gift size={16} />,
   Newspaper: <Newspaper size={16} />,
 };
-
-const ecomStores = [
-  {
-    id: 'shopee',
-    name: 'tritechchannel',
-    platform: 'Shopee Mall',
-    shopBadge: 'SHOP YÊU THÍCH',
-    badgeColor: 'bg-[#ee4d2d]',
-    rating: '4.8',
-    sold: '5K',
-    response: '99%',
-    borderColor: 'border-orange-200 hover:border-[#ee4d2d]',
-    shadowHover: 'hover:shadow-[0_20px_40px_-15px_rgba(238,77,45,0.35)]',
-    glowBg: 'from-orange-500/5 to-transparent',
-    buttonHover: 'group-hover:bg-[#ee4d2d] group-hover:text-white group-hover:border-[#ee4d2d]',
-    buttonText: 'Vào Shop Shopee Mall',
-    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRO6mQ4kh8Ms7cBHu9ViJWVSBGpAinimxpxZMkVW6FnlFCvcS7-pWAU-ts2&s=10',
-    link: 'https://shopee.vn/tritechchannel?entryPoint=ShopBySearch&searchKeyword=tritech%20channel'
-  },
-  {
-    id: 'tiktok',
-    name: 'tritechchannel',
-    platform: 'TikTok Shop',
-    shopBadge: 'shop yêu thích',
-    badgeColor: 'bg-black',
-    rating: '4.8',
-    sold: '3K',
-    response: '95%',
-    borderColor: 'border-gray-200 hover:border-black',
-    shadowHover: 'hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)]',
-    glowBg: 'from-black/5 to-transparent',
-    buttonHover: 'group-hover:bg-black group-hover:text-white group-hover:border-black',
-    buttonText: 'Vào Shop TikTok Shop',
-    logo: 'https://img.icons8.com/color/150/tiktok--v1.png',
-    link: 'https://vt.tiktok.com/ZS4C18NFe/?page=TikTokShop'
-  },
-  {
-    id: 'lazada',
-    name: 'tritechchannel',
-    platform: 'LazMall',
-    shopBadge: 'GIAN HÀNG TỐT',
-    badgeColor: 'bg-[#0f136d]',
-    rating: '5.0',
-    sold: '2K',
-    response: '98%',
-    borderColor: 'border-blue-100 hover:border-[#0f136d]',
-    shadowHover: 'hover:shadow-[0_20px_40px_-15px_rgba(15,19,109,0.3)]',
-    glowBg: 'from-blue-600/5 to-transparent',
-    buttonHover: 'group-hover:bg-[#0f136d] group-hover:text-white group-hover:border-[#0f136d]',
-    buttonText: 'Vào Shop LazMall',
-    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT5dSLzULR90j-8hJJkUTbJk-dejrZdf8FGDWvenMYK1m3-xzC75mXff8A&s=10',
-    link: 'https://www.lazada.vn/shop/tritechchannel'
-  }
-];
 
 export default function HomePage() {
   useSeo();
@@ -291,39 +237,7 @@ export default function HomePage() {
               <span className="w-1.5 h-6 bg-red-600 rounded-sm"></span> ĐẠI LÝ ỦY QUYỀN CHÍNH HÃNG
             </h2>
           </div>
-          <Reveal>
-          <div ref={storesRef} className="flex md:grid md:grid-cols-3 gap-6 md:gap-8 pt-10 pb-8 pl-8 pr-6 md:px-6 md:overflow-visible overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
-            {ecomStores.map((store, idx) => (
-              <a key={store.id} href={store.link} target="_blank" rel="noopener noreferrer" style={{ '--reveal-delay': `${idx * 140}ms` }} className={`reveal-item w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center relative block rounded-[20px] p-6 pb-5 bg-[#FAFAFA] border-2 ${store.borderColor} shadow-sm ${store.shadowHover} transform group-hover:-translate-y-2 group-hover:scale-[1.02] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-10 hover:z-20 group`}>
-                <div className="absolute -top-8 -left-5 md:-left-6 w-[76px] h-[76px] bg-white rounded-full flex items-center justify-center shadow-lg border border-gray-100 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500 z-30">
-                  <img src={store.logo} alt={store.platform} className="w-[46px] h-[46px] object-contain" />
-                </div>
-                <div className="relative z-20">
-                  <div className="ml-14 mb-4 mt-1">
-                    <span className={`inline-block ${store.badgeColor} text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider mb-1 shadow-sm`}>{store.shopBadge}</span>
-                    <h3 className="text-xl font-black text-gray-900 tracking-tight leading-none group-hover:text-black">{store.name}</h3>
-                  </div>
-                  <div className="bg-white rounded-xl p-3.5 flex items-center justify-between shadow-sm border border-gray-100 group-hover:shadow-md transition-shadow mb-5">
-                    <div className="flex flex-col items-center flex-1">
-                      <span className="text-[13px] md:text-sm font-black text-black flex items-center gap-1">{store.rating} <Star size={12} className="text-yellow-400 fill-yellow-400 -mt-0.5" /></span>
-                      <span className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase mt-1">Đánh giá</span>
-                    </div>
-                    <div className="w-px h-8 bg-gray-100"></div>
-                    <div className="flex flex-col items-center flex-1">
-                      <span className="text-[13px] md:text-sm font-black text-red-600">{store.sold}</span>
-                      <span className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase mt-1">Đã bán</span>
-                    </div>
-                    <div className="w-px h-8 bg-gray-100"></div>
-                    <div className="flex flex-col items-center flex-1">
-                      <span className="text-[13px] md:text-sm font-black text-black">{store.response}</span>
-                      <span className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase mt-1">Phản hồi</span>
-                    </div>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-          </Reveal>
+          <DealerCards scrollRef={storesRef} />
         </div>
 
         {/* CHƯƠNG TRÌNH KHUYẾN MÃI (Admin → Chương trình khuyến mãi) */}

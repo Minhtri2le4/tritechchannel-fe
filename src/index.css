@@ -82,17 +82,6 @@ div, button, input {
   .cat-tile .cat-splash { animation: none; }
 }
 
-/* Khung "hiện khi kéo tới" (Reveal.jsx): các .reveal-item nảy ra lần lượt như domino */
-.reveal .reveal-item {
-  opacity: 0;
-}
-.reveal.is-visible .reveal-item {
-  opacity: 1;
-  animation: cat-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-  animation-delay: var(--reveal-delay, 0ms);
-  transform-origin: 50% 100%;
-}
-
 /* Đổi trang: nội dung mới hiện dần. Chỉ đổi độ mờ (không dùng transform) để các thanh/khung
    position: fixed bên trong trang (thanh mua hàng, bảng chọn phân loại) không bị lệch. */
 .page-enter {
@@ -103,5 +92,59 @@ div, button, input {
   to { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .reveal.is-visible .reveal-item { animation-name: cat-fade; animation-timing-function: ease-out; }
+}
+
+/* Đại lý ủy quyền (DealerCards.jsx): thẻ bay vào & lật 3D như chia bài, logo bật xoay, vệt sáng lướt qua */
+.dealers .deal-card {
+  opacity: 0;
+}
+.dealers.is-visible .deal-card {
+  opacity: 1;
+  animation: deal-in 0.9s cubic-bezier(0.22, 1.2, 0.36, 1) backwards;
+  animation-delay: var(--deal-delay, 0ms);
+  transform-origin: 50% 100%;
+}
+@keyframes deal-in {
+  0% { opacity: 0; transform: translate3d(-60px, 140px, 0) rotateZ(-16deg) rotateY(75deg) scale(0.8); }
+  55% { opacity: 1; }
+  100% { opacity: 1; transform: none; }
+}
+.dealers.is-visible .dealer-logo {
+  animation: logo-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--deal-delay, 0ms) + 450ms);
+}
+@keyframes logo-pop {
+  from { transform: scale(0) rotate(-180deg); }
+  to { transform: none; }
+}
+.dealer-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.dealers.is-visible .dealer-sheen {
+  animation: sheen 1.1s ease-out backwards;
+  animation-delay: calc(var(--deal-delay, 0ms) + 800ms);
+}
+.dealer-tilt:hover .dealer-sheen {
+  animation: sheen 0.9s ease-out;
+}
+@keyframes sheen {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(120%); }
+}
+/* Nghiêng 3D theo chuột – biến --rx/--ry do DealerCards đặt */
+.dealer-tilt {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.25s ease-out, box-shadow 0.3s;
+}
+.dealer-tilt:hover {
+  box-shadow: 0 22px 45px -18px var(--brand), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dealers.is-visible .deal-card { animation-name: cat-fade; animation-timing-function: ease-out; }
+  .dealers.is-visible .dealer-logo, .dealers.is-visible .dealer-sheen, .dealer-tilt:hover .dealer-sheen { animation: none; }
+  .dealer-tilt { transform: none; }
 }
