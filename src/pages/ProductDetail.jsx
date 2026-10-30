@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   ShieldCheck, Truck, MapPin, CheckCircle, ChevronRight, ShoppingCart, Zap, Check, Loader2,
@@ -60,6 +60,13 @@ function ProductDetailView({ productData }) {
   // Bảng chọn phân loại: 'cart' | 'buy' | null. Bấm "Thêm vào giỏ" ở thẻ sản phẩm ngoài danh sách thì mở sẵn
   const [sheetMode, setSheetMode] = useState(() => (location.state?.pick && hasOptions ? 'cart' : null));
   const [pickHint, setPickHint] = useState(false);
+
+  // Từ giỏ hàng vuốt chọn "Sản phẩm tương tự" -> cuộn xuống mục đó
+  useEffect(() => {
+    if (location.hash !== '#similar') return;
+    const t = setTimeout(() => document.getElementById('similar')?.scrollIntoView({ behavior: 'smooth' }), 300);
+    return () => clearTimeout(t);
+  }, [location.hash]);
   const [activeImage, setActiveImage] = useState(assetUrl(productData.image));
   const [showNotification, setShowNotification] = useState(false);
 
@@ -466,7 +473,7 @@ function ProductDetailView({ productData }) {
 
         {/* Sản phẩm cùng danh mục */}
         {productData.related?.length > 0 && (
-          <div className="mt-6">
+          <div id="similar" className="mt-6 scroll-mt-24">
             <h2 className="text-base md:text-lg font-black text-gray-900 mb-3 uppercase">Sản phẩm tương tự</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
               {productData.related.map((p) => (

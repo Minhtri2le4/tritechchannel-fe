@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Trash2, Plus, Minus, MapPin, QrCode, 
-  ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2
+  ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2, Zap
 } from 'lucide-react';
 import { useCart } from '../context/CartContext'; // Dynamic import Context
 import { shopApi } from '../services/shop';
@@ -10,6 +10,11 @@ import { assetUrl, imgFallback } from '../lib/api';
 import useSeo from '../hooks/useSeo';
 import AddressPicker from '../components/AddressPicker';
 import CartOptionPicker from '../components/CartOptionPicker';
+import SwipeRow from '../components/SwipeRow';
+
+// Giao hỏa tốc: chỉ trong TP. Hồ Chí Minh, cộng phí này (server tính lại khi đặt hàng)
+const HCM = 'Thành phố Hồ Chí Minh';
+const EXPRESS_FEE = 30000;
 import { formatAddress } from '../lib/address';
 
 // Tính tiền giảm theo mã đã áp dụng (server sẽ tính lại khi đặt hàng)
@@ -34,6 +39,8 @@ export default function CartPage() {
   } = useCart();
   // Món đang đổi phân loại (mở bảng chọn như Shopee)
   const [editingItem, setEditingItem] = useState(null);
+  const navigate = useNavigate();
+  const [express, setExpress] = useState(false);
 
   // State gọi API
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -75,7 +82,10 @@ const [note, setNote] = useState('');
   const subTotal = selectedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const discount = calcCouponDiscount(appliedCoupon, subTotal);
   const couponBelowMin = appliedCoupon && subTotal < appliedCoupon.minOrder;
-  const total = subTotal - discount;
+  const isHcm = deliveryMethod === 'home' && addr.province === HCM;
+  const expressActive = express && isHcm;
+  const shippingFee = expressActive ? EXPRESS_FEE : 0;
+  const total = subTotal - discount + shippingFee;
 
   // QR VietQR MB Bank
   const buildQrUrl = (amount, content) =>
@@ -135,6 +145,7 @@ const [note, setNote] = useState('');
         email,
         deliveryMethod: deliveryMethod === 'home' ? 'HOME' : 'STORE',
         address: deliveryMethod === 'home' ? formatAddress(addr) : undefined,
+        express: expressActive,
         note,
         paymentMethod: paymentMethod === 'bank' ? 'BANK' : 'COD',
         couponCode: appliedCoupon && !couponBelowMin ? appliedCoupon.code : undefined,
@@ -265,6 +276,10 @@ const [note, setNote] = useState('');
                 {/* Danh sách Item Dùng dữ liệu thật từ Context */}
                 {cartItems.map((item, idx) => (
                   <div key={`${item.id}-${item.color}-${idx}`} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+                    <SwipeRow
+                      onDelete={() => removeItem(item.id, item.color)}
+                      onSimilar={() => navigate(`/product/${item.productId}#similar`)}
+                    >
                     <div className="p-3 sm:p-4 flex items-start gap-2.5 sm:gap-4">
                       <input 
                         type="checkbox" 
@@ -332,6 +347,7 @@ const [note, setNote] = useState('');
                         </div>
                       </div>
                     </div>
+                    </SwipeRow>
 
                     {/* Khung Ưu đãi */}
                     {item.perks && item.perks.length > 0 && (
@@ -455,6 +471,27 @@ const [note, setNote] = useState('');
                         setErrors((er) => ({ ...er, province: undefined, ward: undefined, street: undefined }));
                       }}
                     />
+                  )}
+
+                  {/* Hình thức giao: tiêu chuẩn (miễn phí) hoặc hỏa tốc nội thành TP.HCM */}
+                  {deliveryMethod === 'home' && (
+                    <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+                      <label className={`flex cursor-pointer items-start gap-2 rounded-xl border p-2.5 text-xs ${!expressActive ? 'border-amber-400 bg-amber-50/40' : 'border-gray-200'}`}>
+                        <input type="radio" name="ship" checked={!expressActive} onChange={() => setExpress(false)} className="mt-0.5 accent-amber-400" />
+                        <span>
+                          <span className="flex items-center gap-1 font-bold text-gray-900"><Truck size={13} /> Giao tiêu chuẩn</span>
+                          <span className="text-emerald-600 font-semibold">Miễn phí</span> · toàn quốc
+                        </span>
+                      </label>
+                      <label className={`flex items-start gap-2 rounded-xl border p-2.5 text-xs ${isHcm ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${expressActive ? 'border-red-400 bg-red-50/50' : 'border-gray-200'}`}>
+                        <input type="radio" name="ship" disabled={!isHcm} checked={expressActive} onChange={() => setExpress(true)} className="mt-0.5 accent-red-500" />
+                        <span>
+                          <span className="flex items-center gap-1 font-bold text-gray-900"><Zap size={13} className="text-red-500 fill-red-500" /> Giao hỏa tốc nội thành</span>
+                          <span className="font-semibold text-red-600">+{EXPRESS_FEE.toLocaleString('vi-VN')}đ</span> · nhận trong ngày
+                          {!isHcm && <span className="block text-[10px] text-gray-500">Chỉ áp dụng khi chọn TP. Hồ Chí Minh</span>}
+                        </span>
+                      </label>
+                    </div>
                   )}
 
                   <div className="mt-2.5">
@@ -593,8 +630,12 @@ const [note, setNote] = useState('');
                     </div>
                   )}
                   <div className="flex justify-between text-gray-600">
-                    <span>Phí vận chuyển:</span>
-                    <span className="text-emerald-600 font-bold">Miễn phí</span>
+                    <span>Phí vận chuyển{expressActive ? ' (hỏa tốc)' : ''}:</span>
+                    {shippingFee > 0 ? (
+                      <span className="font-bold text-gray-900">{shippingFee.toLocaleString('vi-VN')}đ</span>
+                    ) : (
+                      <span className="text-emerald-600 font-bold">Miễn phí</span>
+                    )}
                   </div>
                 </div>
 
