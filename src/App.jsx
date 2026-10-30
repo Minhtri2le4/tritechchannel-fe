@@ -28,6 +28,7 @@ import MobileBottomNav from './components/MobileBottomNav';
 import VoucherPopup from './components/VoucherPopup';
 
 function AppContent() {
+  const location = useLocation();
   return (
     <div className="min-h-screen flex flex-col bg-[#f4f4f4] text-gray-800 pb-16 md:pb-0">
       <ScrollToTop />
@@ -35,6 +36,8 @@ function AppContent() {
       <Header />
 
       <main className="flex-1">
+        {/* Đổi trang thì nội dung mới trượt nhẹ lên & hiện dần (key = đường dẫn để chạy lại hiệu ứng) */}
+        <div key={location.pathname} className="page-enter">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/category/:categoryId" element={<CategoryPage />} />
@@ -57,6 +60,7 @@ function AppContent() {
           <Route path="/dat-lai-mat-khau" element={<ResetPasswordPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </div>
       </main>
 
       <Footer />

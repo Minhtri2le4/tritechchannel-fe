@@ -3,6 +3,7 @@ import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard.jsx';
 import QuickCategories from '../components/QuickCategories';
 import CampaignSection from '../components/CampaignSection';
+import Reveal from '../components/Reveal';
 import { Link, useNavigate } from 'react-router-dom';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
@@ -290,9 +291,10 @@ export default function HomePage() {
               <span className="w-1.5 h-6 bg-red-600 rounded-sm"></span> ĐẠI LÝ ỦY QUYỀN CHÍNH HÃNG
             </h2>
           </div>
+          <Reveal>
           <div ref={storesRef} className="flex md:grid md:grid-cols-3 gap-6 md:gap-8 pt-10 pb-8 pl-8 pr-6 md:px-6 md:overflow-visible overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
-            {ecomStores.map((store) => (
-              <a key={store.id} href={store.link} target="_blank" rel="noopener noreferrer" className={`w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center relative block rounded-[20px] p-6 pb-5 bg-[#FAFAFA] border-2 ${store.borderColor} shadow-sm ${store.shadowHover} transform group-hover:-translate-y-2 group-hover:scale-[1.02] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-10 hover:z-20 group`}>
+            {ecomStores.map((store, idx) => (
+              <a key={store.id} href={store.link} target="_blank" rel="noopener noreferrer" style={{ '--reveal-delay': `${idx * 140}ms` }} className={`reveal-item w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center relative block rounded-[20px] p-6 pb-5 bg-[#FAFAFA] border-2 ${store.borderColor} shadow-sm ${store.shadowHover} transform group-hover:-translate-y-2 group-hover:scale-[1.02] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-10 hover:z-20 group`}>
                 <div className="absolute -top-8 -left-5 md:-left-6 w-[76px] h-[76px] bg-white rounded-full flex items-center justify-center shadow-lg border border-gray-100 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500 z-30">
                   <img src={store.logo} alt={store.platform} className="w-[46px] h-[46px] object-contain" />
                 </div>
@@ -321,6 +323,7 @@ export default function HomePage() {
               </a>
             ))}
           </div>
+          </Reveal>
         </div>
 
         {/* CHƯƠNG TRÌNH KHUYẾN MÃI (Admin → Chương trình khuyến mãi) */}
