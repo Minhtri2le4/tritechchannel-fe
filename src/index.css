@@ -43,3 +43,12 @@ div, button, input {
 @media (prefers-reduced-motion: reduce) {
   .campaign-bat { animation: none; }
 }
+
+/* Bảng chọn phân loại trượt từ dưới lên (VariantSheet.jsx) */
+.sheet-up {
+  animation: sheet-up 0.25s ease-out;
+}
+@keyframes sheet-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

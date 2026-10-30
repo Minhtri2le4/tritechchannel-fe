@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   ShieldCheck, Truck, MapPin, CheckCircle, ChevronRight, ShoppingCart, Zap, Check, Loader2,
   Star, Minus, Plus, MessageCircle,
@@ -10,6 +10,7 @@ import useSeo, { SITE_URL } from '../hooks/useSeo';
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import ProductCard from '../components/ProductCard';
+import VariantSheet from '../components/VariantSheet';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -46,14 +47,19 @@ function Row({ label, children }) {
 
 function ProductDetailView({ productData }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { addToCart } = useCart();
 
   const storages = productData.variants || [];
   const colors = productData.colors || [];
+  const hasOptions = storages.length > 0 || colors.length > 0;
 
-  // Mặc định chọn phiên bản & màu đầu tiên
-  const [selectedVariantId, setSelectedVariantId] = useState(storages[0]?.id ?? null);
-  const [selectedColor, setSelectedColor] = useState(colors[0]?.name ?? '');
+  // Như Shopee: khách tự chọn phân loại; chỉ có 1 lựa chọn thì chọn sẵn
+  const [selectedVariantId, setSelectedVariantId] = useState(storages.length === 1 ? storages[0].id : null);
+  const [selectedColor, setSelectedColor] = useState(colors.length === 1 ? colors[0].name : '');
+  // Bảng chọn phân loại: 'cart' | 'buy' | null. Bấm "Thêm vào giỏ" ở thẻ sản phẩm ngoài danh sách thì mở sẵn
+  const [sheetMode, setSheetMode] = useState(() => (location.state?.pick && hasOptions ? 'cart' : null));
+  const [pickHint, setPickHint] = useState(false);
   const [activeImage, setActiveImage] = useState(assetUrl(productData.image));
   const [showNotification, setShowNotification] = useState(false);
 
@@ -62,11 +68,21 @@ function ProductDetailView({ productData }) {
 
   // Giá theo phiên bản đã chọn
   const selectedVariant = storages.find((v) => v.id === selectedVariantId) || null;
-  const currentPrice = selectedVariant?.price ?? productData.price;
-  const originalPrice = selectedVariant ? selectedVariant.originalPrice : productData.originalPrice;
+  const variantPrices = storages.map((v) => v.price);
+  const priceMin = storages.length ? Math.min(...variantPrices) : productData.price;
+  const priceMax = storages.length ? Math.max(...variantPrices) : productData.price;
+  const currentPrice = selectedVariant?.price ?? priceMin;
+  // Chưa chọn phiên bản mà giá các phiên bản khác nhau -> hiện khoảng giá như Shopee
+  const priceText =
+    !selectedVariant && priceMin !== priceMax
+      ? `${priceMin.toLocaleString('vi-VN')}₫ - ${priceMax.toLocaleString('vi-VN')}₫`
+      : `${currentPrice.toLocaleString('vi-VN')}₫`;
+  const originalPrice = selectedVariant ? selectedVariant.originalPrice : storages.length ? null : productData.originalPrice;
   const discountPercent = originalPrice > currentPrice ? Math.round((1 - currentPrice / originalPrice) * 100) : 0;
-  const stock = selectedVariant ? selectedVariant.stock : productData.stock;
+  const stock = selectedVariant ? selectedVariant.stock : storages.length ? storages.reduce((n, v) => n + v.stock, 0) : productData.stock;
   const inStock = stock > 0;
+  const missing = [colors.length && !selectedColor && 'Phân loại', storages.length && !selectedVariant && 'Phiên bản'].filter(Boolean).join(' và ');
+  const colorImage = colors.find((c) => c.name === selectedColor)?.image;
 
   const productPath = `/product/${productData.slug || productData.id}`;
   const absImage = (src) => (src && /^https?:/.test(src) ? src : `${SITE_URL}${src || ''}`);
@@ -128,6 +144,10 @@ function ProductDetailView({ productData }) {
     : ['Miễn phí dán cường lực khi mua điện thoại, máy tính bảng', 'Tặng voucher 15% cho lần mua phụ kiện tiếp theo'];
 
   const addSelected = () => {
+    if (missing) {
+      setPickHint(true);
+      return false;
+    }
     if (!inStock) {
       alert('Phiên bản này tạm hết hàng, vui lòng chọn phiên bản khác!');
       return false;
@@ -145,6 +165,26 @@ function ProductDetailView({ productData }) {
     if (!addSelected()) return;
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
+  };
+
+  // Điện thoại: sản phẩm có phân loại thì mở bảng chọn trước (như Shopee)
+  const openOrDo = (mode) => (hasOptions ? setSheetMode(mode) : mode === 'buy' ? handleBuyNow() : handleAddToCartOnly());
+  const confirmSheet = () => {
+    if (sheetMode === 'buy') return handleBuyNow();
+    if (addSelected()) {
+      setSheetMode(null);
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    }
+  };
+  const pickColor = (color) => {
+    setSelectedColor(color.name);
+    setPickHint(false);
+    if (color.image) setActiveImage(assetUrl(color.image));
+  };
+  const pickVariant = (id) => {
+    setSelectedVariantId(id);
+    setPickHint(false);
   };
 
   const optionClass = (active, disabled) =>
@@ -236,9 +276,7 @@ function ProductDetailView({ productData }) {
 
             {/* Giá */}
             <div className="bg-gray-50 rounded-xl px-4 py-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-3xl md:text-[34px] font-semibold text-red-600 leading-none">
-                {currentPrice.toLocaleString('vi-VN')}<span className="text-xl align-top">₫</span>
-              </span>
+              <span className="text-3xl md:text-[34px] font-semibold text-red-600 leading-none">{priceText}</span>
               {discountPercent > 0 && (
                 <>
                   <span className="text-base text-gray-400 line-through">{originalPrice.toLocaleString('vi-VN')}₫</span>
@@ -270,6 +308,30 @@ function ProductDetailView({ productData }) {
                 </p>
               </Row>
 
+              {hasOptions && (
+              <div className={`flex flex-col gap-4 rounded-lg -mx-2 px-2 py-2 ${pickHint && missing ? 'bg-red-50 ring-1 ring-red-300' : ''}`}>
+              {colors.length > 0 && (
+                <Row label="Phân loại">
+                  <div className="flex flex-wrap gap-2">
+                    {colors.map((color) => (
+                      <button
+                        key={color.id}
+                        type="button"
+                        onClick={() => pickColor(color)}
+                        className={`${optionClass(selectedColor === color.name, false)} flex items-center gap-2`}
+                      >
+                        {color.image ? (
+                          <img src={assetUrl(color.image)} alt="" className="w-6 h-6 object-contain" />
+                        ) : (
+                          color.hex && <span className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: color.hex }} />
+                        )}
+                        {color.name}
+                        {selectedColor === color.name && <Check size={12} className="absolute -bottom-px -right-px bg-red-500 text-white rounded-tl" />}
+                      </button>
+                    ))}
+                  </div>
+                </Row>
+              )}
               {storages.length > 0 && (
                 <Row label="Phiên bản">
                   <div className="flex flex-wrap gap-2">
@@ -278,7 +340,7 @@ function ProductDetailView({ productData }) {
                         key={v.id}
                         type="button"
                         disabled={v.stock <= 0}
-                        onClick={() => setSelectedVariantId(v.id)}
+                        onClick={() => pickVariant(v.id)}
                         className={optionClass(selectedVariantId === v.id, v.stock <= 0)}
                       >
                         {v.label}
@@ -289,30 +351,8 @@ function ProductDetailView({ productData }) {
                 </Row>
               )}
 
-              {colors.length > 0 && (
-                <Row label="Màu sắc">
-                  <div className="flex flex-wrap gap-2">
-                    {colors.map((color) => (
-                      <button
-                        key={color.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedColor(color.name);
-                          if (color.image) setActiveImage(assetUrl(color.image));
-                        }}
-                        className={`${optionClass(selectedColor === color.name, false)} flex items-center gap-2`}
-                      >
-                        {color.image ? (
-                          <img src={assetUrl(color.image)} alt="" className="w-6 h-6 object-contain" />
-                        ) : (
-                          <span className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: color.hex || '#e5e7eb' }} />
-                        )}
-                        {color.name}
-                        {selectedColor === color.name && <Check size={12} className="absolute -bottom-px -right-px bg-red-500 text-white rounded-tl" />}
-                      </button>
-                    ))}
-                  </div>
-                </Row>
+              {pickHint && missing && <p className="text-sm text-red-600">Vui lòng chọn {missing}</p>}
+              </div>
               )}
 
               <Row label="Số lượng">
@@ -343,7 +383,7 @@ function ProductDetailView({ productData }) {
               <button
                 type="button"
                 onClick={handleAddToCartOnly}
-                disabled={!inStock}
+                disabled={!missing && !inStock}
                 className="flex-1 max-w-[240px] flex items-center justify-center gap-2 border border-red-500 bg-red-50 text-red-600 font-semibold py-3 rounded-lg hover:bg-red-100 disabled:opacity-50 cursor-pointer"
               >
                 <ShoppingCart size={18} /> Thêm vào giỏ hàng
@@ -351,7 +391,7 @@ function ProductDetailView({ productData }) {
               <button
                 type="button"
                 onClick={handleBuyNow}
-                disabled={!inStock}
+                disabled={!missing && !inStock}
                 className="flex-1 max-w-[240px] bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 Mua ngay
@@ -442,13 +482,35 @@ function ProductDetailView({ productData }) {
         <a href="https://zalo.me/0325477841" target="_blank" rel="noopener noreferrer" className="w-16 flex flex-col items-center justify-center text-[10px] text-gray-600 border-r border-gray-200">
           <MessageCircle size={20} /> Chat
         </a>
-        <button type="button" onClick={handleAddToCartOnly} disabled={!inStock} className="flex-1 flex flex-col items-center justify-center bg-amber-400 text-black text-[11px] font-semibold disabled:opacity-50">
+        <button type="button" onClick={() => openOrDo('cart')} disabled={!hasOptions && !inStock} className="flex-1 flex flex-col items-center justify-center bg-amber-400 text-black text-[11px] font-semibold disabled:opacity-50">
           <ShoppingCart size={18} /> Thêm vào giỏ
         </button>
-        <button type="button" onClick={handleBuyNow} disabled={!inStock} className="flex-[1.4] bg-red-600 text-white text-sm font-bold disabled:opacity-50">
+        <button type="button" onClick={() => openOrDo('buy')} disabled={!hasOptions && !inStock} className="flex-[1.4] bg-red-600 text-white text-sm font-bold disabled:opacity-50">
           Mua ngay
         </button>
       </div>
+
+      {sheetMode && (
+        <VariantSheet
+          mode={sheetMode}
+          image={colorImage ? assetUrl(colorImage) : assetUrl(productData.image)}
+          priceText={priceText}
+          originalPrice={discountPercent > 0 ? originalPrice : null}
+          stockText={selectedVariant || !storages.length ? (inStock ? `Kho: ${stock}` : 'Tạm hết hàng') : 'Chọn phiên bản để xem giá'}
+          variants={storages}
+          colors={colors.map((c) => ({ ...c, imageUrl: c.image ? assetUrl(c.image) : null }))}
+          variantId={selectedVariantId}
+          onVariant={pickVariant}
+          color={selectedColor}
+          onColor={pickColor}
+          qty={qty}
+          maxQty={maxQty}
+          onQty={setQuantity}
+          missing={missing}
+          onConfirm={confirmSheet}
+          onClose={() => setSheetMode(null)}
+        />
+      )}
     </div>
   );
 }
