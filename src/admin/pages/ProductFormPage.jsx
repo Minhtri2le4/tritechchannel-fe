@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ImagePlus, Plus, Star, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ImagePlus, Loader2, Plus, Star, Trash2, UploadCloud, X } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { assetUrl, imgFallback } from '../../lib/api';
+import { assetUrl, formatPrice, imgFallback } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import { Button, Card, Checkbox, ErrorBox, Field, Input, MoneyInput, PageHeader, Select, Spinner, Textarea, errorText } from '../ui';
 
@@ -21,7 +21,7 @@ const toForm = (p) => ({
   image: p.image || '',
   description: p.description || '',
   variants: p.variants.map(({ label, price, originalPrice, stock }) => ({ label, price, originalPrice, stock })),
-  colors: p.colors.map(({ name, hex, image }) => ({ name, hex: hex || '#000000', image: image || '' })),
+  colors: p.colors.map(({ name, hex, image }) => ({ name, hex: hex || null, image: image || '' })),
 });
 
 export default function ProductFormPage() {
@@ -42,6 +42,8 @@ function ProductForm({ initial, productId }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [dragging, setDragging] = useState(false);
+  const [colorUploading, setColorUploading] = useState(null); // index phân loại đang tải ảnh
   const fileRef = useRef(null);
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
@@ -63,6 +65,39 @@ function ProductForm({ initial, productId }) {
       if (fileRef.current) fileRef.current.value = '';
     }
   };
+  // Kéo thả ảnh từ máy vào khung Hình ảnh
+  const imageFiles = (list) => [...(list || [])].filter((f) => /^image\/(jpeg|png|webp)$/.test(f.type));
+  const dropZone = {
+    onDragOver: (e) => {
+      if (![...e.dataTransfer.types].includes('Files')) return;
+      e.preventDefault();
+      setDragging(true);
+    },
+    onDragLeave: (e) => !e.currentTarget.contains(e.relatedTarget) && setDragging(false),
+    onDrop: (e) => {
+      e.preventDefault();
+      setDragging(false);
+      const files = imageFiles(e.dataTransfer.files);
+      if (files.length) uploadImages(files);
+      else if (e.dataTransfer.files?.length) alert('Chỉ nhận ảnh JPG, PNG hoặc WEBP');
+    },
+  };
+
+  // Ảnh riêng của 1 phân loại: tải từ máy (bấm hoặc kéo thả vào ô ảnh)
+  const uploadColorImage = async (idx, files) => {
+    const file = imageFiles(files)[0];
+    if (!file) return;
+    setColorUploading(idx);
+    try {
+      const { data } = await adminApi.upload([file]);
+      setForm((f) => ({ ...f, colors: f.colors.map((c, i) => (i === idx ? { ...c, image: data[0].url } : c)) }));
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setColorUploading(null);
+    }
+  };
+
   const addImageUrl = () => {
     const url = prompt('Dán link ảnh (https://...)');
     if (url?.trim()) setForm((f) => ({ ...f, image: f.image || url.trim(), images: [...f.images, url.trim()] }));
@@ -77,21 +112,27 @@ function ProductForm({ initial, productId }) {
   const updateItem = (key, idx, patch) => set(key, form[key].map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   const removeItem = (key, idx) => set(key, form[key].filter((_, i) => i !== idx));
 
+  // Có phiên bản thì giá/kho chung lấy từ phiên bản: giá thấp nhất hiện ở danh sách, kho = tổng các phiên bản
+  const hasVariants = form.variants.length > 0;
+  const variantPrices = form.variants.map((v) => v.price).filter((v) => v != null);
+  const cheapest = form.variants.filter((v) => v.price != null).sort((a, b) => a.price - b.price)[0];
+  const variantStock = form.variants.reduce((n, v) => n + (Number(v.stock) || 0), 0);
+
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    if (form.price == null) return setError('Vui lòng nhập giá bán');
-    if (form.variants.some((v) => !v.label.trim() || v.price == null)) return setError('Phiên bản cần có tên và giá');
-    if (form.colors.some((c) => !c.name.trim())) return setError('Màu sắc cần có tên');
+    if (!hasVariants && form.price == null) return setError('Vui lòng nhập giá bán');
+    if (form.variants.some((v) => !v.label.trim() || v.price == null)) return setError('Phiên bản cần có tên và giá bán');
+    if (form.colors.some((c) => !c.name.trim())) return setError('Phân loại cần có tên');
 
     const body = {
       name: form.name,
       ...(form.slug ? { slug: form.slug } : {}),
       brand: form.brand || null,
       categoryId: form.categoryId ? Number(form.categoryId) : null,
-      price: form.price,
-      originalPrice: form.originalPrice || null,
-      stock: Number(form.stock) || 0,
+      price: hasVariants ? cheapest.price : form.price,
+      originalPrice: (hasVariants ? cheapest.originalPrice : form.originalPrice) || null,
+      stock: hasVariants ? variantStock : Number(form.stock) || 0,
       image: form.image || null,
       images: allImages,
       description: form.description || null,
@@ -161,7 +202,14 @@ function ProductForm({ initial, productId }) {
             </Field>
           </Card>
 
-          <Card className="p-4 space-y-3">
+          <Card className="p-4 relative">
+            <div {...dropZone} className="space-y-3">
+            {dragging && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50/90 text-amber-700 pointer-events-none">
+                <UploadCloud size={32} />
+                <p className="font-bold">Thả ảnh vào đây để tải lên</p>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <h2 className="font-bold">Hình ảnh</h2>
               <div className="flex gap-2">
@@ -173,7 +221,14 @@ function ProductForm({ initial, productId }) {
               </div>
             </div>
             {allImages.length === 0 ? (
-              <p className="text-sm text-gray-500">Chưa có ảnh nào.</p>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="w-full rounded-xl border-2 border-dashed border-gray-300 py-8 flex flex-col items-center gap-1.5 text-sm text-gray-500 hover:border-amber-400 hover:text-gray-700"
+              >
+                {uploading ? <Loader2 size={26} className="animate-spin" /> : <UploadCloud size={26} />}
+                {uploading ? 'Đang tải ảnh lên…' : 'Kéo thả ảnh vào đây hoặc bấm để chọn (chọn được nhiều ảnh)'}
+              </button>
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {allImages.map((url) => (
@@ -191,22 +246,23 @@ function ProductForm({ initial, productId }) {
                 ))}
               </div>
             )}
-            <p className="text-[11px] text-gray-500">Ảnh có ngôi sao là ảnh đại diện hiển thị ở danh sách sản phẩm.</p>
+            <p className="text-[11px] text-gray-500">Ảnh có ngôi sao là ảnh đại diện. Có thể kéo thả ảnh từ máy vào khung này.</p>
+            </div>
           </Card>
 
           <Card className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-bold">Phiên bản (dung lượng / tình trạng)</h2>
-                <p className="text-[11px] text-gray-500">Có phiên bản thì khách phải chọn trước khi mua; giá & kho tính theo từng phiên bản.</p>
+                <p className="text-[11px] text-gray-500">Có phiên bản thì khách phải chọn trước khi mua; giá & kho lấy theo từng phiên bản (không cần nhập ở khung Giá & kho).</p>
               </div>
-              <Button type="button" size="sm" variant="outline" onClick={() => set('variants', [...form.variants, { label: '', price: form.price, originalPrice: form.originalPrice, stock: 0 }])}>
+              <Button type="button" size="sm" variant="outline" onClick={() => set('variants', [...form.variants, { label: '', price: null, originalPrice: null, stock: 0 }])}>
                 <Plus size={14} /> Thêm
               </Button>
             </div>
             {form.variants.map((v, i) => (
               <div key={i} className="grid grid-cols-12 gap-2 items-end">
-                <Field label={i === 0 ? 'Tên phiên bản' : undefined} className="col-span-12 sm:col-span-4">
+                <Field label={i === 0 ? 'Tên phiên bản' : undefined} className="col-span-12 sm:col-span-3">
                   <Input value={v.label} placeholder="512GB - Máy Đẹp" onChange={(e) => updateItem('variants', i, { label: e.target.value })} />
                 </Field>
                 <Field label={i === 0 ? 'Giá bán' : undefined} className="col-span-4 sm:col-span-3">
@@ -215,7 +271,7 @@ function ProductForm({ initial, productId }) {
                 <Field label={i === 0 ? 'Giá gốc' : undefined} className="col-span-4 sm:col-span-3">
                   <MoneyInput value={v.originalPrice} onChange={(val) => updateItem('variants', i, { originalPrice: val })} />
                 </Field>
-                <Field label={i === 0 ? 'Kho' : undefined} className="col-span-3 sm:col-span-1">
+                <Field label={i === 0 ? 'Kho' : undefined} className="col-span-3 sm:col-span-2">
                   <Input type="number" min={0} value={v.stock} onChange={(e) => updateItem('variants', i, { stock: e.target.value })} />
                 </Field>
                 <Button type="button" size="sm" variant="ghost" className="col-span-1 mb-1 hover:text-red-600" onClick={() => removeItem('variants', i)}>
@@ -227,26 +283,56 @@ function ProductForm({ initial, productId }) {
 
           <Card className="p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold">Màu sắc</h2>
-              <Button type="button" size="sm" variant="outline" onClick={() => set('colors', [...form.colors, { name: '', hex: '#000000', image: '' }])}>
+              <div>
+                <h2 className="font-bold">Phân loại (màu / mẫu)</h2>
+                <p className="text-[11px] text-gray-500">Như Shopee: mỗi phân loại có tên và ảnh riêng (tuỳ chọn). Khách bấm vào thì ảnh lớn đổi theo.</p>
+              </div>
+              <Button type="button" size="sm" variant="outline" onClick={() => set('colors', [...form.colors, { name: '', hex: null, image: '' }])}>
                 <Plus size={14} /> Thêm
               </Button>
             </div>
             {form.colors.map((c, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2 items-end">
-                <Field label={i === 0 ? 'Mã màu' : undefined} className="col-span-2 sm:col-span-1">
-                  <input type="color" value={c.hex} onChange={(e) => updateItem('colors', i, { hex: e.target.value })} className="h-[38px] w-full rounded-lg border border-gray-300 cursor-pointer" />
-                </Field>
-                <Field label={i === 0 ? 'Tên màu' : undefined} className="col-span-10 sm:col-span-4">
-                  <Input value={c.name} placeholder="Titan Tự Nhiên" onChange={(e) => updateItem('colors', i, { name: e.target.value })} />
-                </Field>
-                <Field label={i === 0 ? 'Ảnh của màu (tùy chọn)' : undefined} className="col-span-11 sm:col-span-6">
-                  <Select value={c.image} onChange={(e) => updateItem('colors', i, { image: e.target.value })}>
-                    <option value="">— Dùng ảnh đại diện —</option>
-                    {allImages.map((url, idx) => <option key={url} value={url}>Ảnh {idx + 1}</option>)}
-                  </Select>
-                </Field>
-                <Button type="button" size="sm" variant="ghost" className="col-span-1 mb-1 hover:text-red-600" onClick={() => removeItem('colors', i)}>
+              <div key={i} className="flex items-center gap-3 rounded-xl border border-gray-200 p-2">
+                <label
+                  title="Bấm hoặc kéo thả ảnh vào đây"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadColorImage(i, e.dataTransfer.files);
+                  }}
+                  className="relative w-16 h-16 shrink-0 cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:border-amber-400 flex items-center justify-center overflow-hidden"
+                >
+                  {colorUploading === i ? (
+                    <Loader2 size={18} className="animate-spin text-gray-400" />
+                  ) : c.image ? (
+                    <img src={assetUrl(c.image)} onError={imgFallback} alt="" className="w-full h-full object-contain" />
+                  ) : (
+                    <span className="flex flex-col items-center text-[10px] text-gray-400"><ImagePlus size={16} /> Ảnh</span>
+                  )}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { uploadColorImage(i, e.target.files); e.target.value = ''; }} />
+                </label>
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Input value={c.name} placeholder="VD: E18 Trắng Xanh" onChange={(e) => updateItem('colors', i, { name: e.target.value })} />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {allImages.length > 0 && <span className="text-[11px] text-gray-500">hoặc chọn ảnh có sẵn:</span>}
+                    {allImages.slice(0, 12).map((url) => (
+                      <button
+                        key={url}
+                        type="button"
+                        title="Dùng ảnh này"
+                        onClick={() => updateItem('colors', i, { image: url })}
+                        className={`w-7 h-7 rounded border-2 overflow-hidden bg-white ${c.image === url ? 'border-amber-400' : 'border-gray-200 hover:border-gray-400'}`}
+                      >
+                        <img src={assetUrl(url)} onError={imgFallback} alt="" className="w-full h-full object-contain" />
+                      </button>
+                    ))}
+                    {c.image && (
+                      <button type="button" onClick={() => updateItem('colors', i, { image: '' })} className="text-[11px] text-red-600 hover:underline ml-1">Bỏ ảnh</button>
+                    )}
+                  </div>
+                </div>
+                <Button type="button" size="sm" variant="ghost" className="hover:text-red-600" onClick={() => removeItem('colors', i)}>
                   <Trash2 size={15} />
                 </Button>
               </div>
@@ -257,16 +343,30 @@ function ProductForm({ initial, productId }) {
         <div className="space-y-4">
           <Card className="p-4 space-y-3">
             <h2 className="font-bold">Giá & kho</h2>
-            <Field label="Giá bán (VND)" required hint={form.variants.length ? 'Giá hiển thị ở danh sách; giá thật theo phiên bản' : undefined}>
-              <MoneyInput value={form.price} onChange={(v) => set('price', v)} />
-            </Field>
-            <Field label="Giá gốc (gạch ngang)">
-              <MoneyInput value={form.originalPrice} onChange={(v) => set('originalPrice', v)} />
-            </Field>
-            {form.variants.length === 0 && (
-              <Field label="Số lượng trong kho">
-                <Input type="number" min={0} {...bind('stock')} />
-              </Field>
+            {hasVariants ? (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5 text-sm space-y-1">
+                <p className="text-gray-700">Giá & kho lấy theo <b>phiên bản</b>:</p>
+                <p className="font-bold text-red-600">
+                  {!variantPrices.length
+                    ? 'Chưa nhập giá phiên bản'
+                    : Math.min(...variantPrices) === Math.max(...variantPrices)
+                      ? formatPrice(variantPrices[0])
+                      : `${formatPrice(Math.min(...variantPrices))} – ${formatPrice(Math.max(...variantPrices))}`}
+                </p>
+                <p className="text-xs text-gray-500">Tổng kho: {variantStock}</p>
+              </div>
+            ) : (
+              <>
+                <Field label="Giá bán (VND)" required>
+                  <MoneyInput value={form.price} onChange={(v) => set('price', v)} />
+                </Field>
+                <Field label="Giá gốc (gạch ngang)">
+                  <MoneyInput value={form.originalPrice} onChange={(v) => set('originalPrice', v)} />
+                </Field>
+                <Field label="Số lượng trong kho">
+                  <Input type="number" min={0} {...bind('stock')} />
+                </Field>
+              </>
             )}
           </Card>
 

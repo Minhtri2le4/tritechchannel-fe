@@ -74,7 +74,7 @@ export default function ProductCard({ product }) {
             e.preventDefault(); // Ngăn hành vi mặc định của Link
             e.stopPropagation(); // Ngăn sự kiện nổi bọt
             // Sản phẩm có dung lượng/màu thì phải vào trang chi tiết để chọn
-            if (product.hasOptions) navigate(`/product/${product.slug || product.id}`);
+            if (product.hasOptions) navigate(`/product/${product.slug || product.id}`, { state: { pick: true } });
             else addToCart(product);
           }}
           className="mt-auto pt-2 w-full"
