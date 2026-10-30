@@ -32,7 +32,8 @@ export default function MobileBottomNav() {
   };
 
   // Trang sản phẩm có thanh "Thêm vào giỏ / Mua ngay" riêng ở vị trí này
-  if (pathname.startsWith('/product/')) return null;
+  // Trang sản phẩm và giỏ hàng có thanh mua hàng riêng dính đáy
+  if (pathname.startsWith('/product/') || pathname === '/cart') return null;
 
   return (
     <nav
