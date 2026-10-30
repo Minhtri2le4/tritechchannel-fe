@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { KeyRound, Lock, Search, Unlock } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { formatDate } from '../../lib/api';
+import { assetUrl, formatDate } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import { Button, Card, ErrorBox, Input, PageHeader, Pagination, Table, errorText, useDebounced } from '../ui';
 
@@ -56,7 +56,7 @@ export default function CustomersPage() {
               render: (c) => (
                 <div className="flex items-center gap-2.5 min-w-[200px]">
                   {c.avatar ? (
-                    <img src={c.avatar} alt="" referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover" />
+                    <img src={assetUrl(c.avatar)} alt="" referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover" />
                   ) : (
                     <span className="w-9 h-9 rounded-full bg-amber-100 text-amber-800 font-bold flex items-center justify-center">{c.fullName.trim().split(/\s+/).pop()?.[0]}</span>
                   )}

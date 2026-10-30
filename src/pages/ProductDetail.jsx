@@ -11,6 +11,7 @@ import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import ProductCard from '../components/ProductCard';
 import VariantSheet from '../components/VariantSheet';
+import ProductReviews from '../components/ProductReviews';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -269,12 +270,12 @@ function ProductDetailView({ productData }) {
               <h1 className="text-lg md:text-2xl font-bold text-gray-900 leading-snug">{productData.name}</h1>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-sm text-gray-500">
                 {productData.reviewsCount > 0 && (
-                  <span className="flex items-center gap-1">
+                  <a href="#reviews" className="flex items-center gap-1 hover:opacity-80">
                     <span className="text-red-600 font-semibold underline">{productData.rating.toFixed(1)}</span>
                     <Star size={14} className="text-amber-400 fill-amber-400" />
                     <span className="text-gray-300">|</span>
                     <span><b className="text-gray-800">{productData.reviewsCount}</b> đánh giá</span>
-                  </span>
+                  </a>
                 )}
                 {productData.soldCount > 0 && <span>Đã bán <b className="text-gray-800">{productData.soldCount.toLocaleString('vi-VN')}</b></span>}
                 {productData.brand && <span>Thương hiệu: <b className="text-gray-800">{productData.brand}</b></span>}
@@ -470,6 +471,9 @@ function ProductDetailView({ productData }) {
             </>
           )}
         </div>
+
+        {/* Đánh giá của khách đã mua */}
+        <ProductReviews productId={productData.id} />
 
         {/* Sản phẩm cùng danh mục */}
         {productData.related?.length > 0 && (

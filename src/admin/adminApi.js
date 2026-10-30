@@ -50,6 +50,7 @@ export const adminApi = {
   users: crud('/admin/users'),
   posts: crud('/admin/posts'),
   customers: crud('/admin/customers'),
+  reviews: crud('/admin/reviews'),
 
   // Nội dung trang chủ: banner, video review
   settings: {

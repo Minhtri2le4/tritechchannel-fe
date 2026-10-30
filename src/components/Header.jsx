@@ -448,7 +448,7 @@ export default function Header() {
               className="hidden md:flex items-center gap-1.5 hover:opacity-80 transition-opacity"
             >
               {customer?.avatar ? (
-                <img src={customer.avatar} alt="" referrerPolicy="no-referrer" className="h-7 w-7 rounded-full object-cover border border-black/10" />
+                <img src={assetUrl(customer.avatar)} alt="" referrerPolicy="no-referrer" className="h-7 w-7 rounded-full object-cover border border-black/10" />
               ) : (
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/10">
                   <UserRound size={16} />
