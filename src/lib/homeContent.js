@@ -17,6 +17,8 @@ export const DEFAULT_HOME = {
     right: { image: '/assets/bannermini-right.webp', link: '/promotions' },
   },
   reviewVideo: { url: 'https://www.youtube.com/watch?v=RIDVNiNebt4' },
+  // Banner ngang giữa trang (trên mục Blog)
+  promoBanner: { image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&h=200&fit=crop', link: '' },
   // Popup voucher: tắt cho tới khi admin tải ảnh lên và bật
   popup: { enabled: false, image: '', link: '', frequency: 'session' },
   shorts: [
@@ -35,6 +37,7 @@ export const mergeHome = (saved) => ({
   reviewVideo: saved?.reviewVideo?.url ? saved.reviewVideo : DEFAULT_HOME.reviewVideo,
   shorts: saved?.shorts?.length ? saved.shorts : DEFAULT_HOME.shorts,
   popup: { ...DEFAULT_HOME.popup, ...saved?.popup },
+  promoBanner: saved?.promoBanner ?? DEFAULT_HOME.promoBanner,
 });
 
 // Nội dung trang chủ cho website: hiện mặc định ngay, có dữ liệu từ admin thì thay

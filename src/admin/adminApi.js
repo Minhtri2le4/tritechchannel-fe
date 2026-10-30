@@ -22,6 +22,15 @@ export const adminApi = {
     [...files].forEach((f) => body.append('files', f));
     return api.post('/admin/uploads', body);
   },
+  // 1 video (tối đa 80MB) -> { url }. onProgress(0..100) để hiện % đang tải
+  uploadVideo: (file, onProgress) => {
+    const body = new FormData();
+    body.append('file', file);
+    return api.post('/admin/uploads/video', body, {
+      timeout: 0,
+      onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
+    });
+  },
 
   products: {
     ...crud('/admin/products'),

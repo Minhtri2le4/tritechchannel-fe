@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, Plus, Save, Search, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, Save, Trash2, X } from 'lucide-react';
 import { adminApi } from '../adminApi';
 import ImageField from '../ImageField';
+import ProductSearch from '../ProductSearch';
 import { shopApi } from '../../services/shop';
 import { assetUrl, formatPrice, imgFallback } from '../../lib/api';
-import { Button, Card, ErrorBox, Field, Input, PageHeader, Select, Spinner, errorText, useDebounced } from '../ui';
+import { Button, Card, ErrorBox, Field, Input, PageHeader, Select, Spinner, errorText } from '../ui';
 
 // Ô datetime-local cần dạng "YYYY-MM-DDTHH:mm" theo giờ máy
 const toLocalInput = (d) => (d ? new Date(new Date(d).getTime() - new Date(d).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
@@ -47,60 +48,6 @@ const move = (list, i, dir) => {
   [next[i], next[j]] = [next[j], next[i]];
   return next;
 };
-
-// Tìm sản phẩm theo tên rồi bấm để thêm vào chương trình
-function ProductSearch({ selectedIds, onAdd }) {
-  const [search, setSearch] = useState('');
-  const q = useDebounced(search);
-  const [results, setResults] = useState([]);
-
-  useEffect(() => {
-    if (!q) return;
-    let cancelled = false;
-    adminApi.products
-      .list({ search: q, limit: 8 })
-      .then(({ data }) => !cancelled && setResults(data))
-      .catch(() => !cancelled && setResults([]));
-    return () => {
-      cancelled = true;
-    };
-  }, [q]);
-
-  return (
-    <div className="relative">
-      <Search size={16} className="absolute left-3 top-2.5 text-gray-400" />
-      <Input className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Gõ tên sản phẩm để thêm vào chương trình…" />
-      {q && (
-        <div className="absolute z-20 mt-1 w-full max-h-72 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
-          {results.length ? (
-            results.map((p) => {
-              const added = selectedIds.includes(p.id);
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  disabled={added}
-                  onClick={() => onAdd(p)}
-                  className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-amber-50 disabled:opacity-50"
-                >
-                  <img src={assetUrl(p.image)} onError={imgFallback} alt="" className="h-10 w-10 rounded object-contain bg-gray-50" />
-                  <span className="flex-1 min-w-0">
-                    <span className="block truncate text-sm font-medium">{p.name}</span>
-                    <span className="text-xs text-red-600 font-semibold">{formatPrice(p.price)}</span>
-                    {p.status === 'HIDDEN' && <span className="ml-2 text-xs text-gray-500">(đang ẩn – sẽ không hiện)</span>}
-                  </span>
-                  <span className="text-xs font-bold text-amber-600">{added ? 'Đã thêm' : '+ Thêm'}</span>
-                </button>
-              );
-            })
-          ) : (
-            <p className="px-3 py-3 text-sm text-gray-500">Không tìm thấy sản phẩm</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function CampaignEditor({ c, index, total, products, onChange, onMove, onRemove, onAddProduct }) {
   const set = (patch) => onChange({ ...c, ...patch });
