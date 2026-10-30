@@ -112,8 +112,7 @@ export default function LoginPage() {
 
           {tab === 'login' && (
             <p className="text-right text-xs text-gray-500">
-              Quên mật khẩu?{' '}
-              <a href="https://zalo.me/0325477841" target="_blank" rel="noreferrer" className="font-semibold text-blue-600 hover:underline">Nhắn Zalo shop</a> để được cấp lại
+              <Link to="/quen-mat-khau" className="font-semibold text-blue-600 hover:underline">Quên mật khẩu?</Link>
             </p>
           )}
         </form>

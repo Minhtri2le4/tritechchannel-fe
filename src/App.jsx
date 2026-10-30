@@ -16,6 +16,7 @@ import PolicyPage from './pages/PolicyPage';
 import NotFound from './pages/NotFound';
 import LoginPage from './pages/LoginPage';
 import AccountPage from './pages/AccountPage';
+import { ForgotPasswordPage, ResetPasswordPage } from './pages/PasswordResetPages';
 
 // Trang quản trị tách bundle riêng, chỉ tải khi vào /admin
 const AdminApp = lazy(() => import('./admin/AdminApp'));
@@ -52,6 +53,8 @@ function AppContent() {
           <Route path="/chinh-sach/:slug" element={<PolicyPage />} />
           <Route path="/dang-nhap" element={<LoginPage />} />
           <Route path="/tai-khoan" element={<AccountPage />} />
+          <Route path="/quen-mat-khau" element={<ForgotPasswordPage />} />
+          <Route path="/dat-lai-mat-khau" element={<ResetPasswordPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
