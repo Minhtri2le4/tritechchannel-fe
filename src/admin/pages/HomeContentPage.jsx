@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, Plus, Save, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Film, Loader2, Plus, Save, Trash2, X } from 'lucide-react';
 import { adminApi } from '../adminApi';
 import ImageField from '../ImageField';
+import ProductSearch from '../ProductSearch';
+import { assetUrl, formatPrice, imgFallback } from '../../lib/api';
 import { mergeHome } from '../../lib/homeContent';
+import { shopApi } from '../../services/shop';
 import { youtubeEmbedUrl, youtubeId } from '../../lib/youtube';
 import { Button, Card, ErrorBox, Field, Input, MoneyInput, PageHeader, Select, Spinner, errorText } from '../ui';
 
 const emptyBanner = () => ({ image: '', imageMobile: '', link: '', alt: '' });
-const emptyShort = () => ({ url: '', title: '', productName: '', productImage: '', productLink: '', price: null, oldPrice: null });
+const emptyShort = () => ({ url: '', videoFile: '', productId: null, title: '', productName: '', productImage: '', productLink: '', price: null, oldPrice: null });
 
 // Đổi vị trí phần tử i với i+dir trong mảng
 const move = (list, i, dir) => {
@@ -54,17 +57,109 @@ function YoutubePreview({ url, vertical }) {
   );
 }
 
+// Ô video của 1 video review: tải file từ máy (có % tiến độ) hoặc dán link YouTube shorts
+function ShortVideoSource({ v, onChange }) {
+  const [progress, setProgress] = useState(null);
+  const [error, setError] = useState('');
+
+  const upload = async (file) => {
+    if (!file) return;
+    if (!/^video\/(mp4|webm|quicktime)$/.test(file.type)) return setError('Chỉ nhận video MP4, WEBM hoặc MOV');
+    if (file.size > 80 * 1024 * 1024) return setError('Video tối đa 80MB – hãy nén nhỏ lại hoặc đăng lên YouTube rồi dán link');
+    setError('');
+    setProgress(0);
+    try {
+      const { data } = await adminApi.uploadVideo(file, setProgress);
+      onChange({ videoFile: data.url, url: '' });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setProgress(null);
+    }
+  };
+
+  return (
+    <div className="w-40 shrink-0 space-y-2">
+      <label
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          upload(e.dataTransfer.files?.[0]);
+        }}
+        className="relative block aspect-[9/16] w-40 cursor-pointer overflow-hidden rounded-lg bg-black"
+      >
+        {v.videoFile ? (
+          <video src={assetUrl(v.videoFile)} className="h-full w-full object-cover" muted playsInline controls preload="metadata" />
+        ) : youtubeId(v.url) ? (
+          <iframe src={youtubeEmbedUrl(v.url)} title="Xem trước" className="h-full w-full border-0 pointer-events-none" />
+        ) : (
+          <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-3 text-center text-[11px] text-gray-300">
+            <Film size={22} /> Bấm hoặc kéo thả video vào đây
+          </span>
+        )}
+        {progress !== null && (
+          <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/70 text-sm font-bold text-white">
+            <Loader2 size={20} className="animate-spin" /> {progress}%
+          </span>
+        )}
+        <input type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ''; }} />
+      </label>
+      {v.videoFile && (
+        <button type="button" onClick={() => onChange({ videoFile: '' })} className="text-[11px] text-red-600 hover:underline">Bỏ video đã tải</button>
+      )}
+      {error && <p className="text-[11px] text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+// Sản phẩm gắn vào video: chọn sản phẩm trong shop (giá, ảnh, link tự lấy) – giống gắn giỏ hàng TikTok
+function ShortProduct({ v, onChange, products, onPicked }) {
+  const p = v.productId ? products[v.productId] : null;
+  if (v.productId) {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 p-2">
+        <img src={assetUrl(p?.image)} onError={imgFallback} alt="" className="h-12 w-12 shrink-0 rounded bg-white object-contain" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold">{p?.name || `Sản phẩm #${v.productId} (đang ẩn hoặc đã xoá)`}</p>
+          {p && <p className="text-xs font-bold text-red-600">{formatPrice(p.price)}</p>}
+          <p className="text-[11px] text-gray-500">🛒 Khách bấm “Mua ngay” dưới video sẽ vào trang sản phẩm này</p>
+        </div>
+        <Button size="sm" variant="ghost" title="Bỏ gắn sản phẩm" onClick={() => onChange({ productId: null })}><X size={15} /></Button>
+      </div>
+    );
+  }
+  return (
+    <ProductSearch
+      placeholder="🛒 Gắn sản phẩm trong shop: gõ tên sản phẩm…"
+      addLabel="Gắn"
+      onAdd={(prod) => {
+        onPicked(prod);
+        onChange({ productId: prod.id });
+      }}
+    />
+  );
+}
+
 // Admin → Giao diện trang chủ: banner chạy, banner 2 bên, video review chính và video shorts
 export default function HomeContentPage() {
   const [form, setForm] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [products, setProducts] = useState({}); // id -> sản phẩm gắn với video
 
   useEffect(() => {
     adminApi.settings
       .getHome()
-      .then(({ data }) => setForm(mergeHome(data)))
+      .then(async ({ data }) => {
+        const home = mergeHome(data);
+        const ids = [...new Set(home.shorts.map((s) => s.productId).filter(Boolean))];
+        if (ids.length) {
+          const { data: found } = await shopApi.products({ ids: ids.join(',') }).catch(() => ({ data: [] }));
+          setProducts(Object.fromEntries(found.map((p) => [p.id, p])));
+        }
+        setForm(home);
+      })
       .catch(setLoadError);
   }, []);
 
@@ -80,8 +175,8 @@ export default function HomeContentPage() {
     if (form.popup.enabled && !form.popup.image) return setMessage('❌ Popup voucher đang bật nhưng chưa có ảnh');
     const missing = form.banners.findIndex((b) => !b.image);
     if (missing >= 0) return setMessage(`❌ Banner ${missing + 1} chưa có ảnh`);
-    const badVideo = form.shorts.findIndex((v) => !youtubeId(v.url));
-    if (badVideo >= 0) return setMessage(`❌ Video shorts ${badVideo + 1} chưa có link YouTube hợp lệ`);
+    const badVideo = form.shorts.findIndex((v) => !v.videoFile && !youtubeId(v.url));
+    if (badVideo >= 0) return setMessage(`❌ Video ${badVideo + 1} chưa có video: tải video lên hoặc dán link YouTube`);
     setSaving(true);
     setMessage('');
     try {
@@ -186,6 +281,17 @@ export default function HomeContentPage() {
         </div>
       </Section>
 
+      <Section title="Banner ngang giữa trang" subtitle="Ảnh dài nằm trên mục Blog TriTech. Khoảng 1200×200px. Bỏ ảnh để ẩn banner.">
+        <div className="grid gap-4 md:grid-cols-[auto_1fr]">
+          <Field label="Ảnh banner">
+            <ImageField value={form.promoBanner?.image || ''} onChange={(v) => set('promoBanner', { ...form.promoBanner, image: v })} aspect="aspect-[6/1]" previewClass="w-72" />
+          </Field>
+          <Field label="Bấm vào banner thì mở" hint="VD: /promotions hoặc /category/12. Trống = không bấm được">
+            <Input value={form.promoBanner?.link || ''} onChange={(e) => set('promoBanner', { ...form.promoBanner, link: e.target.value })} placeholder="/promotions" />
+          </Field>
+        </div>
+      </Section>
+
       <Section title="Review sản phẩm mới nhất" subtitle="Video YouTube lớn dưới mục Đại lý ủy quyền. Dán link video bất kỳ (youtube.com/watch?v=…, youtu.be/…).">
         <div className="space-y-3">
           <Input value={form.reviewVideo?.url || ''} onChange={(e) => set('reviewVideo', { url: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." />
@@ -195,7 +301,7 @@ export default function HomeContentPage() {
 
       <Section
         title="Video review về sản phẩm (shorts)"
-        subtitle="Các video dọc vuốt ngang, mỗi video kèm 1 sản phẩm gợi ý. Link shorts dạng youtube.com/shorts/…"
+        subtitle="Video dọc vuốt ngang. Tải video từ máy (MP4 tối đa 80MB) hoặc dán link YouTube shorts, rồi gắn sản phẩm để khách bấm mua."
         action={<Button size="sm" variant="outline" onClick={() => set('shorts', [...form.shorts, emptyShort()])}><Plus size={14} /> Thêm video</Button>}
       >
         <div className="space-y-4">
@@ -211,26 +317,44 @@ export default function HomeContentPage() {
                 />
               </div>
               <div className="flex flex-col md:flex-row gap-4">
-                <YoutubePreview url={v.url} vertical />
-                <div className="flex-1 grid gap-3 sm:grid-cols-2">
-                  <Field label="Link video YouTube" required className="sm:col-span-2">
-                    <Input value={v.url} onChange={(e) => setItem('shorts', i, { url: e.target.value })} placeholder="https://www.youtube.com/shorts/..." />
+                <ShortVideoSource v={v} onChange={(patch) => setItem('shorts', i, patch)} />
+                <div className="flex-1 grid gap-3 sm:grid-cols-2 content-start">
+                  <Field label="…hoặc dán link YouTube shorts" hint={v.videoFile ? 'Đang dùng video tải lên' : 'Dạng youtube.com/shorts/…'} className="sm:col-span-2">
+                    <Input value={v.url} disabled={!!v.videoFile} onChange={(e) => setItem('shorts', i, { url: e.target.value })} placeholder="https://www.youtube.com/shorts/..." />
                   </Field>
-                  <Field label="Tên sản phẩm gợi ý" className="sm:col-span-2">
-                    <Input value={v.productName || ''} onChange={(e) => setItem('shorts', i, { productName: e.target.value })} />
+                  <Field label="Tiêu đề video (tuỳ chọn)" className="sm:col-span-2">
+                    <Input value={v.title || ''} onChange={(e) => setItem('shorts', i, { title: e.target.value })} placeholder="VD: Review sạc dự phòng Anker A1695" />
                   </Field>
-                  <Field label="Giá bán">
-                    <MoneyInput value={v.price} onChange={(n) => setItem('shorts', i, { price: n })} />
+                  <Field label="Gắn sản phẩm (giỏ hàng)" className="sm:col-span-2">
+                    <ShortProduct
+                      v={v}
+                      products={products}
+                      onPicked={(prod) => setProducts((m) => ({ ...m, [prod.id]: prod }))}
+                      onChange={(patch) => setItem('shorts', i, patch)}
+                    />
                   </Field>
-                  <Field label="Giá gốc (gạch ngang)">
-                    <MoneyInput value={v.oldPrice} onChange={(n) => setItem('shorts', i, { oldPrice: n })} />
-                  </Field>
-                  <Field label="Nút Mua ngay mở" hint="Link sản phẩm trên web hoặc Shopee. Trống = mở video trên YouTube" className="sm:col-span-2">
-                    <Input value={v.productLink || ''} onChange={(e) => setItem('shorts', i, { productLink: e.target.value })} placeholder="/product/ten-san-pham" />
-                  </Field>
-                  <Field label="Ảnh sản phẩm" className="sm:col-span-2">
-                    <ImageField value={v.productImage || ''} onChange={(img) => setItem('shorts', i, { productImage: img })} previewClass="w-16" />
-                  </Field>
+                  {!v.productId && (
+                    <details className="sm:col-span-2 text-sm">
+                      <summary className="cursor-pointer text-xs text-gray-500">Sản phẩm không có trong shop? Nhập tay (link Shopee…)</summary>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <Field label="Tên sản phẩm" className="sm:col-span-2">
+                          <Input value={v.productName || ''} onChange={(e) => setItem('shorts', i, { productName: e.target.value })} />
+                        </Field>
+                        <Field label="Giá bán">
+                          <MoneyInput value={v.price} onChange={(n) => setItem('shorts', i, { price: n })} />
+                        </Field>
+                        <Field label="Giá gốc (gạch ngang)">
+                          <MoneyInput value={v.oldPrice} onChange={(n) => setItem('shorts', i, { oldPrice: n })} />
+                        </Field>
+                        <Field label="Nút Mua ngay mở" className="sm:col-span-2">
+                          <Input value={v.productLink || ''} onChange={(e) => setItem('shorts', i, { productLink: e.target.value })} placeholder="https://shopee.vn/..." />
+                        </Field>
+                        <Field label="Ảnh sản phẩm" className="sm:col-span-2">
+                          <ImageField value={v.productImage || ''} onChange={(img) => setItem('shorts', i, { productImage: img })} previewClass="w-16" />
+                        </Field>
+                      </div>
+                    </details>
+                  )}
                 </div>
               </div>
             </div>

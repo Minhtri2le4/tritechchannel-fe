@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Trash2, Plus, Minus, MapPin, QrCode, 
-  ChevronRight, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2
+  ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2
 } from 'lucide-react';
 import { useCart } from '../context/CartContext'; // Dynamic import Context
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import useSeo from '../hooks/useSeo';
 import AddressPicker from '../components/AddressPicker';
+import CartOptionPicker from '../components/CartOptionPicker';
 import { formatAddress } from '../lib/address';
 
 // Tính tiền giảm theo mã đã áp dụng (server sẽ tính lại khi đặt hàng)
@@ -28,8 +29,11 @@ export default function CartPage() {
     toggleSelectAll,
     removeItem,
     clearCart,
-    removeSelected
+    removeSelected,
+    changeOption
   } = useCart();
+  // Món đang đổi phân loại (mở bảng chọn như Shopee)
+  const [editingItem, setEditingItem] = useState(null);
 
   // State gọi API
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -268,18 +272,31 @@ const [note, setNote] = useState('');
                         onChange={() => toggleSelect(item.id, item.color)}
                         className="w-4 h-4 accent-amber-400 rounded cursor-pointer mt-1 sm:mt-2 shrink-0"
                       />
-                      <img 
-                        onError={imgFallback} src={assetUrl(item.image)}
-                        alt={item.name} 
-                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain border border-gray-100 rounded-lg shrink-0 bg-gray-50"
-                      />
+                      <Link to={`/product/${item.productId}`} className="shrink-0">
+                        <img
+                          onError={imgFallback} src={assetUrl(item.image)}
+                          alt={item.name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-contain border border-gray-100 rounded-lg bg-gray-50 hover:border-red-300"
+                        />
+                      </Link>
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2">
                           <div>
-                            <h3 className="font-bold text-xs sm:text-sm text-gray-900 line-clamp-2 leading-snug">
+                            <Link to={`/product/${item.productId}`} className="font-bold text-xs sm:text-sm text-gray-900 line-clamp-2 leading-snug hover:text-red-600">
                               {item.name}
-                            </h3>
-                            <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 sm:mt-1">Màu sắc: {item.color || 'Mặc định'}</p>
+                            </Link>
+                            {(item.variantId || item.color) && (
+                              <button
+                                type="button"
+                                onClick={() => setEditingItem(item)}
+                                className="mt-1 inline-flex max-w-full items-center gap-1 rounded bg-gray-100 px-2 py-1 text-[10px] sm:text-[11px] text-gray-600 hover:bg-gray-200"
+                              >
+                                <span className="truncate">
+                                  Phân loại: {[item.color, item.variantLabel || (item.variantId && item.name.match(/\(([^)]+)\)$/)?.[1])].filter(Boolean).join(', ')}
+                                </span>
+                                <ChevronDown size={12} className="shrink-0" />
+                              </button>
+                            )}
                           </div>
                           <div className="text-left sm:text-right shrink-0 mt-1 sm:mt-0">
                             <p className="font-bold text-red-600 text-xs sm:text-sm">{item.price?.toLocaleString('vi-VN')}đ</p>
@@ -619,6 +636,16 @@ const [note, setNote] = useState('');
         </div>
 
       </div>
+      {editingItem && (
+        <CartOptionPicker
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onConfirm={(product, color, variant, qty) => {
+            changeOption(editingItem, product, color, variant, qty);
+            setEditingItem(null);
+          }}
+        />
+      )}
     </div>
   );
 }

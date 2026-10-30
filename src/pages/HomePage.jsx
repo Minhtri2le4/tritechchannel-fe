@@ -108,6 +108,10 @@ export default function HomePage() {
   const home = useHomeContent();
   const banners = home.banners;
   const shorts = home.shorts;
+  // Sản phẩm gắn vào video review (Admin → Giao diện trang chủ): lấy giá/ảnh mới nhất từ shop
+  const shortIds = [...new Set(shorts.map((v) => v.productId).filter(Boolean))].join(',');
+  const { data: shortProductList } = useFetch(() => (shortIds ? shopApi.products({ ids: shortIds }) : Promise.resolve({ data: [] })), [shortIds]);
+  const shortProducts = Object.fromEntries((shortProductList || []).map((p) => [p.id, p]));
   const bannerCount = useRef(banners.length);
   useEffect(() => {
     bannerCount.current = banners.length;
@@ -408,37 +412,59 @@ export default function HomePage() {
             </div>
             
             <div ref={shortsContainerRef} onScroll={handleScrollShorts} className="flex gap-4 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory scrollbar-hide">
-              {shorts.map((video, idx) => (
+              {shorts.map((video, idx) => {
+                const product = video.productId ? shortProducts[video.productId] : null;
+                const name = product?.name || video.productName;
+                const image = product?.image || video.productImage;
+                const price = product?.price ?? video.price;
+                const oldPrice = product ? product.originalPrice : video.oldPrice;
+                const buyLink = product ? `/product/${product.slug || product.id}` : video.productLink;
+                return (
                 <div key={idx} className="shorts-card w-[300px] sm:w-[350px] md:w-[370px] shrink-0 snap-start bg-black rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between relative border-2 border-gray-800 cursor-pointer group">
                   <div className="relative w-full aspect-[9/16] bg-black">
-                    <iframe src={youtubeEmbedUrl(video.url)} title={video.title || video.productName} className="w-full h-full border-0 absolute inset-0 pointer-events-auto" allowFullScreen></iframe>
+                    {video.videoFile ? (
+                      <video src={assetUrl(video.videoFile)} title={video.title || name} className="absolute inset-0 w-full h-full object-cover" controls playsInline preload="metadata" />
+                    ) : (
+                      <iframe src={youtubeEmbedUrl(video.url)} title={video.title || name} className="w-full h-full border-0 absolute inset-0 pointer-events-auto" allowFullScreen></iframe>
+                    )}
                   </div>
-                  <a
-                    href={video.productLink || video.url}
-                    target={video.productLink?.startsWith('/') ? undefined : '_blank'}
-                    rel="noopener noreferrer"
-                    className="bg-red-600 text-white font-extrabold text-xs sm:text-sm py-3.5 text-center flex items-center justify-center gap-1.5 shadow-inner hover:bg-red-700 transition-colors"
-                  >
-                    <span>🛒</span> {video.productLink ? 'Mua ngay' : 'Xem trên YouTube ➔'}
-                  </a>
-                  {video.productName && (
+                  {buyLink?.startsWith('/') ? (
+                    <Link
+                      to={buyLink}
+                      state={product?.hasOptions ? { pick: true } : undefined}
+                      className="bg-red-600 text-white font-extrabold text-xs sm:text-sm py-3.5 text-center flex items-center justify-center gap-1.5 shadow-inner hover:bg-red-700 transition-colors"
+                    >
+                      <span>🛒</span> Mua ngay
+                    </Link>
+                  ) : (buyLink || video.url) ? (
+                    <a
+                      href={buyLink || video.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-red-600 text-white font-extrabold text-xs sm:text-sm py-3.5 text-center flex items-center justify-center gap-1.5 shadow-inner hover:bg-red-700 transition-colors"
+                    >
+                      <span>🛒</span> {buyLink ? 'Mua ngay' : 'Xem trên YouTube ➔'}
+                    </a>
+                  ) : null}
+                  {name && (
                   <div className="bg-white p-4 flex items-center gap-3 border-t border-gray-800">
-                    {video.productImage && <img src={assetUrl(video.productImage)} alt={video.productName} className="w-12 h-12 object-contain rounded-2xl bg-gray-50 p-1 shrink-0 border border-gray-100 shadow-sm" />}
+                    {image && <img src={assetUrl(image)} onError={imgFallback} alt={name} className="w-12 h-12 object-contain rounded-2xl bg-gray-50 p-1 shrink-0 border border-gray-100 shadow-sm" />}
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-xs sm:text-sm font-bold text-gray-800 truncate">{video.productName}</h4>
-                      {video.price > 0 && (
+                      <h4 className="text-xs sm:text-sm font-bold text-gray-800 truncate">{name}</h4>
+                      {price > 0 && (
                         <p className="text-xs sm:text-sm font-black text-red-600 leading-none mt-1.5">
-                          {video.price.toLocaleString('vi-VN')}đ
-                          {video.oldPrice > video.price && <span className="ml-1.5 text-[11px] font-normal text-gray-400 line-through">{video.oldPrice.toLocaleString('vi-VN')}đ</span>}
+                          {price.toLocaleString('vi-VN')}đ
+                          {oldPrice > price && <span className="ml-1.5 text-[11px] font-normal text-gray-400 line-through">{oldPrice.toLocaleString('vi-VN')}đ</span>}
                         </p>
                       )}
                     </div>
                   </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
-            
+
             <div className="flex flex-col items-center gap-2 mt-1">
               <span className="text-[11px] font-bold text-gray-400 tracking-wider uppercase animate-pulse">← Vuốt ngang để xem thêm video →</span>
               <div className="flex justify-center gap-2">
@@ -523,10 +549,24 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* BANNER 100 NGÀY ĐỔI TRẢ */}
-        <div className="mb-10 w-full rounded-2xl overflow-hidden shadow-sm cursor-pointer hover:opacity-95 transition-opacity">
-           <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&h=200&fit=crop" alt="100 Ngày Đổi Trả" className="w-full h-[120px] md:h-[160px] object-cover" />
-        </div>
+        {/* BANNER NGANG GIỮA TRANG (Admin → Giao diện trang chủ) */}
+        {home.promoBanner?.image && (
+          home.promoBanner.link ? (
+            home.promoBanner.link.startsWith('/') ? (
+              <Link to={home.promoBanner.link} className="mb-10 block w-full rounded-2xl overflow-hidden shadow-sm hover:opacity-95 transition-opacity">
+                <img src={assetUrl(home.promoBanner.image)} onError={imgFallback} alt="Ưu đãi TriTech Channel" className="w-full h-[120px] md:h-[160px] object-cover" />
+              </Link>
+            ) : (
+              <a href={home.promoBanner.link} target="_blank" rel="noopener noreferrer" className="mb-10 block w-full rounded-2xl overflow-hidden shadow-sm hover:opacity-95 transition-opacity">
+                <img src={assetUrl(home.promoBanner.image)} onError={imgFallback} alt="Ưu đãi TriTech Channel" className="w-full h-[120px] md:h-[160px] object-cover" />
+              </a>
+            )
+          ) : (
+            <div className="mb-10 w-full rounded-2xl overflow-hidden shadow-sm">
+              <img src={assetUrl(home.promoBanner.image)} onError={imgFallback} alt="Ưu đãi TriTech Channel" className="w-full h-[120px] md:h-[160px] object-cover" />
+            </div>
+          )
+        )}
 
         {/* BLOG – BÀI VIẾT MỚI NHẤT (đăng trong Admin → Blog) */}
         {latestPosts?.length > 0 && (

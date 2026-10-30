@@ -43,6 +43,7 @@ export const CartProvider = ({ children }) => {
           id,
           productId: product.id,
           variantId: variant?.id ?? null,
+          variantLabel: variant?.label ?? '',
           name: variant ? `${product.name} (${variant.label})` : product.name,
           price: variant?.price ?? product.price,
           oldPrice: (variant ? variant.originalPrice : product.originalPrice) || null,
@@ -53,6 +54,32 @@ export const CartProvider = ({ children }) => {
           perks: product.perks || []
         }
       ];
+    });
+  };
+
+  // Đổi phân loại / phiên bản của 1 món trong giỏ: bỏ dòng cũ, thêm dòng mới (gộp nếu trùng), giữ vị trí & trạng thái chọn
+  const changeOption = (item, product, selectedColor, variant, quantity) => {
+    const id = `${product.id}:${variant?.id ?? 0}`;
+    const color = selectedColor || '';
+    setCartItems((prev) => {
+      const idx = prev.findIndex((i) => i.id === item.id && i.color === item.color);
+      if (idx < 0) return prev;
+      const rest = prev.filter((_, i) => i !== idx);
+      const dup = rest.findIndex((i) => i.id === id && i.color === color);
+      if (dup > -1) return rest.map((i, k) => (k === dup ? { ...i, quantity: i.quantity + quantity } : i));
+      const next = {
+        ...prev[idx],
+        id,
+        variantId: variant?.id ?? null,
+        variantLabel: variant?.label ?? '',
+        name: variant ? `${product.name} (${variant.label})` : product.name,
+        price: variant?.price ?? product.price,
+        oldPrice: (variant ? variant.originalPrice : product.originalPrice) || null,
+        image: product.colors?.find((c) => c.name === color)?.image || product.image || prev[idx].image,
+        color,
+        quantity,
+      };
+      return [...rest.slice(0, idx), next, ...rest.slice(idx)];
     });
   };
 
@@ -105,7 +132,8 @@ export const CartProvider = ({ children }) => {
         toggleSelectAll,
         removeItem,
         clearCart,
-        removeSelected
+        removeSelected,
+        changeOption
       }}
     >
       {children}

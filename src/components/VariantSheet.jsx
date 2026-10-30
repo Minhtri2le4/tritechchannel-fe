@@ -14,7 +14,7 @@ const Tick = () => <Check size={12} className="absolute -bottom-px -right-px bg-
 // Bảng chọn phân loại kiểu Shopee: trượt từ dưới lên trên điện thoại, hiện giữa màn hình trên máy tính.
 // mode: 'cart' (thêm vào giỏ) | 'buy' (mua ngay). Mọi lựa chọn dùng chung state với trang sản phẩm.
 export default function VariantSheet({
-  mode, image, priceText, originalPrice, stockText, variants, colors,
+  mode, confirmLabel, image, priceText, originalPrice, stockText, variants, colors,
   variantId, onVariant, color, onColor, qty, maxQty, onQty, missing, onConfirm, onClose,
 }) {
   useEffect(() => {
@@ -110,7 +110,7 @@ export default function VariantSheet({
               buy ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-amber-400 hover:bg-amber-500 text-black'
             }`}
           >
-            {buy ? 'Mua ngay' : 'Thêm vào giỏ hàng'}
+            {confirmLabel || (buy ? 'Mua ngay' : 'Thêm vào giỏ hàng')}
           </button>
         </div>
       </div>
