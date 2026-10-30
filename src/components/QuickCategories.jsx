@@ -27,7 +27,7 @@ function BrushSplash({ className }) {
 
 // Một ô danh mục: ảnh PNG tách nền nằm trên vệt sơn vàng (không khung); ảnh có nền thì nằm trong ô xám nhạt bo góc.
 // Chưa có ảnh hoặc ảnh lỗi thì hiện icon cùng kiểu, không hiện khung "no image".
-function CategoryTile({ item }) {
+function CategoryTile({ item, index }) {
   const [broken, setBroken] = useState(false);
   const Icon = ICONS[item.icon] || Smartphone;
   const showImage = item.image && !broken;
@@ -36,7 +36,12 @@ function CategoryTile({ item }) {
   const bare = showImage && cutout;
 
   return (
-    <Link to={item.path || `/category/${item.id}`} className="group flex flex-col items-center gap-1.5 text-center">
+    // index: thứ tự để các ô hiện ra lần lượt như domino đổ (xem .cat-tile trong index.css)
+    <Link
+      to={item.path || `/category/${item.id}`}
+      className="cat-tile group flex flex-col items-center gap-1.5 text-center"
+      style={{ '--cat-delay': `${index * 70}ms` }}
+    >
       <div
         className={`relative w-full aspect-square max-w-[84px] flex items-center justify-center transition-all duration-300 group-hover:-translate-y-0.5 ${
           bare
@@ -45,7 +50,7 @@ function CategoryTile({ item }) {
         }`}
       >
         {bare && (
-          <BrushSplash className="absolute -inset-[4%] w-[108%] h-[108%] transition-transform duration-500 group-hover:rotate-12 group-hover:scale-105" />
+          <BrushSplash className="cat-splash absolute -inset-[4%] w-[108%] h-[108%] transition-transform duration-500 group-hover:rotate-12 group-hover:scale-105" />
         )}
         {showImage ? (
           <img
@@ -77,8 +82,8 @@ export default function QuickCategories({ items }) {
   return (
     <div className="bg-white rounded-2xl p-3 md:p-5 shadow-sm mb-4 md:mb-6 mt-4">
       <div className="grid grid-cols-5 md:grid-cols-10 gap-x-2 gap-y-4 md:gap-4 justify-items-center">
-        {items.slice(0, 10).map((item) => (
-          <CategoryTile key={item.id} item={item} />
+        {items.slice(0, 10).map((item, i) => (
+          <CategoryTile key={item.id} item={item} index={i} />
         ))}
       </div>
     </div>
