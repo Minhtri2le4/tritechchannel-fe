@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, Wallet, Receipt, Clock, Package, AlertTriangle, RefreshCw, TrendingUp, TrendingDown, Table2, LineChart,
-  PackageCheck, Truck, XCircle, MessageSquareText, Moon, PartyPopper,
+  PackageCheck, Truck, XCircle, MessageSquareText, Moon, PartyPopper, ShieldCheck,
 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import useCountUp from '../../hooks/useCountUp';
@@ -103,6 +103,8 @@ function TodayColumn({ data, freshOrder }) {
     { icon: XCircle, label: 'Huỷ hôm nay', value: today.cancelled, to: '/admin/orders?status=CANCELLED' },
     { icon: MessageSquareText, label: 'Đánh giá chờ trả lời', value: data.reviewsToReply, to: '/admin/reviews' },
     { icon: RefreshCw, label: 'Thu cũ mới', value: data.newTradeIns, to: '/admin/trade-ins?status=NEW' },
+    { icon: ShieldCheck, label: 'Bảo hành chờ duyệt', value: data.warrantiesPending ?? 0, to: '/admin/warranties?state=pending', hot: true },
+    { icon: AlertTriangle, label: 'Sắp hết hàng', value: data.lowStock.length, to: '/admin/products' },
   ];
 
   return (
@@ -151,7 +153,7 @@ function TodayColumn({ data, freshOrder }) {
           )}
         </div>
 
-        <div className="grid grid-cols-3 divide-x divide-y divide-gray-100 border-t border-gray-100">
+        <div className="grid grid-cols-4 divide-x divide-y divide-gray-100 border-t border-gray-100">
           {todo.map(({ icon: Icon, label, value, to, hot }, i) => (
             <Link
               key={label}

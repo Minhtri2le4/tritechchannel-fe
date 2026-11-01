@@ -43,6 +43,7 @@ export const adminApi = {
   tradeIns: crud('/admin/trade-ins'),
   warranties: {
     ...crud('/admin/warranties'),
+    activate: (id, body) => api.post(`/admin/warranties/${id}/activate`, body),
     addRecord: (id, body) => api.post(`/admin/warranties/${id}/records`, body),
     updateRecord: (id, recordId, body) => api.patch(`/admin/warranties/${id}/records/${recordId}`, body),
     removeRecord: (id, recordId) => api.delete(`/admin/warranties/${id}/records/${recordId}`),

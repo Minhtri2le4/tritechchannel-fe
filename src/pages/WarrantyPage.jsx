@@ -18,7 +18,7 @@ export default function WarrantyPage() {
   const toView = (w) => ({
     ...w,
     purchaseDate: formatDate(w.purchaseDate),
-    expiryDate: formatDate(w.expiryDate),
+    expiryDate: w.pending ? 'Đang chờ shop kích hoạt' : formatDate(w.expiryDate),
     history: w.history.map((h) => ({ ...h, date: formatDate(h.date) })),
   });
 
@@ -125,7 +125,7 @@ export default function WarrantyPage() {
                 
                 {/* Status Bar Header */}
                 <div className={`p-4 flex flex-wrap items-center justify-between gap-2 text-white font-bold text-xs sm:text-sm ${
-                  searchResult.status === 'Còn hạn' ? 'bg-emerald-600' : 'bg-gray-800'
+                  searchResult.status === 'Còn hạn' ? 'bg-emerald-600' : searchResult.pending ? 'bg-amber-500' : 'bg-gray-800'
                 }`}>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 size={18} />
@@ -159,7 +159,7 @@ export default function WarrantyPage() {
 
                   <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
                     <div>
-                      <span className="text-gray-500 text-[11px] block">Ngày mua:</span>
+                      <span className="text-gray-500 text-[11px] block">{searchResult.pending ? 'Ngày nhận hàng:' : 'Ngày mua:'}</span>
                       <strong className="text-gray-800">{searchResult.purchaseDate}</strong>
                     </div>
                     <div>

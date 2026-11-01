@@ -9,7 +9,7 @@ import { Button, Card, Checkbox, ErrorBox, Field, Input, MoneyInput, PageHeader,
 const EMPTY = {
   name: '', slug: '', brand: '', categoryId: '', price: null, originalPrice: null, stock: 0,
   image: '', images: [], description: '', perks: [], rating: 5, reviewsCount: 0, soldCount: 0,
-  isHot: false, isFlashSale: false, installment: false, status: 'ACTIVE', variants: [], colors: [],
+  isHot: false, isFlashSale: false, installment: false, status: 'ACTIVE', variants: [], colors: [], warrantyMonths: null,
 };
 
 // Chuyển dữ liệu API -> state form
@@ -156,6 +156,7 @@ function ProductForm({ initial, productId }) {
       isHot: form.isHot,
       isFlashSale: form.isFlashSale,
       installment: form.installment,
+      warrantyMonths: form.warrantyMonths ?? null,
       status: form.status,
       variants: form.variants.map((v, i) => ({ label: v.label, price: v.price, originalPrice: v.originalPrice || null, stock: Number(v.stock) || 0, sortOrder: i })),
       colors: form.colors.map((c, i) => ({
@@ -424,6 +425,12 @@ function ProductForm({ initial, productId }) {
               <Checkbox label="Flash Sale" checked={form.isFlashSale} onChange={(e) => set('isFlashSale', e.target.checked)} />
               <Checkbox label="Hỗ trợ trả góp 0%" checked={form.installment} onChange={(e) => set('installment', e.target.checked)} />
             </div>
+            <Field label="Bảo hành mặc định" hint="Khách nhận hàng thì phiếu bảo hành tự tạo, chọn sẵn mức này – bạn bấm duyệt ở mục Bảo hành">
+              <Select value={form.warrantyMonths ?? ''} onChange={(e) => set('warrantyMonths', e.target.value === '' ? null : Number(e.target.value))}>
+                <option value="">Chưa đặt (chọn khi duyệt)</option>
+                {[3, 6, 12, 18, 24].map((m) => <option key={m} value={m}>{m} tháng</option>)}
+              </Select>
+            </Field>
           </Card>
 
           <Card className="p-4 space-y-3">

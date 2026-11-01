@@ -448,7 +448,9 @@ function ProductDetailView({ productData }) {
               </>
             )}
             <dt className="text-gray-500">Bảo hành</dt>
-            <dd className="text-gray-800">1 đổi 1 trong 45 ngày</dd>
+            <dd className="text-gray-800">
+              {productData.warrantyMonths ? `${productData.warrantyMonths} tháng chính hãng · ` : ''}1 đổi 1 trong 45 ngày
+            </dd>
             <dt className="text-gray-500">Kho hàng</dt>
             <dd className="text-gray-800">{inStock ? 'Còn hàng' : 'Tạm hết hàng'}</dd>
             <dt className="text-gray-500">Gửi từ</dt>

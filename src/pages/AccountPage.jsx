@@ -124,6 +124,13 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
                       <p className="text-xs text-gray-500">
                         {[it.color, it.variantLabel].filter(Boolean).join(', ')} {it.quantity > 1 && `x${it.quantity}`}
                       </p>
+                      {/* Phiếu bảo hành tự tạo khi nhận hàng */}
+                      {it.warranty && (
+                        <p className={`mt-0.5 flex items-center gap-1 text-[11px] font-semibold ${it.warranty.pending ? 'text-amber-600' : 'text-emerald-600'}`}>
+                          <ShieldCheck size={12} />
+                          {it.warranty.pending ? 'Bảo hành: đang chờ shop kích hoạt' : `Bảo hành đến ${formatDate(it.warranty.expiryDate)}`}
+                        </p>
+                      )}
                     </div>
                   </Link>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
