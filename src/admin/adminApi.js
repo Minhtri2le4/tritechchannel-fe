@@ -13,6 +13,7 @@ export const adminApi = {
   login: (email, password) => api.post('/admin/auth/login', { email, password }),
   me: () => api.get('/admin/auth/me'),
   changePassword: (body) => api.post('/admin/auth/change-password', body),
+  setAvatar: (avatar) => api.patch('/admin/auth/me/avatar', { avatar }),
 
   dashboard: (days = 30) => api.get('/admin/dashboard', { params: { days } }),
 

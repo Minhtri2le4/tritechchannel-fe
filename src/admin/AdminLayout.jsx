@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, RefreshCw, ShieldCheck, Ticket, FolderTree, Users,
-  LogOut, Menu, X, ExternalLink, KeyRound, LayoutTemplate,
+  LogOut, Menu, X, ExternalLink, KeyRound, LayoutTemplate, Sun, Moon, Camera, Loader2,
   PartyPopper,
   UserRound,
   MessageSquareText, Newspaper,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { adminApi } from './adminApi';
+import { assetUrl } from '../lib/api';
 import ChangePasswordModal from './pages/ChangePasswordModal';
 
 const NAV = [
@@ -41,11 +43,50 @@ const NAV = [
   { group: 'Hệ thống', items: [{ to: '/admin/users', label: 'Nhân viên', icon: Users, adminOnly: true }] },
 ];
 
+const THEME_KEY = 'tritech_admin_theme';
+const readTheme = () => {
+  try {
+    return localStorage.getItem(THEME_KEY) || 'light';
+  } catch {
+    return 'light';
+  }
+};
+
 export default function AdminLayout() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, setUser, logout, isAdmin } = useAuth();
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
+  const [theme, setTheme] = useState(readTheme);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const avatarRef = useRef(null);
+
+  // Chế độ tối: gắn class lên <html> để cả hộp thoại (Modal) cũng đổi màu; rời trang admin thì gỡ ra
+  useEffect(() => {
+    document.documentElement.classList.toggle('admin-dark', theme === 'dark');
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // trình duyệt chặn lưu – vẫn đổi được trong phiên này
+    }
+    return () => document.documentElement.classList.remove('admin-dark');
+  }, [theme]);
+
+  const changeAvatar = async (file) => {
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return alert('Chỉ nhận ảnh JPG, PNG, WEBP');
+    setAvatarBusy(true);
+    try {
+      const { data } = await adminApi.upload([file]);
+      const { data: saved } = await adminApi.setAvatar(data[0].url);
+      setUser((u) => ({ ...u, avatar: saved.avatar }));
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setAvatarBusy(false);
+      if (avatarRef.current) avatarRef.current.value = '';
+    }
+  };
 
   const nav = (
     <nav className="flex flex-col gap-4 p-3">
@@ -88,7 +129,7 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800">
       {/* Sidebar desktop */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-60 flex-col bg-gray-950">
+      <aside className="admin-sidebar hidden lg:flex fixed inset-y-0 left-0 w-60 flex-col bg-gray-950">
         {brand}
         {nav}
       </aside>
@@ -96,7 +137,7 @@ export default function AdminLayout() {
       {/* Sidebar mobile */}
       {menuOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMenuOpen(false)}>
-          <aside className="w-64 h-full bg-gray-950" onClick={(e) => e.stopPropagation()}>
+          <aside className="admin-sidebar w-64 h-full bg-gray-950" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between pr-3">
               {brand}
               <button onClick={() => setMenuOpen(false)} className="text-gray-400 p-1">
@@ -116,10 +157,38 @@ export default function AdminLayout() {
           <a href="/" target="_blank" rel="noreferrer" className="hidden sm:flex items-center gap-1 text-xs text-gray-500 hover:text-black">
             <ExternalLink size={14} /> Xem website
           </a>
-          <div className="flex items-center gap-1 sm:gap-3">
-            <span className="hidden sm:flex w-8 h-8 rounded-full bg-gray-900 text-[#FFD400] text-sm font-black items-center justify-center">
-              {user?.name?.trim().split(/\s+/).pop()?.[0]?.toUpperCase() || 'A'}
-            </span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              title="Bật / tắt chế độ tối"
+              onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+              className="relative flex h-8 w-14 shrink-0 items-center rounded-full p-0.5 transition-colors duration-300"
+              style={{ background: theme === 'dark' ? '#4338ca' : '#e5e7eb' }}
+            >
+              <span
+                className="flex h-7 w-7 items-center justify-center rounded-full shadow transition-transform duration-300"
+                style={{ background: '#fff', transform: theme === 'dark' ? 'translateX(24px)' : 'none' }}
+              >
+                {theme === 'dark' ? <Moon size={15} className="text-indigo-500" /> : <Sun size={15} className="text-amber-500" />}
+              </span>
+            </button>
+            {/* Ảnh đại diện: bấm để đổi */}
+            <button
+              type="button"
+              title="Đổi ảnh đại diện"
+              onClick={() => avatarRef.current?.click()}
+              className="group relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#111827] text-sm font-black text-[#FFD400] ring-2 ring-[#FFD400]/60"
+            >
+              {user?.avatar ? (
+                <img src={assetUrl(user.avatar)} alt="" className="h-full w-full object-cover" />
+              ) : (
+                user?.name?.trim().split(/\s+/).pop()?.[0]?.toUpperCase() || 'A'
+              )}
+              <span className={`absolute inset-0 flex items-center justify-center bg-black/50 text-white transition-opacity ${avatarBusy ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                {avatarBusy ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+              </span>
+              <input ref={avatarRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => changeAvatar(e.target.files?.[0])} />
+            </button>
             <div className="text-right sm:text-left leading-tight">
               <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
               <p className="text-[11px] text-gray-500">{user?.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên'}</p>
