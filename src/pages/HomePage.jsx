@@ -13,6 +13,7 @@ import { useHomeContent } from '../lib/homeContent';
 import { youtubeEmbedUrl } from '../lib/youtube';
 import { videoEmbed } from '../lib/video';
 import { isNewArrival } from '../lib/newArrival';
+import PopularSearches from '../components/PopularSearches';
 import useSeo from '../hooks/useSeo';
 
 // Tab "Gợi ý cho bạn" -> tham số lọc gửi lên API
@@ -537,6 +538,8 @@ export default function HomePage() {
               <span className="text-[11px] md:text-sm text-gray-600 leading-tight">THỦ TỤC ĐỔI TRẢ <br/><span className="font-black text-gray-900">DỄ DÀNG</span></span>
            </div>
         </div>
+
+        <PopularSearches />
       </main>
 
       

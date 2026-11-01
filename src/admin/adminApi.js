@@ -60,5 +60,7 @@ export const adminApi = {
     saveHome: (body) => api.put('/admin/settings/home', body),
     getCampaigns: () => api.get('/admin/settings/campaigns'),
     saveCampaigns: (body) => api.put('/admin/settings/campaigns', body),
+    getPopularSearches: () => api.get('/admin/settings/popular-searches'),
+    savePopularSearches: (body) => api.put('/admin/settings/popular-searches', body),
   },
 };

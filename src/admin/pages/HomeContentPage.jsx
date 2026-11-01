@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, Film, Loader2, Plus, Save, Trash2, X } from 'lucide
 import { adminApi } from '../adminApi';
 import ImageField from '../ImageField';
 import ProductSearch from '../ProductSearch';
+import PopularSearchesCard from '../PopularSearchesCard';
 import { assetUrl, formatPrice, imgFallback } from '../../lib/api';
 import { mergeHome } from '../../lib/homeContent';
 import { shopApi } from '../../services/shop';
@@ -198,6 +199,7 @@ export default function HomeContentPage() {
   return (
     <>
       <PageHeader title="Giao diện trang chủ" subtitle="Đổi banner và video review mà không cần sửa code" actions={saveButton} />
+      <PopularSearchesCard />
       {message && <p className={`mb-4 text-sm font-semibold ${message.startsWith('❌') ? 'text-red-600' : 'text-emerald-700'}`}>{message}</p>}
 
       <Section

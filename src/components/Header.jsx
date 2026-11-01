@@ -120,6 +120,8 @@ export default function Header() {
         setRecentSearches([query.trim(), ...recentSearches.slice(0, 4)]);
       }
       setIsOpen(false);
+      // Ghi lại từ khoá cho mục "Mọi người cũng tìm kiếm" (lỗi thì bỏ qua, không ảnh hưởng việc tìm)
+      shopApi.logSearch(query.trim()).catch(() => {});
       // Ẩn bàn phím điện thoại sau khi tìm
       document.activeElement?.blur?.();
       navigate(`/category/1?search=${encodeURIComponent(query.trim())}`);

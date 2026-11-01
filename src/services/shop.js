@@ -57,6 +57,8 @@ export const shopApi = {
   createReview: (body) => api.post('/reviews', body),
   // Chương trình khuyến mãi đang chạy (Halloween, 11.11…)
   campaigns: () => api.get('/settings/campaigns'),
+  popularSearches: () => api.get('/settings/popular-searches'),
+  logSearch: (term) => api.post('/settings/search-log', { term }),
 
   // Blog
   posts: (params) => api.get('/posts', { params }),
