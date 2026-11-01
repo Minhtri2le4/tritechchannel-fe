@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, RefreshCw, ShieldCheck, Ticket, FolderTree, Users,
   LogOut, Menu, X, ExternalLink, KeyRound, LayoutTemplate,
@@ -43,6 +43,7 @@ const NAV = [
 
 export default function AdminLayout() {
   const { user, logout, isAdmin } = useAuth();
+  const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
 
@@ -132,7 +133,8 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="p-4 sm:p-6 max-w-[1400px]">
+        {/* Trang Tổng quan dùng hết bề ngang màn hình lớn (có cột "Hôm nay" bên phải) */}
+        <main className={`p-4 sm:p-6 ${pathname === '/admin' || pathname === '/admin/' ? 'max-w-[1920px]' : 'max-w-[1400px]'}`}>
           <Outlet />
         </main>
       </div>

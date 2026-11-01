@@ -9,7 +9,7 @@ import useFetch from '../hooks/useFetch';
 import useSeo, { SITE_URL } from '../hooks/useSeo';
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
-import { allPrices, optionPrice } from '../lib/price';
+import { allPrices, optionPrice, optionStock } from '../lib/price';
 import ProductCard from '../components/ProductCard';
 import VariantSheet from '../components/VariantSheet';
 import ProductReviews from '../components/ProductReviews';
@@ -90,7 +90,7 @@ function ProductDetailView({ productData }) {
     : `${priceMin.toLocaleString('vi-VN')}₫ - ${priceMax.toLocaleString('vi-VN')}₫`;
   const originalPrice = priceDecided && (colorPriced || selectedVariant || !storages.length) ? chosen.originalPrice : null;
   const discountPercent = originalPrice > currentPrice ? Math.round((1 - currentPrice / originalPrice) * 100) : 0;
-  const stock = selectedVariant ? selectedVariant.stock : storages.length ? storages.reduce((n, v) => n + v.stock, 0) : productData.stock;
+  const stock = optionStock(productData, selectedVariant, selectedColor);
   const inStock = stock > 0;
   const missing = [colors.length && !selectedColor && 'Phân loại', storages.length && !selectedVariant && 'Phiên bản'].filter(Boolean).join(' và ');
   const colorImage = colors.find((c) => c.name === selectedColor)?.image;
@@ -98,7 +98,7 @@ function ProductDetailView({ productData }) {
   const productPath = `/product/${productData.slug || productData.id}`;
   const absImage = (src) => (src && /^https?:/.test(src) ? src : `${SITE_URL}${src || ''}`);
   const minPrice = priceMin;
-  const anyStock = storages.length ? storages.some((v) => v.stock > 0) : productData.stock > 0;
+  const anyStock = colors.some((c) => c.stock > 0) || (storages.length ? storages.some((v) => v.stock > 0) : productData.stock > 0);
   useSeo({
     title: `${productData.name} - Giá ${minPrice.toLocaleString('vi-VN')}đ`,
     description:
@@ -328,8 +328,9 @@ function ProductDetailView({ productData }) {
                       <button
                         key={color.id}
                         type="button"
+                        disabled={color.stock === 0}
                         onClick={() => pickColor(color)}
-                        className={`${optionClass(selectedColor === color.name, false)} flex items-center gap-2`}
+                        className={`${optionClass(selectedColor === color.name, color.stock === 0)} flex items-center gap-2`}
                       >
                         {color.image ? (
                           <img src={assetUrl(color.image)} alt="" className="w-6 h-6 object-contain" />
@@ -337,6 +338,7 @@ function ProductDetailView({ productData }) {
                           color.hex && <span className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: color.hex }} />
                         )}
                         {color.name}
+                        {color.stock === 0 && <span className="text-[10px]">(hết)</span>}
                         {selectedColor === color.name && <Check size={12} className="absolute -bottom-px -right-px bg-red-500 text-white rounded-tl" />}
                       </button>
                     ))}
@@ -446,7 +448,9 @@ function ProductDetailView({ productData }) {
               </>
             )}
             <dt className="text-gray-500">Bảo hành</dt>
-            <dd className="text-gray-800">1 đổi 1 trong 45 ngày</dd>
+            <dd className="text-gray-800">
+              {productData.warrantyMonths ? `${productData.warrantyMonths} tháng chính hãng · ` : ''}1 đổi 1 trong 45 ngày
+            </dd>
             <dt className="text-gray-500">Kho hàng</dt>
             <dd className="text-gray-800">{inStock ? 'Còn hàng' : 'Tạm hết hàng'}</dd>
             <dt className="text-gray-500">Gửi từ</dt>
@@ -510,7 +514,7 @@ function ProductDetailView({ productData }) {
           image={colorImage ? assetUrl(colorImage) : assetUrl(productData.image)}
           priceText={priceText}
           originalPrice={discountPercent > 0 ? originalPrice : null}
-          stockText={selectedVariant || !storages.length ? (inStock ? `Kho: ${stock}` : 'Tạm hết hàng') : 'Chọn phiên bản để xem giá'}
+          stockText={selectedVariant || !storages.length || colors.find((c) => c.name === selectedColor)?.stock != null ? (inStock ? `Kho: ${stock}` : 'Tạm hết hàng') : 'Chọn phiên bản để xem giá'}
           variants={storages}
           colors={colors.map((c) => ({ ...c, imageUrl: c.image ? assetUrl(c.image) : null }))}
           variantId={selectedVariantId}

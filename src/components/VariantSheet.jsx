@@ -57,13 +57,14 @@ export default function VariantSheet({
               <p className="text-sm text-gray-800 mb-2">Phân loại</p>
               <div className="flex flex-wrap gap-2">
                 {colors.map((c) => (
-                  <button key={c.id} type="button" onClick={() => onColor(c)} className={`${optionClass(color === c.name, false)} flex items-center gap-2 pl-1.5`}>
+                  <button key={c.id} type="button" disabled={c.stock === 0} onClick={() => onColor(c)} className={`${optionClass(color === c.name, c.stock === 0)} flex items-center gap-2 pl-1.5`}>
                     {c.image ? (
                       <img src={c.imageUrl} onError={imgFallback} alt="" className="w-8 h-8 object-contain rounded" />
                     ) : (
                       c.hex && <span className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: c.hex }} />
                     )}
                     {c.name}
+                    {c.stock === 0 && <span className="ml-1 text-[10px]">(hết)</span>}
                     {color === c.name && <Tick />}
                   </button>
                 ))}

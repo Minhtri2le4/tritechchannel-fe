@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Star } from 'lucide-react';
+import useCountUp from '../hooks/useCountUp';
 
 // Gian hàng chính hãng của TriTech trên các sàn
 const STORES = [
@@ -43,31 +44,6 @@ const STORES = [
     link: 'https://www.lazada.vn/shop/tritechchannel',
   },
 ];
-
-const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-// Số chạy từ 0 lên `target` sau `delay` ms, khi `start` = true
-function useCountUp(target, start, delay = 0, ms = 1400) {
-  const [value, setValue] = useState(() => (reducedMotion() ? target : 0));
-  useEffect(() => {
-    if (!start || reducedMotion()) return;
-    let raf;
-    const timer = setTimeout(() => {
-      const t0 = performance.now();
-      const tick = (now) => {
-        const p = Math.min(1, (now - t0) / ms);
-        setValue(target * (1 - (1 - p) ** 3));
-        if (p < 1) raf = requestAnimationFrame(tick);
-      };
-      raf = requestAnimationFrame(tick);
-    }, delay);
-    return () => {
-      clearTimeout(timer);
-      cancelAnimationFrame(raf);
-    };
-  }, [start, target, delay, ms]);
-  return value;
-}
 
 const fmtSold = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 9950 ? 0 : 1).replace('.0', '')}K+` : `${Math.round(n)}`);
 

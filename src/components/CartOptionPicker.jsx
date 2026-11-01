@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { shopApi } from '../services/shop';
 import { assetUrl } from '../lib/api';
-import { optionPrice } from '../lib/price';
+import { optionPrice, optionStock } from '../lib/price';
 import VariantSheet from './VariantSheet';
 
 // Đổi phân loại / phiên bản của 1 món ngay trong giỏ hàng (như Shopee).
@@ -45,7 +45,7 @@ export default function CartOptionPicker({ item, onConfirm, onClose }) {
   const colors = product.colors || [];
   const variant = variants.find((v) => v.id === variantId) || null;
   const { price, originalPrice } = optionPrice(product, variant, color);
-  const stock = variant ? variant.stock : product.stock;
+  const stock = optionStock(product, variant, color);
   const colorImage = colors.find((c) => c.name === color)?.image;
   const missing = [colors.length && !color && 'Phân loại', variants.length && !variant && 'Phiên bản'].filter(Boolean).join(' và ');
 
