@@ -221,7 +221,7 @@ function Panel({ title, subtitle, action, children, className = '' }) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [days, setDays] = useState(30);
+  const [days, setDays] = useState(1); // mở trang là xem Hôm nay
   const [asTable, setAsTable] = useState(false);
   const { data, loading, error, reload } = useFetch(() => adminApi.dashboard(days), [days]);
 
