@@ -11,7 +11,9 @@ import { adminApi } from '../adminApi';
 import { AreaChart, BarList, ColumnChart, compactVnd } from '../charts';
 import { Badge, Card, ErrorBox, ORDER_STATUS, PageHeader, Spinner, Table } from '../ui';
 
+// days = 1: Hôm nay – biểu đồ theo giờ, so với hôm qua
 const RANGES = [
+  { days: 1, label: 'Hôm nay' },
   { days: 7, label: '7 ngày' },
   { days: 30, label: '30 ngày' },
   { days: 90, label: '90 ngày' },
@@ -21,15 +23,15 @@ const SERIES_COLOR = '#2563eb'; // 1 màu cho mọi biểu đồ 1 chuỗi – k
 // % thay đổi so với kỳ trước (null khi kỳ trước = 0)
 const change = (cur, prev) => (prev ? ((cur - prev) / prev) * 100 : null);
 
-function Delta({ value }) {
-  if (value === null) return <span className="text-[11px] text-gray-400">Chưa có số liệu kỳ trước</span>;
+function Delta({ value, vs = 'kỳ trước' }) {
+  if (value === null) return <span className="text-[11px] text-gray-400">Chưa có số liệu {vs}</span>;
   const up = value >= 0;
   const Icon = up ? TrendingUp : TrendingDown;
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${up ? 'text-emerald-700' : 'text-red-600'}`}>
       <Icon size={12} />
       {up ? '+' : ''}
-      {value.toFixed(0)}% <span className="font-normal text-gray-500">so với kỳ trước</span>
+      {value.toFixed(0)}% <span className="font-normal text-gray-500">so với {vs}</span>
     </span>
   );
 }
@@ -67,9 +69,9 @@ function Kpi({ icon: Icon, label, value, format, footer, to, index = 0 }) {
 function RangeSwitch({ days, onChange }) {
   const idx = Math.max(0, RANGES.findIndex((r) => r.days === days));
   return (
-    <div className="relative inline-grid grid-cols-3 rounded-lg border border-gray-300 bg-white p-0.5">
+    <div className="relative inline-grid grid-cols-4 rounded-lg border border-gray-300 bg-white p-0.5">
       <span
-        className="absolute inset-y-0.5 left-0.5 w-[calc((100%-4px)/3)] rounded-md bg-gray-900 transition-transform duration-300 ease-out"
+        className="absolute inset-y-0.5 left-0.5 w-[calc((100%-4px)/4)] rounded-md bg-gray-900 transition-transform duration-300 ease-out"
         style={{ transform: `translateX(${idx * 100}%)` }}
       />
       {RANGES.map((r) => (
@@ -253,6 +255,10 @@ export default function DashboardPage() {
   const pending = data.ordersByStatus.PENDING || 0;
   const totalOrders = Object.values(data.ordersByStatus).reduce((s, n) => s + n, 0);
   const rangeLabel = RANGES.find((r) => r.days === days)?.label;
+  const isToday = data.days === 1;
+  const kpiLabel = (s) => (days === 1 ? `${s} hôm nay` : `${s} ${rangeLabel}`);
+  const recent = isToday ? 'Theo từng giờ hôm nay' : `${rangeLabel} gần nhất`;
+  const vs = isToday ? 'hôm qua' : 'kỳ trước';
 
   // Chỉ làm mờ khi đang đổi kỳ (tự tải lại mỗi phút thì không nhấp nháy)
   const switching = loading && data.days !== days;
@@ -268,9 +274,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_380px] gap-4 items-start">
       <div className={`min-w-0 transition-opacity duration-300 ${switching ? 'opacity-60' : ''}`}>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
-        <Kpi index={0} icon={Wallet} label={`Doanh thu ${rangeLabel}`} value={period.revenue} format={money} footer={<Delta value={change(period.revenue, prev.revenue)} />} />
-        <Kpi index={1} icon={ShoppingCart} label={`Đơn hàng ${rangeLabel}`} value={period.orders} footer={<Delta value={change(period.orders, prev.orders)} />} />
-        <Kpi index={2} icon={Receipt} label="Giá trị TB / đơn" value={avg} format={money} footer={<Delta value={change(avg, prevAvg)} />} />
+        <Kpi index={0} icon={Wallet} label={kpiLabel('Doanh thu')} value={period.revenue} format={money} footer={<Delta vs={vs} value={change(period.revenue, prev.revenue)} />} />
+        <Kpi index={1} icon={ShoppingCart} label={kpiLabel('Đơn hàng')} value={period.orders} footer={<Delta vs={vs} value={change(period.orders, prev.orders)} />} />
+        <Kpi index={2} icon={Receipt} label="Giá trị TB / đơn" value={avg} format={money} footer={<Delta vs={vs} value={change(avg, prevAvg)} />} />
         <Kpi
           index={3}
           icon={Clock}
@@ -285,8 +291,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
         <Panel
           className="xl:col-span-2"
-          title="Doanh thu theo ngày"
-          subtitle={`${rangeLabel} gần nhất · không tính đơn đã hủy`}
+          title={isToday ? 'Doanh thu theo giờ' : 'Doanh thu theo ngày'}
+          subtitle={`${recent} · không tính đơn đã hủy`}
           action={
             <button
               onClick={() => setAsTable((v) => !v)}
@@ -305,7 +311,7 @@ export default function DashboardPage() {
                 <tbody>
                   {[...data.series].reverse().map((d) => (
                     <tr key={d.date} className="border-t border-gray-100">
-                      <td className="py-1.5">{d.date.split('-').reverse().join('/')}</td>
+                      <td className="py-1.5">{d.date.includes('T') ? `${d.date.slice(11, 13)}:00` : d.date.split('-').reverse().join('/')}</td>
                       <td className="text-right tabular-nums">{d.orders}</td>
                       <td className="text-right tabular-nums font-semibold">{formatPrice(d.revenue)}</td>
                     </tr>
@@ -324,7 +330,7 @@ export default function DashboardPage() {
           )}
         </Panel>
 
-        <Panel title="Sản phẩm bán chạy" subtitle={`Theo doanh thu, ${rangeLabel}`}>
+        <Panel title="Sản phẩm bán chạy" subtitle={`Theo doanh thu, ${isToday ? 'hôm nay' : rangeLabel}`}>
           <BarList
             items={data.topProducts}
             valueKey="revenue"
@@ -337,7 +343,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
-        <Panel className="xl:col-span-2" title="Số đơn theo ngày" subtitle={`${rangeLabel} gần nhất`}>
+        <Panel className="xl:col-span-2" title={isToday ? 'Số đơn theo giờ' : 'Số đơn theo ngày'} subtitle={recent}>
           <ColumnChart
             data={data.series}
             valueKey="orders"

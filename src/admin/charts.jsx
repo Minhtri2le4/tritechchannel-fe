@@ -25,7 +25,9 @@ const niceMax = (max) => {
   return n * step;
 };
 
+// yyyy-MM-dd -> dd/MM; yyyy-MM-ddTHH (biểu đồ Hôm nay theo giờ) -> HHh
 const dayLabel = (iso) => {
+  if (iso.includes('T')) return `${iso.slice(11, 13)}h`;
   const [, m, d] = iso.split('-');
   return `${d}/${m}`;
 };
