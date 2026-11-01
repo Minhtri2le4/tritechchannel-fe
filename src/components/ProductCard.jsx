@@ -2,6 +2,7 @@ import { ShoppingCart, Star } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom'; // 1. Import thêm Link từ react-router-dom
 import { useCart } from '../context/CartContext';
 import { assetUrl, imgFallback } from '../lib/api';
+import { isNewArrival } from '../lib/newArrival';
 
 // Rút gọn số đã bán: 1250 -> 1.2K
 const formatSold = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}K` : n);
@@ -58,6 +59,12 @@ export default function ProductCard({ product }) {
             </span>
           )}
         </div>
+
+        {isNewArrival(product) && (
+          <span className="mt-1.5 w-fit rounded border border-red-500 px-1.5 py-px text-[9px] md:text-[11px] font-medium leading-tight text-red-600">
+            Hàng mới về
+          </span>
+        )}
 
         <div className="mt-2 flex items-center gap-2 text-[9px] md:text-xs text-gray-500 font-medium pb-1">
           <div className="flex items-center text-yellow-400">

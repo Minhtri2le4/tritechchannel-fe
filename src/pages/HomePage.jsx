@@ -12,6 +12,7 @@ import { assetUrl, imgFallback } from '../lib/api';
 import { useHomeContent } from '../lib/homeContent';
 import { youtubeEmbedUrl } from '../lib/youtube';
 import { videoEmbed } from '../lib/video';
+import { isNewArrival } from '../lib/newArrival';
 import useSeo from '../hooks/useSeo';
 
 // Tab "Gợi ý cho bạn" -> tham số lọc gửi lên API
@@ -445,6 +446,9 @@ export default function HomePage() {
                       <span className="text-[10px] font-bold text-yellow-500 flex items-center gap-0.5"><Star size={10} className="fill-yellow-400 text-yellow-400" /> {item.rating}</span>
                       <span className="text-[10px] text-gray-400">| Đã bán {item.soldCount}</span>
                     </div>
+                    {isNewArrival(item) && (
+                      <span className="mt-1.5 inline-block rounded border border-red-500 px-1.5 py-px text-[9px] font-medium leading-tight text-red-600">Hàng mới về</span>
+                    )}
                   </div>
                   <div className="mt-3 pt-2 border-t border-gray-100 flex items-end justify-between">
                     <div>
