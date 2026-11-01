@@ -13,3 +13,11 @@ export const allPrices = (product) => {
   const colors = product.colors || [];
   return colors.length ? colors.flatMap((c) => (c.price != null ? [c.price] : base)) : base;
 };
+
+// Kho của 1 lựa chọn: phân loại có kho riêng thì lấy kho đó, không thì kho phiên bản / sản phẩm (giống backend khi trừ kho)
+export const optionStock = (product, variant, colorName) => {
+  const color = product.colors?.find((c) => c.name === colorName);
+  if (color?.stock != null) return color.stock;
+  if (variant) return variant.stock;
+  return product.variants?.length ? product.variants.reduce((n, v) => n + v.stock, 0) : product.stock;
+};
