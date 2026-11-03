@@ -3,13 +3,26 @@ import { Link, useNavigate } from 'react-router-dom'; // 1. Import thêm Link t�
 import { useCart } from '../context/CartContext';
 import { assetUrl, imgFallback } from '../lib/api';
 import { isNewArrival } from '../lib/newArrival';
+import { isSoldOut } from '../lib/stock';
 
 // Rút gọn số đã bán: 1250 -> 1.2K
 const formatSold = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}K` : n);
 
+// Vòng tròn "Bán hết" phủ giữa ảnh như Shopee – đặt trong khung ảnh có class relative
+export function SoldOutBadge() {
+  return (
+    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+      <span className="w-[42%] aspect-square rounded-full bg-black/65 text-white text-xs md:text-sm font-semibold flex items-center justify-center">
+        Bán hết
+      </span>
+    </div>
+  );
+}
+
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const navigate = useNavigate();
+  const soldOut = isSoldOut(product);
 
   return (
     /* 2. Bọc toàn bộ card bằng thẻ Link trỏ tới trang chi tiết sản phẩm */
@@ -41,6 +54,7 @@ export default function ProductCard({ product }) {
           alt={product.name} 
           className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
         />
+        {soldOut && <SoldOutBadge />}
       </div>
 
       {/* Nội Dung (Tên, Giá, Đánh giá, Nút) */}
@@ -76,20 +90,28 @@ export default function ProductCard({ product }) {
         </div>
 
         {/* Nút thêm vào giỏ hàng giữ nguyên e.stopPropagation để không bị nhảy trang khi bấm mua nhanh */}
-        <button 
-          onClick={(e) => {
-            e.preventDefault(); // Ngăn hành vi mặc định của Link
-            e.stopPropagation(); // Ngăn sự kiện nổi bọt
-            // Sản phẩm có dung lượng/màu thì phải vào trang chi tiết để chọn
-            if (product.hasOptions) navigate(`/product/${product.slug || product.id}`, { state: { pick: true } });
-            else addToCart(product);
-          }}
-          className="mt-auto pt-2 w-full"
-        >
-          <div className="w-full py-2 md:py-2.5 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-xs md:text-sm rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm">
-            <ShoppingCart size={14} /> Thêm vào giỏ
+        {soldOut ? (
+          <div className="mt-auto pt-2 w-full">
+            <div className="w-full py-2 md:py-2.5 bg-gray-100 text-gray-400 font-bold text-xs md:text-sm rounded-xl flex items-center justify-center">
+              Hết hàng
+            </div>
           </div>
-        </button>
+        ) : (
+          <button
+            onClick={(e) => {
+              e.preventDefault(); // Ngăn hành vi mặc định của Link
+              e.stopPropagation(); // Ngăn sự kiện nổi bọt
+              // Sản phẩm có dung lượng/màu thì phải vào trang chi tiết để chọn
+              if (product.hasOptions) navigate(`/product/${product.slug || product.id}`, { state: { pick: true } });
+              else addToCart(product);
+            }}
+            className="mt-auto pt-2 w-full"
+          >
+            <div className="w-full py-2 md:py-2.5 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-xs md:text-sm rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm">
+              <ShoppingCart size={14} /> Thêm vào giỏ
+            </div>
+          </button>
+        )}
       </div>
     </Link>
   );
