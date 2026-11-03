@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext'; 
-import ProductCard from '../components/ProductCard.jsx';
+import ProductCard, { SoldOutBadge } from '../components/ProductCard.jsx';
+import { isSoldOut } from '../lib/stock';
 import QuickCategories from '../components/QuickCategories';
 import CampaignSection from '../components/CampaignSection';
 import Reveal from '../components/Reveal';
@@ -27,7 +28,7 @@ import {
   ShieldCheck, RefreshCw, Truck, RotateCcw, 
   ChevronLeft, ChevronRight, PhoneCall, Star, Play, Flame, Zap, Clock,
   Smartphone, Tablet, Percent, Headphones, Speaker, Watch, Laptop, Home, Gift, Newspaper, 
-  ArrowRight, Sparkles
+  ArrowRight, Sparkles, List
 } from 'lucide-react';
 
 const iconMap = {
@@ -123,6 +124,7 @@ export default function HomePage() {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('all');
   const [suggestLimit, setSuggestLimit] = useState(SUGGEST_PAGE);
+  const [suggestCategory, setSuggestCategory] = useState(null);
   const shortsContainerRef = useRef(null);
   // Banner, video review: lấy từ Admin → Giao diện trang chủ (chưa cấu hình thì dùng mặc định)
   const home = useHomeContent();
@@ -141,18 +143,29 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   // Dữ liệu từ backend
-  const { sidebar: sidebarCategories, quick: quickCategories } = useCategories();
+  const { sidebar: sidebarCategories, quick: quickCategories, all: allCategories } = useCategories();
+  // Cột danh mục ở mục Gợi ý: mọi danh mục có trang sản phẩm (bỏ Blog, Thu cũ đổi mới...)
+  const productCategories = (allCategories || []).filter((c) => !c.path || c.path.startsWith('/category/'));
   const { data: products } = useFetch(() => shopApi.products({ isHot: true, limit: 8 }), []);
   const { data: latestPosts } = useFetch(() => shopApi.posts({ limit: 5 }), []);
   const { data: flashSale } = useFetch(() => shopApi.products({ isFlashSale: true, limit: 6 }), []);
   const bestPricesToday = flashSale || [];
   const { data: suggested, meta: suggestMeta, loading: suggestLoading } = useFetch(
-    () => shopApi.products({ ...SUGGEST_TABS[activeTab], limit: suggestLimit }),
-    [activeTab, suggestLimit]
+    () => shopApi.products({ ...SUGGEST_TABS[activeTab], ...(suggestCategory ? { category: String(suggestCategory) } : {}), limit: suggestLimit }),
+    [activeTab, suggestCategory, suggestLimit]
   );
   const thirtyProducts = suggested || [];
+  // Backend xếp sản phẩm hết hàng xuống cuối -> tách ra để hiện dưới tiêu đề "Hết hàng"
+  const inStockSuggested = thirtyProducts.filter((p) => !isSoldOut(p));
+  const soldOutSuggested = thirtyProducts.filter(isSoldOut);
   const changeTab = (tab) => {
     setActiveTab(tab);
+    setSuggestCategory(null);
+    setSuggestLimit(SUGGEST_PAGE);
+  };
+  const changeCategory = (id) => {
+    setActiveTab('all');
+    setSuggestCategory(id);
     setSuggestLimit(SUGGEST_PAGE);
   };
 
@@ -530,19 +543,44 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {[{ id: 'all', label: '🔥 Tất cả gợi ý' }, { id: 'apple', label: '🍎 Apple Ecosystem' }, { id: 'audio', label: '🎧 Tai nghe & Loa' }].map((tab) => (
-              <button key={tab.id} onClick={() => changeTab(tab.id)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeTab === tab.id ? 'bg-red-600 text-white shadow-red-600/20 shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'}`}>{tab.label}</button>
+              <button key={tab.id} onClick={() => changeTab(tab.id)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${activeTab === tab.id && !suggestCategory ? 'bg-red-600 text-white shadow-red-600/20 shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'}`}>{tab.label}</button>
+            ))}
+          </div>
+          {/* Điện thoại: danh mục là hàng chip trượt ngang (máy tính có cột bên trái) */}
+          <div className="md:hidden flex items-center gap-2 overflow-x-auto pt-1 pb-2 scrollbar-hide">
+            {productCategories.map((cat) => (
+              <button key={cat.id} onClick={() => changeCategory(cat.id)} className={`px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap border transition-colors ${suggestCategory === cat.id ? 'bg-red-50 text-red-600 border-red-300' : 'bg-white text-gray-600 border-gray-200'}`}>{cat.name}</button>
             ))}
           </div>
         </div>
 
-        {/* LƯỚI 30 SẢN PHẨM KHAI BÁO THỦ CÔNG ĐỂ GIỮ LẠI ĐỘ DÀI CODE CỦA ÔNG */}
-        <div className="mb-16">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-            {thirtyProducts.map((item) => (
+        {/* LƯỚI SẢN PHẨM GỢI Ý + DANH MỤC BÊN TRÁI (danh mục nhiều, thanh menu trên không chứa hết) */}
+        <div className="mb-16 md:flex md:items-start md:gap-4">
+          <aside className="hidden md:block w-[210px] shrink-0 sticky top-24 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 max-h-[calc(100vh-7rem)] overflow-y-auto">
+            <h3 className="flex items-center gap-2 text-base font-black text-gray-900 pb-3 mb-2 border-b border-gray-100">
+              <List size={18} /> Danh Mục
+            </h3>
+            <button onClick={() => changeCategory(null)} className={`w-full text-left px-2 py-2 text-sm rounded-lg transition-colors ${!suggestCategory ? 'text-red-600 font-bold' : 'text-gray-700 hover:text-red-600'}`}>
+              {!suggestCategory && <span className="mr-1">▸</span>}Tất cả sản phẩm
+            </button>
+            {productCategories.map((cat) => (
+              <button key={cat.id} onClick={() => changeCategory(cat.id)} className={`w-full text-left px-2 py-2 text-sm rounded-lg leading-snug transition-colors ${suggestCategory === cat.id ? 'text-red-600 font-bold' : 'text-gray-700 hover:text-red-600'}`}>
+                {suggestCategory === cat.id && <span className="mr-1">▸</span>}{cat.name}
+              </button>
+            ))}
+          </aside>
+
+          <div className="flex-1 min-w-0">
+          {[inStockSuggested, soldOutSuggested].map((list, i) => list.length > 0 && (
+          <div key={i}>
+          {i === 1 && <h3 className="mt-8 mb-4 text-sm md:text-base font-semibold text-gray-500 uppercase">Hết hàng</h3>}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+            {list.map((item) => (
               <div key={item.id} onClick={() => navigate(`/product/${item.slug || item.id}`)} className="bg-white rounded-2xl p-3 flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative group cursor-pointer border border-gray-100">
                 <span className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full z-10 shadow-sm">CHÍNH HÃNG</span>
                 <div className="relative w-full aspect-square bg-gray-50 rounded-xl flex items-center justify-center p-2 overflow-hidden">
                   <img onError={imgFallback} src={assetUrl(item.image)} alt={item.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
+                  {isSoldOut(item) && <SoldOutBadge />}
                 </div>
                 <div className="mt-3 flex flex-col flex-1 justify-between">
                   <div>
@@ -560,18 +598,21 @@ export default function HomePage() {
                       <span className="text-xs md:text-sm font-black text-red-600 block leading-none">{item.price.toLocaleString('vi-VN')}đ</span>
                       {item.originalPrice > item.price && <span className="text-[10px] text-gray-400 line-through mt-0.5 block">{item.originalPrice.toLocaleString('vi-VN')}đ</span>}
                     </div>
-                    <button onClick={(e) => { e.stopPropagation(); handleAddToCart(item); }} className="bg-yellow-400 hover:bg-yellow-500 text-black p-2 rounded-xl text-xs font-extrabold transition-all shadow-sm border border-yellow-200 transform hover:scale-105">🛒</button>
+                    {!isSoldOut(item) && <button onClick={(e) => { e.stopPropagation(); handleAddToCart(item); }} className="bg-yellow-400 hover:bg-yellow-500 text-black p-2 rounded-xl text-xs font-extrabold transition-all shadow-sm border border-yellow-200 transform hover:scale-105">🛒</button>}
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          
+          </div>
+          ))}
+
           {/* KHÔI PHỤC NÚT XEM THÊM */}
           <div className="flex justify-center mt-8">
             {(suggestMeta?.total ?? 0) > thirtyProducts.length && <button disabled={suggestLoading} onClick={() => setSuggestLimit((n) => n + SUGGEST_PAGE)} className="bg-white hover:bg-gray-50 disabled:opacity-60 text-gray-900 font-black text-xs px-8 py-3.5 rounded-2xl shadow-md border border-gray-200 transition-all hover:scale-105">
               XEM THÊM SẢN PHẨM KHÁC ▾
             </button>}
+          </div>
           </div>
         </div>
 
