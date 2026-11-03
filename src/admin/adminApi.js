@@ -16,6 +16,7 @@ export const adminApi = {
   setAvatar: (avatar) => api.patch('/admin/auth/me/avatar', { avatar }),
 
   dashboard: (days = 30) => api.get('/admin/dashboard', { params: { days } }),
+  presence: () => api.get('/admin/presence'),
 
   // files: FileList | File[] -> trả về [{ url }]
   upload: (files) => {

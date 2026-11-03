@@ -33,6 +33,7 @@ export const shopApi = {
   changeMyPassword: (body) => api.post('/customers/me/password', body),
   myOrders: () => api.get('/customers/me/orders'),
   myVouchers: () => api.get('/customers/me/vouchers'),
+  presencePing: (visitorId, path) => api.post('/presence/ping', { visitorId, path }),
   cancelMyOrder: (id, reason) => api.post(`/customers/me/orders/${id}/cancel`, { reason }),
   uploadAvatar: (file) => {
     const body = new FormData();
