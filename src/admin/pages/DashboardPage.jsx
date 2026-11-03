@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, Wallet, Receipt, Clock, Package, AlertTriangle, RefreshCw, TrendingUp, TrendingDown, Table2, LineChart,
-  PackageCheck, Truck, XCircle, MessageSquareText, Moon, PartyPopper, ShieldCheck,
+  PackageCheck, Truck, XCircle, MessageSquareText, ShieldCheck,
 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import useCountUp from '../../hooks/useCountUp';
@@ -92,6 +92,18 @@ function RangeSwitch({ days, onChange }) {
 const WEEKDAYS = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
 const hhmm = (d) => new Date(d).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
+// Ô việc cần làm: mỗi ô 1 màu riêng (nền icon nhạt + icon đậm) – mã màu cố định nên chế độ sáng / tối đều rõ
+const TODO_TONES = {
+  amber: ['#f59e0b', 'rgba(245,158,11,0.14)'],
+  sky: ['#0ea5e9', 'rgba(14,165,233,0.14)'],
+  indigo: ['#6366f1', 'rgba(99,102,241,0.14)'],
+  rose: ['#f43f5e', 'rgba(244,63,94,0.14)'],
+  violet: ['#8b5cf6', 'rgba(139,92,246,0.14)'],
+  teal: ['#14b8a6', 'rgba(20,184,166,0.14)'],
+  emerald: ['#10b981', 'rgba(16,185,129,0.14)'],
+  orange: ['#f97316', 'rgba(249,115,22,0.14)'],
+};
+
 // Cột "Hôm nay" bên phải – như app Kênh Người Bán của Shopee: hôm nay nổ đơn chưa + việc cần làm
 function TodayColumn({ data, freshOrder }) {
   const { today } = data;
@@ -99,79 +111,125 @@ function TodayColumn({ data, freshOrder }) {
   const s = data.ordersByStatus;
   const diff = today.orders - today.yesterday.orders;
   const todo = [
-    { icon: Clock, label: 'Chờ xác nhận', value: s.PENDING || 0, to: '/admin/orders?status=PENDING', hot: true },
-    { icon: PackageCheck, label: 'Chờ lấy hàng', value: s.CONFIRMED || 0, to: '/admin/orders?status=CONFIRMED' },
-    { icon: Truck, label: 'Đang giao', value: s.SHIPPING || 0, to: '/admin/orders?status=SHIPPING' },
-    { icon: XCircle, label: 'Huỷ hôm nay', value: today.cancelled, to: '/admin/orders?status=CANCELLED' },
-    { icon: MessageSquareText, label: 'Đánh giá chờ trả lời', value: data.reviewsToReply, to: '/admin/reviews' },
-    { icon: RefreshCw, label: 'Thu cũ mới', value: data.newTradeIns, to: '/admin/trade-ins?status=NEW' },
-    { icon: ShieldCheck, label: 'Bảo hành chờ duyệt', value: data.warrantiesPending ?? 0, to: '/admin/warranties?state=pending', hot: true },
-    { icon: AlertTriangle, label: 'Sắp hết hàng', value: data.lowStock.length, to: '/admin/products' },
+    { icon: Clock, label: 'Chờ xác nhận', value: s.PENDING || 0, to: '/admin/orders?status=PENDING', tone: 'amber', hot: true },
+    { icon: PackageCheck, label: 'Chờ lấy hàng', value: s.CONFIRMED || 0, to: '/admin/orders?status=CONFIRMED', tone: 'sky' },
+    { icon: Truck, label: 'Đang giao', value: s.SHIPPING || 0, to: '/admin/orders?status=SHIPPING', tone: 'indigo' },
+    { icon: XCircle, label: 'Huỷ hôm nay', value: today.cancelled, to: '/admin/orders?status=CANCELLED', tone: 'rose' },
+    { icon: MessageSquareText, label: 'Đánh giá chờ trả lời', value: data.reviewsToReply, to: '/admin/reviews', tone: 'violet', hot: true },
+    { icon: RefreshCw, label: 'Thu cũ mới', value: data.newTradeIns, to: '/admin/trade-ins?status=NEW', tone: 'teal', hot: true },
+    { icon: ShieldCheck, label: 'Bảo hành chờ duyệt', value: data.warrantiesPending ?? 0, to: '/admin/warranties?state=pending', tone: 'emerald', hot: true },
+    { icon: AlertTriangle, label: 'Sắp hết hàng', value: data.lowStock.length, to: '/admin/products', tone: 'orange' },
   ];
+
+  // Số đơn theo từng giờ hôm nay (từ danh sách đơn hôm nay) -> biểu đồ cột nhỏ
+  const hours = Array.from({ length: 24 }, () => 0);
+  for (const o of today.orderList) hours[new Date(o.createdAt).getHours()] += 1;
+  const peak = Math.max(1, ...hours);
+  const nowHour = now.getHours();
 
   return (
     <div className="space-y-4 2xl:sticky 2xl:top-20">
-      <Card className="dash-pop overflow-hidden" >
-        <div
-          className="relative px-4 pt-4 pb-5 text-white"
-          style={{
-            background: today.orders
-              ? 'linear-gradient(135deg, #ff7337 0%, #ee4d2d 55%, #d0011b 100%)'
-              : 'linear-gradient(135deg, #334155 0%, #0f172a 100%)',
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold opacity-90">Hôm nay · {WEEKDAYS[now.getDay()]} {formatDate(now)}</p>
-            <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider opacity-90">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-              </span>
-              Trực tiếp
-            </span>
+      <Card className="dash-pop overflow-hidden">
+        <div className="flex items-start justify-between gap-2 px-4 pt-4">
+          <div>
+            <p className="text-sm font-bold text-gray-900">Hôm nay</p>
+            <p className="text-xs text-gray-500">{WEEKDAYS[now.getDay()]}, {formatDate(now)}</p>
           </div>
-          <div className="mt-3 flex items-end gap-3">
-            <p className={`text-5xl font-black tabular-nums leading-none ${freshOrder ? 'dash-bump' : ''}`}>
-              <CountUp value={today.orders} />
-            </p>
-            <p className="pb-1 text-sm font-semibold">đơn mới</p>
-            {today.orders > 0 ? <PartyPopper size={28} className="ml-auto mb-1 opacity-90" /> : <Moon size={26} className="ml-auto mb-1 opacity-70" />}
-          </div>
-          <p className="mt-2 text-sm">
-            {today.orders ? (
-              <>Doanh thu <b className="text-lg tabular-nums"><CountUp value={today.revenue} format={money} /></b></>
-            ) : (
-              'Chưa nổ đơn nào hôm nay – cố lên shop ơi!'
-            )}
-          </p>
-          <p className="mt-1 text-xs opacity-80">
-            Hôm qua: {today.yesterday.orders} đơn · {formatPrice(today.yesterday.revenue)}
-            {diff !== 0 && <b className="ml-1">({diff > 0 ? `+${diff}` : diff} đơn)</b>}
-          </p>
-          {freshOrder && (
-            <span className="dash-toast absolute right-3 bottom-3 rounded-full bg-white px-3 py-1 text-xs font-black text-[#ee4d2d] shadow-lg">
-              Ting ting! Có đơn mới 🎉
+          <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: 'rgba(16,185,129,0.14)', color: '#10b981' }}>
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" style={{ background: '#10b981' }} />
+              <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: '#10b981' }} />
             </span>
-          )}
+            Trực tiếp
+          </span>
         </div>
 
-        <div className="grid grid-cols-4 divide-x divide-y divide-gray-100 border-t border-gray-100">
-          {todo.map(({ icon: Icon, label, value, to, hot }, i) => (
-            <Link
-              key={label}
-              to={to}
-              className="group flex flex-col items-center gap-1 px-1 py-3 text-center transition-colors hover:bg-gray-50 active:bg-gray-100"
-            >
-              <span className="relative">
-                <Icon size={22} className="text-gray-700 transition-transform group-hover:scale-110 group-active:scale-90" />
-                {value > 0 && hot && <span className="absolute -right-1.5 -top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />}
+        <div className="flex items-end justify-between gap-3 px-4 pt-3">
+          <div className="min-w-0">
+            <p className="flex items-baseline gap-2">
+              <span className={`text-5xl font-black leading-none tabular-nums text-gray-900 ${freshOrder ? 'dash-bump' : ''}`}>
+                <CountUp value={today.orders} />
               </span>
-              <span className={`text-xl font-black tabular-nums ${value > 0 && hot ? 'text-[#ee4d2d]' : 'text-gray-900'}`}>
-                <CountUp value={value} delay={300 + i * 80} />
-              </span>
-              <span className="text-[11px] leading-tight text-gray-500">{label}</span>
-            </Link>
-          ))}
+              <span className="text-sm font-semibold text-gray-500">đơn mới</span>
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              Doanh thu <b className="tabular-nums text-gray-900"><CountUp value={today.revenue} format={money} /></b>
+            </p>
+          </div>
+          <span
+            className="mb-1 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold"
+            style={
+              diff > 0
+                ? { background: 'rgba(16,185,129,0.14)', color: '#10b981' }
+                : diff < 0
+                  ? { background: 'rgba(244,63,94,0.14)', color: '#f43f5e' }
+                  : { background: 'rgba(148,163,184,0.18)', color: '#94a3b8' }
+            }
+          >
+            {diff > 0 ? `▲ ${diff}` : diff < 0 ? `▼ ${-diff}` : '='} so với hôm qua
+          </span>
+        </div>
+
+        {/* Đơn theo giờ: cột mọc lên lần lượt, giờ hiện tại tô vàng */}
+        <div className="px-4 pt-3">
+          <div className="flex h-14 items-end gap-[3px]">
+            {hours.map((n, h) => (
+              <span
+                key={h}
+                title={`${h}h: ${n} đơn`}
+                className="today-bar flex-1 rounded-t-[3px]"
+                style={{
+                  '--d': `${h * 18}ms`,
+                  height: `${n ? Math.max(14, (n / peak) * 100) : 6}%`,
+                  background: h === nowHour ? '#FFD400' : n ? '#f59e0b' : 'rgba(148,163,184,0.25)',
+                }}
+              />
+            ))}
+          </div>
+          <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+            <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span>
+          </div>
+        </div>
+
+        <p className="px-4 pb-3 pt-2 text-xs text-gray-500">
+          {today.orders
+            ? `Hôm qua ${today.yesterday.orders} đơn · ${formatPrice(today.yesterday.revenue)}`
+            : 'Chưa có đơn hôm nay – thử chia sẻ sản phẩm lên Zalo, Facebook để kéo khách nhé.'}
+        </p>
+
+        {freshOrder && (
+          <p className="dash-toast mx-4 mb-3 rounded-lg px-3 py-2 text-center text-xs font-bold" style={{ background: 'rgba(16,185,129,0.14)', color: '#10b981' }}>
+            Ting ting! Có đơn mới
+          </p>
+        )}
+
+        <div className="grid grid-cols-4 gap-2 border-t border-gray-100 p-3">
+          {todo.map(({ icon: Icon, label, value, to, tone, hot }, i) => {
+            const [fg, bg] = TODO_TONES[tone];
+            const urgent = hot && value > 0;
+            return (
+              <Link
+                key={label}
+                to={to}
+                className="today-tile group flex flex-col items-center gap-1 rounded-xl px-1 py-2.5 text-center"
+                style={{ '--d': `${200 + i * 60}ms` }}
+              >
+                <span className="today-ico relative flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: bg, color: fg }}>
+                  <Icon size={18} />
+                  {urgent && (
+                    <span className="absolute -right-1 -top-1 flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: '#ef4444' }} />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: '#ef4444' }} />
+                    </span>
+                  )}
+                </span>
+                <span className="text-lg font-black leading-none tabular-nums" style={urgent ? { color: fg } : undefined}>
+                  <CountUp value={value} delay={300 + i * 70} />
+                </span>
+                <span className="text-[10px] leading-tight text-gray-500">{label}</span>
+              </Link>
+            );
+          })}
         </div>
       </Card>
 

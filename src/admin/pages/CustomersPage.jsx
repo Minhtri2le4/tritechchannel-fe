@@ -3,6 +3,7 @@ import { KeyRound, Lock, Search, Unlock } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { assetUrl, formatDate } from '../../lib/api';
 import { adminApi } from '../adminApi';
+import CustomerDrawer from '../CustomerDrawer';
 import { Button, Card, ErrorBox, Input, PageHeader, Pagination, Table, errorText, useDebounced } from '../ui';
 
 // Admin → Khách hàng: tài khoản khách đăng ký trên web (SĐT, Google, Facebook)
@@ -10,6 +11,7 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const q = useDebounced(search);
+  const [viewing, setViewing] = useState(null); // id khách đang xem chi tiết
   const { data, meta, loading, error, reload } = useFetch(() => adminApi.customers.list({ search: q || undefined, page, limit: 20 }), [q, page]);
 
   const toggleLock = async (c) => {
@@ -36,7 +38,7 @@ export default function CustomersPage() {
 
   return (
     <>
-      <PageHeader title="Khách hàng" subtitle={meta ? `${meta.total} tài khoản` : 'Tài khoản khách đăng ký trên website'} />
+      <PageHeader title="Khách hàng" subtitle={meta ? `${meta.total} tài khoản · bấm vào khách để xem chi tiết` : 'Tài khoản khách đăng ký trên website'} />
       <Card>
         <div className="p-3 border-b border-gray-100">
           <div className="relative max-w-md">
@@ -49,6 +51,7 @@ export default function CustomersPage() {
           rows={data}
           loading={loading}
           empty="Chưa có khách hàng nào đăng ký"
+          onRowClick={(c) => setViewing(c.id)}
           columns={[
             {
               key: 'name',
@@ -75,7 +78,7 @@ export default function CustomersPage() {
               title: '',
               className: 'text-right whitespace-nowrap',
               render: (c) => (
-                <div className="flex justify-end gap-1">
+                <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                   <Button size="sm" variant="ghost" title="Đặt lại mật khẩu" onClick={() => resetPassword(c)}><KeyRound size={15} /></Button>
                   <Button size="sm" variant="ghost" title={c.isActive ? 'Khoá tài khoản' : 'Mở khoá'} className={c.isActive ? 'hover:text-red-600' : 'text-red-600'} onClick={() => toggleLock(c)}>
                     {c.isActive ? <Lock size={15} /> : <Unlock size={15} />}
@@ -87,6 +90,7 @@ export default function CustomersPage() {
         />
         <Pagination meta={meta} onChange={setPage} />
       </Card>
+      {viewing && <CustomerDrawer id={viewing} onClose={() => setViewing(null)} />}
     </>
   );
 }

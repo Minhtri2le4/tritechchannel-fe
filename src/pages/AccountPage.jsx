@@ -11,6 +11,7 @@ import { useCustomer } from '../context/CustomerContext';
 import AddressPicker from '../components/AddressPicker';
 import ReviewForm from '../components/ReviewForm';
 import CancelOrderSheet from '../components/CancelOrderSheet';
+import OrderDetailSheet from '../components/OrderDetailSheet';
 import ProductCard from '../components/ProductCard';
 
 // Như Shopee: tên trạng thái phía khách (Đã xác nhận = shop đang chuẩn bị, chờ bên giao lấy hàng)
@@ -40,6 +41,7 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
   const [thanks, setThanks] = useState(false);
   const [cancelling, setCancelling] = useState(null); // đơn đang chọn lý do huỷ
   const [cancelled, setCancelled] = useState('');
+  const [viewingId, setViewingId] = useState(null); // đơn đang xem chi tiết
   if (loading && !orders) return <div className="flex justify-center py-10 text-gray-400"><Loader2 className="animate-spin" /></div>;
   if (error) return <p className="py-6 text-center text-sm text-red-600">{error.message}</p>;
   const shown = (orders || []).filter((o) => filter === 'ALL' || o.status === filter);
@@ -91,6 +93,20 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
           }}
         />
       )}
+      {viewingId && orders?.find((o) => o.id === viewingId) && (
+        <OrderDetailSheet
+          order={orders.find((o) => o.id === viewingId)}
+          onClose={() => setViewingId(null)}
+          onCancel={(o) => {
+            setViewingId(null);
+            setCancelling(o);
+          }}
+          onReview={(it) => {
+            setViewingId(null);
+            setReviewing(it);
+          }}
+        />
+      )}
       {reviewing && (
         <ReviewForm
           item={reviewing}
@@ -117,7 +133,8 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
             <div className="divide-y divide-gray-100">
               {o.items.map((it) => (
                 <div key={it.id} className="flex items-center gap-3 px-3 py-2.5">
-                  <Link to={`/product/${it.productId}`} className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80">
+                  {/* Bấm vào sản phẩm -> xem chi tiết đơn (như Shopee) */}
+                  <button type="button" onClick={() => setViewingId(o.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left hover:opacity-80">
                     <img src={assetUrl(it.image)} onError={imgFallback} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-sm text-gray-800">{it.productName}</p>
@@ -132,7 +149,7 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
                         </p>
                       )}
                     </div>
-                  </Link>
+                  </button>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
                     <span className="text-sm font-semibold text-gray-900">{vnd(it.lineTotal)}</span>
                     {o.status === 'COMPLETED' && it.productId && (
@@ -148,9 +165,15 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
                 </div>
               ))}
             </div>
-            <div className="flex flex-wrap items-end justify-between gap-2 border-t border-gray-100 px-3 py-2.5 text-xs text-gray-500">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setViewingId(o.id)}
+              onKeyDown={(e) => e.key === 'Enter' && setViewingId(o.id)}
+              className="flex cursor-pointer flex-wrap items-end justify-between gap-2 border-t border-gray-100 px-3 py-2.5 text-xs text-gray-500 hover:bg-gray-50"
+            >
               <span>
-                Mã đơn {o.code} · {formatDate(o.createdAt, true)}
+                Mã đơn {o.code} · {formatDate(o.createdAt, true)} · <span className="font-semibold text-red-600">Xem chi tiết ›</span>
                 <br />
                 {o.deliveryMethod === 'HOME' ? 'Giao tận nơi' : 'Nhận tại Thanh Đa'} · {o.paymentMethod === 'BANK' ? 'Chuyển khoản' : 'COD'}
                 {o.paymentMethod === 'BANK' && (o.paymentStatus === 'PAID' ? ' · Đã thanh toán' : ' · Chưa thanh toán')}
