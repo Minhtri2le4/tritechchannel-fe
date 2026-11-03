@@ -138,10 +138,7 @@ div, button, input {
 .dealer-3d:hover .dealer-glare {
   opacity: 0.55;
 }
-@media (prefers-reduced-motion: reduce) {
-  .dealer-3d, .dealer-3d:hover { transform: none; }
-  .dealer-3d:hover .dealer-3d-lift { transform: none; }
-}
+/* Không tắt khi máy bật "giảm chuyển động": hiệu ứng chỉ chạy khi chính người dùng rê chuột vào thẻ */
 
 /* Chấm đỏ số đơn ở trang Tài khoản (acc-badge) */
 @keyframes logo-pop {
