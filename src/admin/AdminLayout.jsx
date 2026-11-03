@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, RefreshCw, ShieldCheck, Ticket, FolderTree, Users,
-  LogOut, Menu, X, ExternalLink, KeyRound, LayoutTemplate, Sun, Moon, Camera, Loader2,
+  LogOut, Menu, ExternalLink, KeyRound, LayoutTemplate, Sun, Moon, Camera, Loader2,
   PartyPopper,
   UserRound,
   MessageSquareText, Newspaper,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import AdminSidebar from './AdminSidebar';
+import useFetch from '../hooks/useFetch';
 import { adminApi } from './adminApi';
 import { assetUrl } from '../lib/api';
 import ChangePasswordModal from './pages/ChangePasswordModal';
@@ -44,6 +46,7 @@ const NAV = [
 ];
 
 const THEME_KEY = 'tritech_admin_theme';
+const SIDEBAR_KEY = 'tritech_admin_sidebar_collapsed';
 const readTheme = () => {
   try {
     return localStorage.getItem(THEME_KEY) || 'light';
@@ -60,6 +63,37 @@ export default function AdminLayout() {
   const [theme, setTheme] = useState(readTheme);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const avatarRef = useRef(null);
+  // Menu thu gọn (chỉ icon) – nhớ lựa chọn trên máy
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem(SIDEBAR_KEY, c ? '0' : '1');
+      } catch {
+        // trình duyệt chặn lưu
+      }
+      return !c;
+    });
+  }, []);
+
+  // Số đỏ trên menu: đơn chờ xác nhận, bảo hành chờ duyệt, đánh giá chờ trả lời, thu cũ mới – tự cập nhật mỗi phút
+  const { data: stats, reload: reloadStats } = useFetch(() => adminApi.dashboard(1), []);
+  useEffect(() => {
+    const t = setInterval(reloadStats, 60000);
+    return () => clearInterval(t);
+  }, [reloadStats]);
+  const badges = {
+    '/admin/orders': stats?.ordersByStatus?.PENDING || 0,
+    '/admin/warranties': stats?.warrantiesPending || 0,
+    '/admin/reviews': stats?.reviewsToReply || 0,
+    '/admin/trade-ins': stats?.newTradeIns || 0,
+  };
 
   // Chế độ tối: gắn class lên <html> để cả hộp thoại (Modal) cũng đổi màu; rời trang admin thì gỡ ra
   useEffect(() => {
@@ -88,68 +122,38 @@ export default function AdminLayout() {
     }
   };
 
-  const nav = (
-    <nav className="flex flex-col gap-4 p-3">
-      {NAV.map(({ group, items }) => {
-        const visible = items.filter((n) => !n.adminOnly || isAdmin);
-        if (!visible.length) return null;
-        return (
-          <div key={group || 'main'} className="flex flex-col gap-0.5">
-            {group && <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">{group}</p>}
-            {visible.map(({ to, label, icon: Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                onClick={() => setMenuOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive ? 'bg-[#FFD400] text-black font-bold' : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                  }`
-                }
-              >
-                <Icon size={17} />
-                {label}
-              </NavLink>
-            ))}
-          </div>
-        );
-      })}
-    </nav>
-  );
-
-  const brand = (
-    <Link to="/admin" className="flex items-center gap-2 px-5 h-14 border-b border-white/10">
-      <span className="text-lg font-black text-white tracking-tight">
-        TRITECH<span className="text-[#FFD400]"> ADMIN</span>
-      </span>
-    </Link>
-  );
+  const sidebarProps = { nav: null, badges, theme, onTheme: setTheme, user, onLogout: logout };
+  // Menu chỉ hiện trang tài khoản được phép xem
+  const nav = NAV.map((g) => ({ ...g, items: g.items.filter((n) => !n.adminOnly || isAdmin) })).filter((g) => g.items.length);
+  sidebarProps.nav = nav;
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800">
-      {/* Sidebar desktop */}
-      <aside className="admin-sidebar hidden lg:flex fixed inset-y-0 left-0 w-60 flex-col bg-gray-950">
-        {brand}
-        {nav}
+      {/* Menu nổi bên trái (máy tính): thu gọn / mở rộng */}
+      <aside
+        className="admin-sidebar fixed bottom-3 left-3 top-3 z-40 hidden lg:block transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{ width: collapsed ? 76 : 256 }}
+      >
+        <AdminSidebar {...sidebarProps} collapsed={collapsed} onToggle={toggleCollapsed} />
       </aside>
 
-      {/* Sidebar mobile */}
+      {/* Menu điện thoại: trượt từ trái */}
       {menuOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMenuOpen(false)}>
-          <aside className="admin-sidebar w-64 h-full bg-gray-950" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between pr-3">
-              {brand}
-              <button onClick={() => setMenuOpen(false)} className="text-gray-400 p-1">
-                <X size={20} />
-              </button>
-            </div>
-            {nav}
+          <aside
+            className="admin-sidebar h-full w-[280px] p-2"
+            style={{ animation: 'admin-drawer-in 0.3s cubic-bezier(0.22, 1, 0.36, 1)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AdminSidebar {...sidebarProps} mobile onNavigate={() => setMenuOpen(false)} />
           </aside>
         </div>
       )}
 
-      <div className="lg:pl-60">
+      <div
+        className="transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:pl-[var(--admin-pad)]"
+        style={{ '--admin-pad': collapsed ? '100px' : '280px' }}
+      >
         <header className="sticky top-0 z-30 h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4">
           <button onClick={() => setMenuOpen(true)} className="lg:hidden p-1.5 -ml-1.5 text-gray-700">
             <Menu size={22} />

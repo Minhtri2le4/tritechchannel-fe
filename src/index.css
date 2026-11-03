@@ -875,3 +875,12 @@ html.admin-dark [class~="bg-white/95"] { background-color: color-mix(in srgb, va
 html.admin-dark svg line[stroke="#e5e7eb"] { stroke: #283244; }
 html.admin-dark svg circle[stroke="#ffffff"], html.admin-dark svg circle[stroke="#fff"] { stroke: #161d2a; }
 html.admin-dark img { filter: none; }
+
+/* Menu admin trên điện thoại trượt vào từ trái (AdminLayout.jsx) */
+@keyframes admin-drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: none; }
+}
+/* Ẩn thanh cuộn của danh sách trang trong menu admin (vẫn cuộn được) */
+.admin-nav-scroll { scrollbar-width: none; }
+.admin-nav-scroll::-webkit-scrollbar { display: none; }
