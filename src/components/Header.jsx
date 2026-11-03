@@ -202,7 +202,7 @@ export default function Header() {
               <div className={`fixed inset-0 top-[85px] bg-black/60 transition-all duration-300 pointer-events-none z-40 ${menuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
 
               <div className={`absolute top-full left-0 pt-3 w-56 md:w-64 transition-all duration-200 z-50 ${menuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-                <div className="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col p-2">
+                <div className="thin-scroll bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col p-2 max-h-[70vh] overflow-y-auto">
                   {sidebarCategories && sidebarCategories.map((cat) => {
                     // Xử lý điều hướng riêng cho mục Thu Cũ Đổi Mới (id = 4 hoặc theo tên)
                     const categoryPath = cat.path || ((cat.id === 4 || cat.name?.toLowerCase().includes('thu cũ'))

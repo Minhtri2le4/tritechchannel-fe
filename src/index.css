@@ -940,3 +940,9 @@ html.admin-dark img { filter: none; }
   100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 @media (prefers-reduced-motion: reduce) { .online-dot { animation: none; } }
+
+/* Thanh cuộn mảnh cho danh sách danh mục (cạnh banner trang chủ, menu Danh mục đầu trang) */
+.thin-scroll { scrollbar-width: thin; scrollbar-color: #d1d5db transparent; }
+.thin-scroll::-webkit-scrollbar { width: 5px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9999px; }
+.thin-scroll::-webkit-scrollbar-track { background: transparent; }
