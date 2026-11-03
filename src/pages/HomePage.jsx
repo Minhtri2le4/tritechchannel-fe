@@ -145,7 +145,14 @@ export default function HomePage() {
   // Dữ liệu từ backend
   const { sidebar: sidebarCategories, quick: quickCategories, all: allCategories } = useCategories();
   // Cột danh mục ở mục Gợi ý: mọi danh mục có trang sản phẩm (bỏ Blog, Thu cũ đổi mới...)
-  const productCategories = (allCategories || []).filter((c) => !c.path || c.path.startsWith('/category/'));
+  // + "Sản phẩm khác": sản phẩm chưa gán danh mục nào (backend lọc category=other)
+  const productCategories = [
+    ...(allCategories || []).filter((c) => !c.path || c.path.startsWith('/category/')),
+    { id: 'other', name: 'Sản phẩm khác' },
+  ];
+  const [showAllCats, setShowAllCats] = useState(false);
+  const CAT_PREVIEW = 8;
+  const visibleCats = showAllCats ? productCategories : productCategories.slice(0, CAT_PREVIEW);
   const { data: products } = useFetch(() => shopApi.products({ isHot: true, limit: 8 }), []);
   const { data: latestPosts } = useFetch(() => shopApi.posts({ limit: 5 }), []);
   const { data: flashSale } = useFetch(() => shopApi.products({ isFlashSale: true, limit: 6 }), []);
@@ -563,11 +570,20 @@ export default function HomePage() {
             <button onClick={() => changeCategory(null)} className={`w-full text-left px-2 py-2 text-sm rounded-lg transition-colors ${!suggestCategory ? 'text-red-600 font-bold' : 'text-gray-700 hover:text-red-600'}`}>
               {!suggestCategory && <span className="mr-1">▸</span>}Tất cả sản phẩm
             </button>
-            {productCategories.map((cat) => (
+            {visibleCats.map((cat) => (
               <button key={cat.id} onClick={() => changeCategory(cat.id)} className={`w-full text-left px-2 py-2 text-sm rounded-lg leading-snug transition-colors ${suggestCategory === cat.id ? 'text-red-600 font-bold' : 'text-gray-700 hover:text-red-600'}`}>
                 {suggestCategory === cat.id && <span className="mr-1">▸</span>}{cat.name}
               </button>
             ))}
+            {/* Danh mục dài: ẩn bớt, bấm Xem thêm để mở hết */}
+            {productCategories.length > CAT_PREVIEW && (
+              <button
+                onClick={() => setShowAllCats((v) => !v)}
+                className="mt-1 flex w-full items-center gap-1 px-2 py-2 text-sm font-semibold text-gray-500 hover:text-red-600"
+              >
+                {showAllCats ? 'Thu gọn ▴' : `Xem thêm (${productCategories.length - CAT_PREVIEW}) ▾`}
+              </button>
+            )}
           </aside>
 
           <div className="flex-1 min-w-0">
