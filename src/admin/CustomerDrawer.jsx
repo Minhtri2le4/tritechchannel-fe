@@ -5,6 +5,7 @@ import useFetch from '../hooks/useFetch';
 import { assetUrl, formatDate, formatPrice } from '../lib/api';
 import { formatAddress } from '../lib/address';
 import { adminApi } from './adminApi';
+import { onlineInfo, pageName } from './presence';
 import { Badge, ORDER_STATUS, Spinner } from './ui';
 
 const GENDER = { male: 'Nam', female: 'Nữ', other: 'Khác' };
@@ -19,7 +20,12 @@ const STAT_TONES = {
 
 // Bấm 1 khách ở Admin → Khách hàng: khung trượt từ phải hiện thông tin, thống kê mua hàng, đơn gần đây, voucher
 export default function CustomerDrawer({ id, onClose }) {
-  const { data: c, loading, error } = useFetch(() => adminApi.customers.get(id), [id]);
+  const { data: c, loading, error, reload } = useFetch(() => adminApi.customers.get(id), [id]);
+  useEffect(() => {
+    const t = setInterval(reload, 30000);
+    return () => clearInterval(t);
+  }, [reload]);
+  const seen = onlineInfo(c?.lastSeenAt);
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
@@ -51,15 +57,23 @@ export default function CustomerDrawer({ id, onClose }) {
             {/* Thẻ khách */}
             <div className="cust-pop rounded-xl border border-gray-200 bg-white p-4" style={{ '--d': '0ms' }}>
               <div className="flex items-center gap-3">
-                {c.avatar ? (
-                  <img src={assetUrl(c.avatar)} alt="" referrerPolicy="no-referrer" className="h-14 w-14 rounded-full object-cover ring-2 ring-[#FFD400]" />
-                ) : (
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FFD400] text-xl font-black text-black">
-                    {c.fullName.trim().split(/\s+/).pop()?.[0]}
-                  </span>
-                )}
+                <span className="relative shrink-0">
+                  {c.avatar ? (
+                    <img src={assetUrl(c.avatar)} alt="" referrerPolicy="no-referrer" className="h-14 w-14 rounded-full object-cover ring-2 ring-[#FFD400]" />
+                  ) : (
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FFD400] text-xl font-black text-black">
+                      {c.fullName.trim().split(/\s+/).pop()?.[0]}
+                    </span>
+                  )}
+                  {seen.online && <span className="online-dot absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white" style={{ background: '#22c55e' }} />}
+                </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-lg font-bold text-gray-900">{c.fullName}</p>
+                  <p className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: seen.online ? '#16a34a' : '#94a3b8' }}>
+                    <span className={`h-2 w-2 rounded-full ${seen.online ? 'online-dot' : ''}`} style={{ background: seen.online ? '#22c55e' : '#cbd5e1' }} />
+                    {seen.text}
+                    {seen.online && c.lastPath && <span className="font-normal text-gray-500">· đang xem {pageName(c.lastPath)}</span>}
+                  </p>
                   <p className="text-xs text-gray-500">
                     Đăng ký {formatDate(c.createdAt)} · {c.loginWith.join(', ') || '—'}
                   </p>

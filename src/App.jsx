@@ -27,9 +27,11 @@ import { CustomerProvider } from './context/CustomerContext';
 import WelcomeVoucherModal from './components/WelcomeVoucherModal';
 import MobileBottomNav from './components/MobileBottomNav';
 import VoucherPopup from './components/VoucherPopup';
+import usePresence from './hooks/usePresence';
 
 function AppContent() {
   const location = useLocation();
+  usePresence(); // báo admin: có người đang xem web (chấm xanh online)
   return (
     <div className="min-h-screen flex flex-col bg-[#f4f4f4] text-gray-800 pb-16 md:pb-0">
       <ScrollToTop />

@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import useCountUp from '../../hooks/useCountUp';
-import { formatDate, formatPrice } from '../../lib/api';
+import { assetUrl, formatDate, formatPrice } from '../../lib/api';
+import { pageName } from '../presence';
 import { adminApi } from '../adminApi';
 import { AreaChart, BarList, ColumnChart, compactVnd } from '../charts';
 import { Badge, Card, ErrorBox, ORDER_STATUS, PageHeader, Spinner, Table } from '../ui';
@@ -107,6 +108,12 @@ const TODO_TONES = {
 // Cột "Hôm nay" bên phải – như app Kênh Người Bán của Shopee: hôm nay nổ đơn chưa + việc cần làm
 function TodayColumn({ data, freshOrder }) {
   const { today } = data;
+  // Ai đang xem web (như chấm xanh Messenger) – làm mới mỗi 30 giây
+  const { data: live, reload: reloadLive } = useFetch(() => adminApi.presence(), []);
+  useEffect(() => {
+    const t = setInterval(reloadLive, 30000);
+    return () => clearInterval(t);
+  }, [reloadLive]);
   const now = new Date();
   const s = data.ordersByStatus;
   const diff = today.orders - today.yesterday.orders;
@@ -141,6 +148,28 @@ function TodayColumn({ data, freshOrder }) {
               <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: '#10b981' }} />
             </span>
             Trực tiếp
+          </span>
+        </div>
+
+        {/* Đang xem web */}
+        <div className="mx-4 mt-3 flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'rgba(34,197,94,0.1)' }}>
+          <span className="online-dot h-2 w-2 shrink-0 rounded-full" style={{ background: '#22c55e' }} />
+          <span className="flex-1 text-xs text-gray-700">
+            <b className="text-sm tabular-nums" style={{ color: '#16a34a' }}>{live?.total ?? 0}</b> người đang xem web
+            {live?.members?.length ? ` · ${live.members.length} thành viên` : ''}
+          </span>
+          <span className="flex -space-x-2">
+            {(live?.members || []).slice(0, 5).map((m) => (
+              <Link key={m.id} to="/admin/customers" title={`${m.fullName} – ${pageName(m.path)}`} className="relative">
+                {m.avatar ? (
+                  <img src={assetUrl(m.avatar)} alt="" referrerPolicy="no-referrer" className="h-7 w-7 rounded-full object-cover ring-2 ring-white" />
+                ) : (
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFD400] text-[11px] font-black text-black ring-2 ring-white">
+                    {m.fullName?.trim().split(/\s+/).pop()?.[0]}
+                  </span>
+                )}
+              </Link>
+            ))}
           </span>
         </div>
 

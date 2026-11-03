@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyRound, Lock, Search, Unlock } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { assetUrl, formatDate } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import CustomerDrawer from '../CustomerDrawer';
+import { onlineInfo } from '../presence';
 import { Button, Card, ErrorBox, Input, PageHeader, Pagination, Table, errorText, useDebounced } from '../ui';
 
 // Admin → Khách hàng: tài khoản khách đăng ký trên web (SĐT, Google, Facebook)
@@ -13,6 +14,11 @@ export default function CustomersPage() {
   const q = useDebounced(search);
   const [viewing, setViewing] = useState(null); // id khách đang xem chi tiết
   const { data, meta, loading, error, reload } = useFetch(() => adminApi.customers.list({ search: q || undefined, page, limit: 20 }), [q, page]);
+  // Tự làm mới mỗi 30 giây để chấm online luôn đúng (như Messenger)
+  useEffect(() => {
+    const t = setInterval(reload, 30000);
+    return () => clearInterval(t);
+  }, [reload]);
 
   const toggleLock = async (c) => {
     if (!confirm(c.isActive ? `Khoá tài khoản "${c.fullName}"? Khách sẽ không đăng nhập được.` : `Mở khoá tài khoản "${c.fullName}"?`)) return;
@@ -58,17 +64,29 @@ export default function CustomersPage() {
               title: 'Khách hàng',
               render: (c) => (
                 <div className="flex items-center gap-2.5 min-w-[200px]">
-                  {c.avatar ? (
-                    <img src={assetUrl(c.avatar)} alt="" referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover" />
-                  ) : (
-                    <span className="w-9 h-9 rounded-full bg-amber-100 text-amber-800 font-bold flex items-center justify-center">{c.fullName.trim().split(/\s+/).pop()?.[0]}</span>
-                  )}
+                  <span className="relative shrink-0">
+                    {c.avatar ? (
+                      <img src={assetUrl(c.avatar)} alt="" referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-9 h-9 rounded-full bg-amber-100 text-amber-800 font-bold flex items-center justify-center">{c.fullName.trim().split(/\s+/).pop()?.[0]}</span>
+                    )}
+                    {onlineInfo(c.lastSeenAt).online && <span className="online-dot absolute bottom-0 right-0 h-3 w-3 rounded-full ring-2 ring-white" style={{ background: '#22c55e' }} />}
+                  </span>
                   <div className="min-w-0">
                     <p className={`font-semibold truncate ${c.isActive ? '' : 'text-gray-400 line-through'}`}>{c.fullName}</p>
                     <p className="text-xs text-gray-500 truncate">{c.phone || 'Chưa có SĐT'}{c.email ? ` · ${c.email}` : ''}</p>
                   </div>
                 </div>
               ),
+            },
+            {
+              key: 'seen',
+              title: 'Hoạt động',
+              className: 'whitespace-nowrap',
+              render: (c) => {
+                const s = onlineInfo(c.lastSeenAt);
+                return <span className={`text-xs ${s.online ? 'font-bold' : 'text-gray-500'}`} style={s.online ? { color: '#16a34a' } : undefined}>{s.text}</span>;
+              },
             },
             { key: 'loginWith', title: 'Đăng nhập bằng', render: (c) => c.loginWith.join(', ') || '—' },
             { key: 'orderCount', title: 'Đơn', className: 'text-right', render: (c) => c.orderCount },
