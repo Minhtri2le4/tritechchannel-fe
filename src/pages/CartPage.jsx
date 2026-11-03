@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Trash2, Plus, Minus, MapPin, QrCode,
-  ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2, Zap, X
+  ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2, Zap, X, Ticket
 } from 'lucide-react';
 import { useCart } from '../context/CartContext'; // Dynamic import Context
 import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import useSeo from '../hooks/useSeo';
+import useFetch from '../hooks/useFetch';
 import AddressPicker from '../components/AddressPicker';
 import CartOptionPicker from '../components/CartOptionPicker';
 import SwipeRow from '../components/SwipeRow';
@@ -68,6 +69,9 @@ const [note, setNote] = useState('');
 
   // Đã đăng nhập: tự điền thông tin & địa chỉ đã lưu (chỉ điền ô còn trống, 1 lần cho mỗi tài khoản)
   const { customer, setCustomer } = useCustomer();
+  // Voucher riêng còn dùng được (quà đăng ký…) – hiện ngay dưới ô nhập mã
+  const { data: vouchers } = useFetch(() => (customer ? shopApi.myVouchers() : Promise.resolve({ data: [] })), [customer?.id]);
+  const myVouchers = (vouchers || []).filter((v) => v.usable);
   const [prefilledFor, setPrefilledFor] = useState(null);
   if (customer && prefilledFor !== customer.id) {
     setPrefilledFor(customer.id);
@@ -107,8 +111,9 @@ const [note, setNote] = useState('');
     `https://img.vietqr.io/image/MB-${bankInfo.accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(content)}&accountName=${encodeURIComponent(bankInfo.accountName)}`;
   const qrUrl = buildQrUrl(total, `TT DH ${phone || 'TRITECH'}`);
 
-  const handleApplyCoupon = async () => {
-    const code = couponCode.trim();
+  const handleApplyCoupon = async (picked) => {
+    const code = (typeof picked === 'string' ? picked : couponCode).trim();
+    if (typeof picked === 'string') setCouponCode(picked);
     if (!code) return;
     setApplyingCoupon(true);
     setCouponMessage('');
@@ -593,6 +598,34 @@ const [note, setNote] = useState('');
                   {applyingCoupon ? <Loader2 size={14} className="animate-spin" /> : 'Áp dụng'}
                 </button>
               </div>
+              {/* Voucher riêng của khách (quà đăng ký…) – bấm Dùng là áp luôn */}
+              {myVouchers.length > 0 && (
+                <div className="-mt-1 space-y-1.5">
+                  {myVouchers.map((v) => {
+                    const active = appliedCoupon?.code === v.code;
+                    const short = subTotal < v.minOrder;
+                    return (
+                      <div key={v.code} className={`flex items-center gap-2 rounded-lg border border-dashed px-2.5 py-1.5 ${active ? 'border-emerald-400 bg-emerald-50' : 'border-red-300 bg-red-50/60'}`}>
+                        <Ticket size={16} className="shrink-0 text-red-500" />
+                        <div className="min-w-0 flex-1 leading-tight">
+                          <p className="text-[11px] font-bold text-red-600">Giảm {v.value.toLocaleString('vi-VN')}đ</p>
+                          <p className="truncate text-[10px] text-gray-500">
+                            {short ? `Mua thêm ${(v.minOrder - subTotal).toLocaleString('vi-VN')}đ để dùng` : `Đơn từ ${v.minOrder.toLocaleString('vi-VN')}đ`}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={active || short || applyingCoupon}
+                          onClick={() => handleApplyCoupon(v.code)}
+                          className="shrink-0 rounded-md bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white disabled:bg-gray-300"
+                        >
+                          {active ? 'Đang dùng' : 'Dùng'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               {couponMessage && (
                 <p className={`text-[11px] -mt-2 ${appliedCoupon && !couponBelowMin ? 'text-emerald-600' : 'text-red-600'}`}>
                   {couponBelowMin
