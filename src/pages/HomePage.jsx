@@ -98,6 +98,23 @@ const ecomStores = [
   }
 ];
 
+// Thẻ đại lý nghiêng 3D theo chuột (chỉ máy có chuột) + vệt sáng chạy theo con trỏ
+const tiltCard = (e) => {
+  if (e.pointerType !== 'mouse') return;
+  const el = e.currentTarget;
+  const r = el.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width;
+  const y = (e.clientY - r.top) / r.height;
+  el.style.setProperty('--rx', `${((0.5 - y) * 16).toFixed(2)}deg`);
+  el.style.setProperty('--ry', `${((x - 0.5) * 18).toFixed(2)}deg`);
+  el.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
+  el.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
+};
+const resetTilt = (e) => {
+  e.currentTarget.style.setProperty('--rx', '0deg');
+  e.currentTarget.style.setProperty('--ry', '0deg');
+};
+
 export default function HomePage() {
   useSeo();
   const { addToCart } = useCart();
@@ -296,11 +313,12 @@ export default function HomePage() {
           <Reveal>
           <div ref={storesRef} className="flex md:grid md:grid-cols-3 gap-6 md:gap-8 pt-10 pb-8 pl-8 pr-6 md:px-6 md:overflow-visible overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 md:mx-0">
             {ecomStores.map((store, idx) => (
-              <a key={store.id} href={store.link} target="_blank" rel="noopener noreferrer" style={{ '--reveal-delay': `${idx * 140}ms` }} className={`reveal-item w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center relative block rounded-[20px] p-6 pb-5 bg-[#FAFAFA] border-2 ${store.borderColor} shadow-sm ${store.shadowHover} transform group-hover:-translate-y-2 group-hover:scale-[1.02] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-10 hover:z-20 group`}>
+              <a key={store.id} href={store.link} target="_blank" rel="noopener noreferrer" onPointerMove={tiltCard} onPointerLeave={resetTilt} style={{ '--reveal-delay': `${idx * 140}ms` }} className={`reveal-item dealer-3d w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center relative block rounded-[20px] p-6 pb-5 bg-[#FAFAFA] border-2 ${store.borderColor} shadow-sm ${store.shadowHover} z-10 hover:z-20 group`}>
+                <span className="dealer-glare" aria-hidden="true" />
                 <div className="absolute -top-8 -left-5 md:-left-6 w-[76px] h-[76px] bg-white rounded-full flex items-center justify-center shadow-lg border border-gray-100 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500 z-30">
                   <img src={store.logo} alt={store.platform} className="w-[46px] h-[46px] object-contain" />
                 </div>
-                <div className="relative z-20">
+                <div className="relative z-20 dealer-3d-lift">
                   <div className="ml-14 mb-4 mt-1">
                     <span className={`inline-block ${store.badgeColor} text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider mb-1 shadow-sm`}>{store.shopBadge}</span>
                     <h3 className="text-xl font-black text-gray-900 tracking-tight leading-none group-hover:text-black">{store.name}</h3>

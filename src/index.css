@@ -107,6 +107,42 @@ div, button, input {
 @media (prefers-reduced-motion: reduce) {
   .reveal.is-visible .reveal-item { animation-name: cat-fade; animation-timing-function: ease-out; }
 }
+/* Thẻ Đại lý ủy quyền (HomePage.jsx): nghiêng 3D theo chuột – HomePage đặt --rx/--ry (góc nghiêng) và --mx/--my (vị trí vệt sáng).
+   Dùng class riêng thay cho translate/scale của Tailwind để không bị cộng dồn transform với bản Tailwind CDN */
+.dealer-3d {
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--ty, 0px)) scale(var(--sc, 1));
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.5s, border-color 0.5s;
+}
+.dealer-3d:hover {
+  --ty: -8px;
+  --sc: 1.02;
+  transition: transform 0.15s ease-out, box-shadow 0.5s, border-color 0.5s;
+}
+.dealer-3d .dealer-3d-lift {
+  transition: transform 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.dealer-3d:hover .dealer-3d-lift {
+  transform: translateZ(30px);
+}
+.dealer-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 25;
+  opacity: 0;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.85), transparent 55%);
+  transition: opacity 0.3s;
+}
+.dealer-3d:hover .dealer-glare {
+  opacity: 0.55;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dealer-3d, .dealer-3d:hover { transform: none; }
+  .dealer-3d:hover .dealer-3d-lift { transform: none; }
+}
+
 /* Chấm đỏ số đơn ở trang Tài khoản (acc-badge) */
 @keyframes logo-pop {
   from { transform: scale(0) rotate(-180deg); }
