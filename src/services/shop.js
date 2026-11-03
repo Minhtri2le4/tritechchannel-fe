@@ -32,6 +32,7 @@ export const shopApi = {
   updateMe: (body) => api.patch('/customers/me', body),
   changeMyPassword: (body) => api.post('/customers/me/password', body),
   myOrders: () => api.get('/customers/me/orders'),
+  myVouchers: () => api.get('/customers/me/vouchers'),
   cancelMyOrder: (id, reason) => api.post(`/customers/me/orders/${id}/cancel`, { reason }),
   uploadAvatar: (file) => {
     const body = new FormData();

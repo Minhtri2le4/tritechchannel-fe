@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import {
-  Camera, ChevronLeft, ChevronRight, KeyRound, Loader2, LogOut, Package, PackageOpen, RefreshCw, ShieldCheck, Star, Truck, UserRound, Wallet,
+  Camera, ChevronLeft, ChevronRight, KeyRound, Loader2, LogOut, Package, PackageOpen, RefreshCw, ShieldCheck, Star, Ticket, Truck, UserRound, Wallet,
 } from 'lucide-react';
 import useSeo from '../hooks/useSeo';
 import useFetch from '../hooks/useFetch';
@@ -358,7 +358,48 @@ const TABS = [
   ['orders', 'Đơn mua', Package],
   ['profile', 'Thông tin & địa chỉ', UserRound],
   ['password', 'Mật khẩu', KeyRound],
+  ['vouchers', 'Kho voucher', Ticket],
 ];
+
+// Kho voucher: voucher riêng của khách (quà đăng ký…) – bấm Dùng ngay là sang giỏ hàng
+function Vouchers() {
+  const { data: list, loading } = useFetch(() => shopApi.myVouchers(), []);
+  if (loading && !list) return <div className="flex justify-center py-10 text-gray-400"><Loader2 className="animate-spin" /></div>;
+  if (!list?.length) {
+    return (
+      <div className="py-10 text-center space-y-2">
+        <Ticket className="mx-auto text-gray-300" size={44} />
+        <p className="text-sm text-gray-500">Bạn chưa có voucher nào.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2.5">
+      {list.map((v) => (
+        <div key={v.code} className={`flex items-stretch overflow-hidden rounded-xl border ${v.usable ? 'border-red-200' : 'border-gray-200 opacity-60'}`}>
+          <div className={`flex w-20 shrink-0 flex-col items-center justify-center py-3 text-white ${v.usable ? 'bg-red-600' : 'bg-gray-400'}`}>
+            <span className="text-[10px] font-bold uppercase">Giảm</span>
+            <span className="text-xl font-black leading-none">{v.type === 'PERCENT' ? `${v.value}%` : `${Math.round(v.value / 1000)}K`}</span>
+          </div>
+          <div className="min-w-0 flex-1 border-l border-dashed border-red-200 px-3 py-2.5">
+            <p className="text-sm font-semibold text-gray-900">{v.description || `Giảm ${vnd(v.value)}`}</p>
+            <p className="text-xs text-gray-500">
+              Đơn từ {vnd(v.minOrder)} · Mã <b className="font-mono text-gray-700">{v.code}</b>
+              {v.endsAt && ` · HSD ${formatDate(v.endsAt)}`}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center pr-3">
+            {v.usable ? (
+              <Link to="/cart" className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 active:scale-95">Dùng ngay</Link>
+            ) : (
+              <span className="text-xs font-semibold text-gray-500">{v.used ? 'Đã dùng' : 'Hết hạn'}</span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // Hàng icon "Đơn mua" như trang Tôi của Shopee – số đỏ = số đơn ở trạng thái đó
 const ORDER_SHORTCUTS = [
@@ -372,7 +413,16 @@ const ORDER_SHORTCUTS = [
 export default function AccountPage() {
   useSeo({ title: 'Tài khoản của tôi', noindex: true });
   const { customer, loading, logout, setCustomer } = useCustomer();
-  const [tab, setTab] = useState('orders');
+  const [params] = useSearchParams();
+  // /tai-khoan?tab=vouchers (từ hộp quà đăng ký) mở thẳng Kho voucher
+  const [tab, setTab] = useState(() => (TABS.some(([k]) => k === params.get('tab')) ? params.get('tab') : 'orders'));
+  // Đang ở trang này mà bấm link ?tab=… (VD hộp quà đăng ký) thì chuyển mục theo
+  const tabParam = params.get('tab');
+  const [seenTabParam, setSeenTabParam] = useState(tabParam);
+  if (tabParam !== seenTabParam) {
+    setSeenTabParam(tabParam);
+    if (TABS.some(([k]) => k === tabParam)) setTab(tabParam);
+  }
   const [filter, setFilter] = useState('ALL');
   const avatarRef = useRef(null);
   const listRef = useRef(null);
@@ -411,6 +461,7 @@ export default function AccountPage() {
   };
   const tools = [
     { label: 'Thông tin & địa chỉ', icon: UserRound, onClick: () => setTab('profile') },
+    { label: 'Kho voucher', icon: Ticket, onClick: () => setTab('vouchers') },
     { label: 'Đổi mật khẩu', icon: KeyRound, onClick: () => setTab('password') },
     { label: 'Thu cũ đổi mới', icon: RefreshCw, to: '/thu-cu-doi-moi' },
     { label: 'Tra cứu bảo hành', icon: ShieldCheck, to: '/bao-hanh' },
@@ -485,7 +536,7 @@ export default function AccountPage() {
         {/* Tiện ích của tôi */}
         <div className="acc-pop rounded-2xl border border-gray-200 bg-white px-4 py-3.5" style={{ '--acc-delay': '160ms' }}>
           <h2 className="mb-2 font-bold text-gray-900">Tiện ích của tôi</h2>
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-5 gap-1">
             {tools.map(({ label, icon: Icon, onClick, to }) => {
               const inner = (
                 <>
@@ -526,6 +577,7 @@ export default function AccountPage() {
             )}
             {tab === 'profile' && <Profile customer={customer} onSaved={setCustomer} />}
             {tab === 'password' && <Password customer={customer} onSaved={setCustomer} />}
+            {tab === 'vouchers' && <Vouchers />}
           </div>
         </div>
 

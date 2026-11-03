@@ -17,6 +17,8 @@ const readToken = () => {
 export function CustomerProvider({ children }) {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(() => Boolean(readToken()));
+  // Voucher quà chào mừng vừa nhận khi đăng ký -> hiện hộp thông báo (WelcomeVoucherModal)
+  const [welcomeVoucher, setWelcomeVoucher] = useState(null);
 
   const logout = useCallback(() => {
     try {
@@ -27,8 +29,9 @@ export function CustomerProvider({ children }) {
     setCustomer(null);
   }, []);
 
-  // Nhận kết quả đăng nhập / đăng ký từ server: { token, customer }
-  const signIn = useCallback(({ token, customer: c }) => {
+  // Nhận kết quả đăng nhập / đăng ký từ server: { token, customer, welcomeVoucher? }
+  const signIn = useCallback(({ token, customer: c, welcomeVoucher: gift }) => {
+    if (gift) setWelcomeVoucher(gift);
     try {
       localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
     } catch {
@@ -52,7 +55,9 @@ export function CustomerProvider({ children }) {
   }, [logout]);
 
   return (
-    <CustomerContext.Provider value={{ customer, loading, signIn, logout, setCustomer }}>
+    <CustomerContext.Provider
+      value={{ customer, loading, signIn, logout, setCustomer, welcomeVoucher, dismissWelcome: () => setWelcomeVoucher(null) }}
+    >
       {children}
     </CustomerContext.Provider>
   );

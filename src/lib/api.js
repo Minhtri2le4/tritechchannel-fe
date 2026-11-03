@@ -15,7 +15,13 @@ api.interceptors.request.use((config) => {
   let token = null;
   try {
     if (url.startsWith('/admin')) token = localStorage.getItem(ADMIN_TOKEN_KEY);
-    else if (url.startsWith('/customers/me') || url === '/orders' || (url === '/reviews' && config.method === 'post')) token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
+    else if (
+      url.startsWith('/customers/me') ||
+      url === '/orders' ||
+      url === '/coupons/validate' || // voucher riêng (quà đăng ký) chỉ chủ tài khoản dùng được
+      (url === '/reviews' && config.method === 'post')
+    )
+      token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
   } catch {
     token = null;
   }
