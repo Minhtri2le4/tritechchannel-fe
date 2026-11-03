@@ -270,9 +270,10 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div className="hidden md:block md:col-span-3 relative z-40 group/sidebar h-[380px]">
-              <div className="bg-white rounded-xl shadow-sm p-2 flex flex-col justify-between text-xs h-full relative z-20">
+              {/* Nhiều danh mục hơn chiều cao banner thì cuộn trong khung (không tràn xuống hàng icon) */}
+              <div className="thin-scroll bg-white rounded-xl shadow-sm p-2 flex flex-col justify-between text-xs h-full overflow-y-auto relative z-20">
                 {sidebarCategories && sidebarCategories.map((cat) => (
-  <div key={cat.id} className="group/item">
+  <div key={cat.id} className="group/item shrink-0">
     <Link 
       to={cat.path || (cat.id === 4 ? '/thu-cu-doi-moi' : `/category/${cat.id}`)} 
       className="flex items-center justify-between p-1.5 hover:bg-yellow-50 rounded-lg transition-colors font-medium text-gray-700 group-hover/item:text-black group-hover/item:bg-yellow-100"
