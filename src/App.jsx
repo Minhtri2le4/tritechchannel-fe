@@ -27,6 +27,7 @@ import { CustomerProvider } from './context/CustomerContext';
 import WelcomeVoucherModal from './components/WelcomeVoucherModal';
 import MobileBottomNav from './components/MobileBottomNav';
 import VoucherPopup from './components/VoucherPopup';
+import TradeInNotice from './components/TradeInNotice';
 import usePresence from './hooks/usePresence';
 
 function AppContent() {
@@ -69,6 +70,7 @@ function AppContent() {
       <Footer />
       <MobileBottomNav />
       <VoucherPopup />
+      <TradeInNotice />
       <WelcomeVoucherModal />
     </div>
   );

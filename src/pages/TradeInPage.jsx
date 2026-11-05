@@ -1,7 +1,12 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { RefreshCw, PhoneCall, ArrowRight, FileText, PackageCheck, X, Camera } from 'lucide-react';
 import { shopApi } from '../services/shop';
 import useSeo from '../hooks/useSeo';
+import { saveToken } from '../lib/tradeIn';
+import TradeInRequests from '../components/TradeInRequests';
+
+const OTHER = 'Khác';
 
 export default function TradeIn() {
   useSeo({ title: 'Thu cũ đổi mới - Lên đời giá tốt', description: 'Thu cũ đổi mới điện thoại tại TriTech Channel: định giá nhanh, trợ giá lên đời, nhận máy tận nơi hoặc trực tiếp tại Thanh Đa, Bình Thạnh.' });
@@ -16,6 +21,11 @@ export default function TradeIn() {
     targetDevice: '',
     note: ''
   });
+
+  // Chọn "Khác" thì khách ghi rõ loại thiết bị / phụ kiện
+  const [otherCategory, setOtherCategory] = useState('');
+  const [otherAccessory, setOtherAccessory] = useState('');
+  const location = useLocation();
 
   // State quản lý ảnh upload
   const [images, setImages] = useState([]);
@@ -49,15 +59,23 @@ export default function TradeIn() {
       alert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
       return;
     }
+    const withOther = (value, other) => (value === OTHER ? (other.trim() ? `${OTHER}: ${other.trim()}` : OTHER) : value);
+    const payload = {
+      ...formData,
+      category: withOther(formData.category, otherCategory),
+      accessoryIncluded: withOther(formData.accessoryIncluded, otherAccessory),
+    };
 
     // Gửi dạng multipart/form-data: các trường form + ảnh ở key "images"
     const body = new FormData();
-    Object.entries(formData).forEach(([key, value]) => body.append(key, value));
+    Object.entries(payload).forEach(([key, value]) => body.append(key, value));
     images.forEach((img) => body.append('images', img.file));
 
     setSubmitting(true);
     try {
-      await shopApi.createTradeIn(body);
+      const { data } = await shopApi.createTradeIn(body);
+      // Lưu mã theo dõi để khách xem giá shop báo ngay trên web
+      if (data?.token) saveToken(data.token);
       images.forEach((img) => URL.revokeObjectURL(img.preview));
       setSubmitted(true);
     } catch (err) {
@@ -85,6 +103,9 @@ export default function TradeIn() {
           </p>
         </div>
 
+        {/* Báo giá shop gửi về: Đồng ý bán / Không bán, ký giấy mua bán */}
+        <TradeInRequests focusToken={location.state?.focus} />
+
         {/* Form Đăng Ký */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center gap-2 pb-3 sm:pb-4 mb-4 sm:mb-6 border-b border-gray-100">
@@ -99,7 +120,8 @@ export default function TradeIn() {
               </div>
               <h3 className="font-bold text-base sm:text-lg text-gray-900">Đã Gửi Thông Tin & Hình Ảnh Thành Công!</h3>
               <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto">
-                TriTech Channel sẽ kiểm tra hình ảnh món đồ của ông và phản hồi định giá qua Zalo/SĐT <strong>{formData.phone}</strong> ngay lập tức.
+                TriTech Channel sẽ kiểm tra hình ảnh và báo giá qua Zalo/SĐT <strong>{formData.phone}</strong>. Giá cũng sẽ hiện ngay trên trang này
+                (mục &quot;Yêu cầu định giá của bạn&quot;) để bạn bấm Đồng ý bán hoặc không.
               </p>
               <button
                 onClick={() => { setSubmitted(false); setImages([]); }}
@@ -157,7 +179,17 @@ export default function TradeIn() {
                     <option value="Tai nghe / Loa">Tai nghe / Loa Bluetooth</option>
                     <option value="Bàn phím / Chuột / Phụ kiện">Bàn phím / Chuột / Phụ kiện</option>
                     <option value="Đồng hồ thông minh">Đồng hồ thông minh</option>
+                    <option value={OTHER}>Khác</option>
                   </select>
+                  {formData.category === OTHER && (
+                    <input
+                      type="text"
+                      placeholder="Ghi rõ: VD máy chơi game, camera..."
+                      value={otherCategory}
+                      onChange={(e) => setOtherCategory(e.target.value)}
+                      className="mt-2 w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl outline-none focus:border-yellow-500 text-xs sm:text-sm"
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -260,7 +292,17 @@ export default function TradeIn() {
                     <option value="Đủ hộp & Phụ kiện">Còn đủ Hộp (Box) + Cáp sạc/Phụ kiện</option>
                     <option value="Chỉ có máy/sản phẩm">Chỉ có sản phẩm lẻ (Không box/cáp)</option>
                     <option value="Kèm cáp sạc">Sản phẩm + Cáp sạc</option>
+                    <option value={OTHER}>Khác</option>
                   </select>
+                  {formData.accessoryIncluded === OTHER && (
+                    <input
+                      type="text"
+                      placeholder="Ghi rõ phụ kiện kèm theo..."
+                      value={otherAccessory}
+                      onChange={(e) => setOtherAccessory(e.target.value)}
+                      className="mt-2 w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl outline-none focus:border-yellow-500 text-xs sm:text-sm"
+                    />
+                  )}
                 </div>
               </div>
 

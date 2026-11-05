@@ -15,6 +15,11 @@ export const shopApi = {
 
   // formData: FormData gồm các field form + nhiều file ở key "images"
   createTradeIn: (formData) => api.post('/trade-ins', formData),
+  // Theo dõi báo giá thu cũ bằng mã bí mật lưu trong trình duyệt (hoặc theo tài khoản)
+  tradeInTracks: (tokens) => api.get('/trade-ins/track', { params: { tokens: tokens.join(',') } }),
+  myTradeIns: () => api.get('/trade-ins/mine'),
+  tradeInDecide: (token, body) => api.post(`/trade-ins/track/${token}/decision`, body),
+  tradeInSign: (token, body) => api.post(`/trade-ins/track/${token}/contract`, body),
   lookupWarranty: (q) => api.get('/warranties/lookup', { params: { q } }),
 
   // Banner, video review trang chủ chỉnh trong admin (null = chưa cấu hình, dùng mặc định)
