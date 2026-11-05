@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, LayoutGrid, RefreshCw, Headset, UserRound } from 'lucide-react';
+import { HomeIcon, LayoutDashboardIcon, RefreshIcon, TelephoneIcon, UserIcon, useIconHover } from './hover-icons';
 import { useCustomer } from '../context/CustomerContext';
 
 // Sự kiện để Header mở menu DANH MỤC từ thanh dưới đáy
@@ -10,11 +10,13 @@ const itemClass = (active) =>
     active ? 'text-black' : 'text-gray-500'
   }`;
 
+// Chạm vào mục nào thì icon mục đó chuyển động (icon Its Hover)
 function Item({ icon: Icon, label, active, hot }) {
+  const [iconRef, hover] = useIconHover();
   return (
     <>
-      <span className={`relative flex items-center justify-center w-10 h-7 rounded-full ${active ? 'bg-[#FFD400]' : ''}`}>
-        <Icon size={20} strokeWidth={active ? 2.4 : 1.8} />
+      <span {...hover} className={`relative flex items-center justify-center w-10 h-7 rounded-full ${active ? 'bg-[#FFD400]' : ''}`}>
+        <Icon ref={iconRef} size={20} strokeWidth={active ? 2.4 : 1.8} />
         {hot && <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[7px] font-black px-1 rounded-full leading-3">HOT</span>}
       </span>
       {label}
@@ -42,19 +44,19 @@ export default function MobileBottomNav() {
     >
       <div className="flex items-stretch h-14">
         <NavLink to="/" end className={({ isActive }) => itemClass(isActive)}>
-          {({ isActive }) => <Item icon={Home} label="Trang chủ" active={isActive} />}
+          {({ isActive }) => <Item icon={HomeIcon} label="Trang chủ" active={isActive} />}
         </NavLink>
         <button type="button" onClick={openMenu} className={itemClass(false)}>
-          <Item icon={LayoutGrid} label="Danh mục" />
+          <Item icon={LayoutDashboardIcon} label="Danh mục" />
         </button>
         <NavLink to="/thu-cu-doi-moi" className={({ isActive }) => itemClass(isActive)}>
-          {({ isActive }) => <Item icon={RefreshCw} label="Thu cũ" active={isActive} hot />}
+          {({ isActive }) => <Item icon={RefreshIcon} label="Thu cũ" active={isActive} hot />}
         </NavLink>
         <a href="https://zalo.me/0325477841" target="_blank" rel="noopener noreferrer" className={itemClass(false)}>
-          <Item icon={Headset} label="Liên hệ" />
+          <Item icon={TelephoneIcon} label="Liên hệ" />
         </a>
         <NavLink to={customer ? '/tai-khoan' : '/dang-nhap'} className={({ isActive }) => itemClass(isActive)}>
-          {({ isActive }) => <Item icon={UserRound} label={customer ? 'Tài khoản' : 'Đăng nhập'} active={isActive} />}
+          {({ isActive }) => <Item icon={UserIcon} label={customer ? 'Tài khoản' : 'Đăng nhập'} active={isActive} />}
         </NavLink>
       </div>
     </nav>
