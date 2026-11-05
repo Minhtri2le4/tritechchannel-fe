@@ -57,6 +57,13 @@ const seenKey = (t) => `${t.token}:${t.quotedAt || ''}:${t.decision || ''}`;
 export const isSeen = (t) => read(SEEN_KEY).includes(seenKey(t));
 export const markSeen = (t) => write(SEEN_KEY, [seenKey(t), ...read(SEEN_KEY)].slice(0, 50));
 
+// Nơi khách bán online gửi máy về (hiện cho khách sau khi ký giấy)
+export const SHIP_TO = {
+  name: 'Minh Trí (TriTech Channel)',
+  phone: '0325 477 841',
+  address: 'Nhà nghỉ Khách sạn Công Đoàn Thanh Đa, Phường 27, Bình Thạnh, TP. Hồ Chí Minh',
+};
+
 export const vnd = (n) => `${Number(n || 0).toLocaleString('vi-VN')}đ`;
 
 // Đọc số tiền thành chữ cho giấy mua bán: 7500000 -> "Bảy triệu năm trăm nghìn đồng"

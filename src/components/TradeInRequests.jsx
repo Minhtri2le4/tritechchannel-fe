@@ -4,6 +4,7 @@ import { shopApi } from '../services/shop';
 import { assetUrl, formatDate, imgFallback } from '../lib/api';
 import { TRADE_IN_EVENT, fetchMyTradeIns, markSeen, needsAnswer, needsSign, saveToken, vnd } from '../lib/tradeIn';
 import TradeInContractSheet from './TradeInContractSheet';
+import ShipToShopGuide from './ShipToShopGuide';
 
 // Trạng thái hiển thị cho khách
 const stage = (t) => {
@@ -106,13 +107,13 @@ export default function TradeInRequests({ focusToken }) {
                   <FileSignature size={16} /> Điền thông tin & ký giấy mua bán
                 </button>
               )}
-              {t.signed && t.status !== 'COMPLETED' && (
+              {t.signed && t.status !== 'COMPLETED' && (t.sellMethod === 'ONLINE' ? (
+                <ShipToShopGuide requestId={t.id} />
+              ) : (
                 <p className="mt-2 rounded-lg bg-blue-50 p-2 text-xs text-blue-800">
-                  {t.sellMethod === 'STORE'
-                    ? 'Bạn mang máy tới cửa hàng tại Thanh Đa, Bình Thạnh (gọi trước 0325 477 841). Shop kiểm tra máy rồi thanh toán ngay.'
-                    : 'Shop sẽ gọi hướng dẫn gửi máy qua đơn vị vận chuyển. Nhận máy, kiểm tra xong shop chuyển khoản cho bạn.'}
+                  Bạn mang máy tới cửa hàng tại Thanh Đa, Bình Thạnh (gọi trước 0325 477 841). Shop kiểm tra máy rồi thanh toán ngay.
                 </p>
-              )}
+              ))}
             </div>
           );
         })}
@@ -127,7 +128,7 @@ export default function TradeInRequests({ focusToken }) {
             <div className="mt-4 space-y-2">
               {[
                 ['STORE', Store, 'Bán tại cửa hàng', 'Mang máy tới Thanh Đa, Bình Thạnh – kiểm tra & nhận tiền ngay'],
-                ['ONLINE', Truck, 'Bán online', 'Gửi máy qua vận chuyển – shop kiểm tra rồi chuyển khoản'],
+                ['ONLINE', Truck, 'Bán online', 'Tự gửi máy về shop (không COD) – shop kiểm tra, chuyển khoản tiền máy + hoàn phí ship'],
               ].map(([key, Icon, title, sub]) => (
                 <button
                   key={key}
