@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
-  Search, ShoppingBag, Grid3X3, Phone, ShieldCheck, Trash2, TrendingUp,
+  Grid3X3, Trash2, TrendingUp,
   Smartphone, Tablet, Percent, RefreshCw, Headphones, Speaker, Watch, Laptop, Home, Gift, Newspaper,
-  Headset, Wrench, Copy, Check, MessageCircle, ChevronDown, UserRound
+  Headset, Wrench, Copy, Check, MessageCircle, ChevronDown
 } from 'lucide-react';
+import { MagnifierIcon, ShieldCheckIcon, ShoppingCartIcon, TelephoneIcon, UserIcon, useIconHover } from './hover-icons';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
 import { shopApi } from '../services/shop';
@@ -41,6 +42,12 @@ export default function Header() {
 
   // State quản lý Popover Hotline Liên Hệ
   const [showContact, setShowContact] = useState(false);
+  // Icon chuyển động khi rê chuột vào nút (Its Hover)
+  const [phoneIcon, phoneHover] = useIconHover();
+  const [shieldIcon, shieldHover] = useIconHover();
+  const [userIcon, userHover] = useIconHover();
+  const [cartIcon, cartHover] = useIconHover();
+  const [searchIcon, searchHover] = useIconHover();
   const [copiedIndex, setCopiedIndex] = useState(null);
 
   const navigate = useNavigate();
@@ -245,9 +252,11 @@ export default function Header() {
               />
               <button
                 type="submit"
+                aria-label="Tìm kiếm"
+                {...searchHover}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-black transition-colors"
               >
-                <Search size={15} />
+                <MagnifierIcon ref={searchIcon} size={15} />
               </button>
             </form>
 
@@ -345,9 +354,10 @@ export default function Header() {
             <div className="hidden lg:block relative" ref={contactRef}>
               <div
                 onClick={() => setShowContact(!showContact)}
+                {...phoneHover}
                 className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity select-none py-1"
               >
-                <Phone size={18} />
+                <TelephoneIcon ref={phoneIcon} size={18} />
                 <div className="leading-tight">
                   <p className="flex items-center gap-0.5">
                     Liên Hệ
@@ -435,8 +445,8 @@ export default function Header() {
               )}
             </div>
 
-            <Link to="/bao-hanh" className="hidden lg:flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-               <ShieldCheck size={18} />
+            <Link to="/bao-hanh" {...shieldHover} className="hidden lg:flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
+               <ShieldCheckIcon ref={shieldIcon} size={18} />
                <div className="leading-tight">
                   <p>Bảo Hành</p>
                   <p className="text-[9px] font-normal">Tra cứu</p>
@@ -447,13 +457,14 @@ export default function Header() {
             <Link
               to={customer ? '/tai-khoan' : '/dang-nhap'}
               title={customer ? 'Tài khoản của tôi' : 'Đăng nhập / Đăng ký'}
+              {...userHover}
               className="hidden md:flex items-center gap-1.5 hover:opacity-80 transition-opacity"
             >
               {customer?.avatar ? (
                 <img src={assetUrl(customer.avatar)} alt="" referrerPolicy="no-referrer" className="h-7 w-7 rounded-full object-cover border border-black/10" />
               ) : (
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/10">
-                  <UserRound size={16} />
+                  <UserIcon ref={userIcon} size={16} />
                 </span>
               )}
               <div className="hidden lg:block leading-tight max-w-[90px]">
@@ -465,9 +476,10 @@ export default function Header() {
             {/* 🛒 NÚT GIỎ HÀNG */}
             <Link
               to="/cart"
+              {...cartHover}
               className="relative cursor-pointer flex items-center gap-1 bg-black text-white px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg hover:bg-gray-800 transition-colors"
             >
-              <ShoppingBag size={16} className="text-[#FFD400]" />
+              <ShoppingCartIcon ref={cartIcon} size={17} color="#FFD400" />
               <span className="hidden sm:inline text-xs font-bold">Giỏ hàng</span>
               {totalCartCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full border-2 border-[#FFD400]">
