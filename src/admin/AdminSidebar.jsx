@@ -72,7 +72,7 @@ export default function AdminSidebar({ nav, badges, collapsed, onToggle, theme, 
       {/* Logo + nút thu gọn */}
       <div className={`flex items-center gap-2.5 pb-3 pt-4 ${slim ? 'justify-center px-2' : 'px-4'}`}>
         <Link to="/admin" onClick={onNavigate} className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FFD400] text-sm font-black text-black">T</span>
+          <img src="/assets/logo.png" alt="TriTech Channel" className="h-9 w-9 shrink-0 rounded-full bg-[#FFD400] object-contain p-1" />
           {!slim && (
             <span className="min-w-0 leading-tight">
               <span className="block text-sm font-black tracking-tight text-white">TriTech Admin</span>
