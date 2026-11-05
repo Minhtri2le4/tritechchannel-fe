@@ -3,6 +3,9 @@ export const SHOP = {
   name: 'TRITECH CHANNEL',
   hotline: '0325 477 841',
   address: 'Thanh Đa, Bình Thạnh, TP.HCM',
+  // Chủ hộ kinh doanh – đứng tên bên mua trên giấy mua bán máy thu cũ
+  ownerName: 'HỒ MINH TRÍ',
+  fullAddress: 'Hộ kinh doanh HỒ MINH TRÍ – Thanh Đa, Bình Thạnh, TP.HCM',
   carrier: 'Viettel Post',
 };
 

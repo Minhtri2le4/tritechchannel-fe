@@ -11,6 +11,7 @@ import OrdersPage from './pages/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import OrderPrintPage from './pages/OrderPrintPage';
 import TradeInsPage from './pages/TradeInsPage';
+import TradeInPrintPage from './pages/TradeInPrintPage';
 import WarrantiesPage from './pages/WarrantiesPage';
 import CouponsPage from './pages/CouponsPage';
 import CategoriesPage from './pages/CategoriesPage';
@@ -38,6 +39,7 @@ function AdminRoutes() {
       <Route path="login" element={!checking && user ? <Navigate to="/admin" replace /> : <LoginPage />} />
       {/* Trang in phiếu không có menu admin */}
       <Route path="orders/:id/print" element={<Protected><OrderPrintPage /></Protected>} />
+      <Route path="trade-ins/:id/print" element={<Protected><TradeInPrintPage /></Protected>} />
       <Route
         element={
           <Protected>

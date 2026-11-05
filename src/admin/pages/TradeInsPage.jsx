@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Phone, Search, Trash2 } from 'lucide-react';
+import { FileSignature, Phone, Printer, Search, Trash2 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { assetUrl, imgFallback, formatDate, formatPrice } from '../../lib/api';
 import { adminApi } from '../adminApi';
@@ -66,7 +66,7 @@ export default function TradeInsPage() {
             { key: 'customer', title: 'Khách hàng', render: (t) => <><p className="font-medium">{t.fullName}</p><p className="text-xs text-gray-500">{t.phone}</p></> },
             { key: 'targetDevice', title: 'Muốn lên đời', className: 'text-gray-600', render: (t) => t.targetDevice || '—' },
             { key: 'quotedPrice', title: 'Giá báo', className: 'text-right whitespace-nowrap', render: (t) => (t.quotedPrice != null ? <b>{formatPrice(t.quotedPrice)}</b> : '—') },
-            { key: 'status', title: 'Trạng thái', render: (t) => <Badge map={TRADE_IN_STATUS} value={t.status} /> },
+            { key: 'status', title: 'Trạng thái', render: (t) => <><Badge map={TRADE_IN_STATUS} value={t.status} /><CustomerStep t={t} /></> },
             { key: 'createdAt', title: 'Ngày gửi', className: 'whitespace-nowrap text-xs text-gray-500', render: (t) => formatDate(t.createdAt, true) },
           ]}
         />
@@ -88,8 +88,24 @@ export default function TradeInsPage() {
   );
 }
 
-function TradeInModal({ item, onClose, onSaved }) {
+// Khách đã trả lời báo giá chưa / đã ký giấy chưa
+const DECISION = {
+  ACCEPTED: 'text-emerald-700',
+  DECLINED: 'text-gray-500',
+};
+function CustomerStep({ t }) {
+  if (t.signedAt) return <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-blue-700"><FileSignature size={12} /> Đã ký giấy</p>;
+  if (t.decision === 'ACCEPTED') return <p className={`mt-1 text-[11px] font-semibold ${DECISION.ACCEPTED}`}>Khách đồng ý · {t.sellMethod === 'STORE' ? 'tại cửa hàng' : 'online'}</p>;
+  if (t.decision === 'DECLINED') return <p className={`mt-1 text-[11px] font-semibold ${DECISION.DECLINED}`}>Khách không bán</p>;
+  if (t.status === 'QUOTED' && t.quotedPrice != null) return <p className="mt-1 text-[11px] text-amber-700">Chờ khách trả lời</p>;
+  return null;
+}
+
+function TradeInModal({ item: row, onClose, onSaved }) {
   const { isAdmin } = useAuth();
+  // Bản đầy đủ (có giấy mua bán đã ký) lấy riêng
+  const { data: full } = useFetch(() => adminApi.tradeIns.get(row.id), [row.id]);
+  const item = full || row;
   const [form, setForm] = useState({ status: item.status, quotedPrice: item.quotedPrice, adminNote: item.adminNote || '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -98,7 +114,10 @@ function TradeInModal({ item, onClose, onSaved }) {
     setSaving(true);
     setError('');
     try {
-      await adminApi.tradeIns.update(item.id, form);
+      // Nhập giá mà chưa chọn trạng thái -> tự chuyển "Đã báo giá" để khách thấy giá trên web
+      const body = { ...form };
+      if (body.quotedPrice != null && body.quotedPrice !== item.quotedPrice && ['NEW', 'CONTACTED'].includes(body.status)) body.status = 'QUOTED';
+      await adminApi.tradeIns.update(item.id, body);
       onSaved();
     } catch (err) {
       setError(errorText(err));
@@ -175,6 +194,43 @@ function TradeInModal({ item, onClose, onSaved }) {
           <Field label="Giá thu báo cho khách (VND)">
             <MoneyInput value={form.quotedPrice} onChange={(v) => setForm({ ...form, quotedPrice: v })} />
           </Field>
+          <p className="-mt-1 text-xs text-gray-500">
+            Lưu giá với trạng thái <b>Đã báo giá</b> → khách thấy giá trên web và bấm Đồng ý bán / Không bán. Đổi giá thì khách phải xác nhận & ký lại.
+          </p>
+
+          {/* Khách trả lời + giấy mua bán */}
+          <div className="rounded-xl border border-gray-200 p-3 text-sm">
+            <p className="font-semibold">Phản hồi của khách</p>
+            {item.decision === 'ACCEPTED' ? (
+              <p className="mt-1 text-emerald-700">
+                Đồng ý bán · {item.sellMethod === 'STORE' ? 'mang máy tới cửa hàng' : 'bán online (gửi máy)'}
+                {item.decidedAt && <span className="text-gray-500"> · {formatDate(item.decidedAt, true)}</span>}
+              </p>
+            ) : item.decision === 'DECLINED' ? (
+              <p className="mt-1 text-gray-600">Không bán{item.decidedAt && ` · ${formatDate(item.decidedAt, true)}`}</p>
+            ) : (
+              <p className="mt-1 text-gray-500">{item.status === 'QUOTED' && item.quotedPrice != null ? 'Chờ khách trả lời báo giá' : 'Chưa báo giá'}</p>
+            )}
+            {item.signedAt ? (
+              <div className="mt-2 space-y-1 border-t border-gray-100 pt-2 text-xs">
+                <p className="font-semibold text-blue-700">Đã ký giấy mua bán · {formatDate(item.signedAt, true)}</p>
+                {item.sellerInfo && (
+                  <p className="text-gray-600">
+                    {item.sellerInfo.fullName} · CCCD {item.sellerInfo.cccd} · IMEI {item.sellerInfo.imei}
+                  </p>
+                )}
+                {item.signature && <img src={item.signature} alt="Chữ ký" className="h-16 rounded border border-gray-100 bg-white" />}
+              </div>
+            ) : null}
+            <a
+              href={`/admin/trade-ins/${item.id}/print`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-700"
+            >
+              <Printer size={14} /> In giấy mua bán (A5){!item.signedAt && ' – bản trống để khách ký tay'}
+            </a>
+          </div>
           <Field label="Ghi chú nội bộ">
             <Textarea rows={4} value={form.adminNote} onChange={(e) => setForm({ ...form, adminNote: e.target.value })} />
           </Field>

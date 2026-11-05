@@ -20,6 +20,7 @@ api.interceptors.request.use((config) => {
       url === '/orders' ||
       url === '/coupons/validate' || // voucher riêng (quà đăng ký) chỉ chủ tài khoản dùng được
       url === '/presence/ping' || // biết thành viên nào đang online
+      url === '/trade-ins' || url === '/trade-ins/mine' || // yêu cầu thu cũ gắn với tài khoản khách
       (url === '/reviews' && config.method === 'post')
     )
       token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
