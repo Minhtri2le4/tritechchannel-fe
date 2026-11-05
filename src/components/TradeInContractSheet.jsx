@@ -79,7 +79,7 @@ export default function TradeInContractSheet({ item, onClose, onSigned }) {
               <span className="text-gray-600"> ({moneyInWords(item.quotedPrice)})</span>
             </p>
             <p className="mt-1 text-xs text-gray-600">
-              {item.sellMethod === 'STORE' ? 'Hình thức: mang máy tới cửa hàng Thanh Đa, Bình Thạnh.' : 'Hình thức: bán online – gửi máy qua đơn vị vận chuyển.'}
+              {item.sellMethod === 'STORE' ? 'Hình thức: mang máy tới cửa hàng Thanh Đa, Bình Thạnh.' : 'Hình thức: bán online – bạn gửi máy về shop (không COD), shop kiểm tra rồi chuyển khoản tiền máy + hoàn phí ship.'}
             </p>
           </div>
 
