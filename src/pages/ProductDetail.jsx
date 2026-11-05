@@ -269,7 +269,10 @@ function ProductDetailView({ productData }) {
                 <button
                   type="button"
                   key={index}
-                  onClick={() => setActiveImage(img)}
+                  onClick={() => {
+                    setActiveImage(img);
+                    setZoomOpen(true);
+                  }}
                   onMouseEnter={() => setActiveImage(img)}
                   className={`shrink-0 w-16 h-16 md:w-20 md:h-20 border-2 rounded-lg overflow-hidden bg-gray-50 p-1 ${activeImage === img ? 'border-red-500' : 'border-transparent hover:border-gray-300'}`}
                 >
