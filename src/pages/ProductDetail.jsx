@@ -13,6 +13,7 @@ import { allPrices, optionPrice, optionStock } from '../lib/price';
 import ProductCard from '../components/ProductCard';
 import VariantSheet from '../components/VariantSheet';
 import ProductReviews from '../components/ProductReviews';
+import ImageLightbox from '../components/ImageLightbox';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -71,9 +72,13 @@ function ProductDetailView({ productData }) {
   }, [location.hash]);
   const [activeImage, setActiveImage] = useState(assetUrl(productData.image));
   const [showNotification, setShowNotification] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   // Ảnh thumbnail: ảnh đại diện + ảnh phụ (bỏ trùng)
   const productImages = [...new Set([productData.image, ...(productData.images || [])].filter(Boolean))].map(assetUrl);
+
+  // Ảnh xem phóng to: thêm ảnh phân loại đang chọn nếu nó không nằm trong danh sách
+  const lightboxImages = productImages.includes(activeImage) ? productImages : [activeImage, ...productImages];
 
   // Giá theo phân loại (nếu có giá riêng) hoặc phiên bản đã chọn
   const selectedVariant = storages.find((v) => v.id === selectedVariantId) || null;
@@ -239,7 +244,14 @@ function ProductDetailView({ productData }) {
 
           {/* CỘT TRÁI: Hình ảnh sản phẩm */}
           <div className="lg:col-span-5 flex flex-col gap-3">
-            <div className="relative border border-gray-200 rounded-2xl overflow-hidden bg-gray-50 aspect-square flex items-center justify-center p-4 group">
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="Phóng to ảnh"
+              onClick={() => setZoomOpen(true)}
+              onKeyDown={(e) => e.key === 'Enter' && setZoomOpen(true)}
+              className="relative border border-gray-200 rounded-2xl overflow-hidden bg-gray-50 aspect-square flex items-center justify-center p-4 group cursor-zoom-in"
+            >
               <img
                 onError={imgFallback}
                 src={activeImage}
@@ -266,6 +278,16 @@ function ProductDetailView({ productData }) {
               ))}
             </div>
           </div>
+
+          {zoomOpen && (
+            <ImageLightbox
+              images={lightboxImages}
+              start={Math.max(0, lightboxImages.indexOf(activeImage))}
+              title={productData.name}
+              onChange={setActiveImage}
+              onClose={() => setZoomOpen(false)}
+            />
+          )}
 
           {/* CỘT PHẢI: Khung mua hàng */}
           <div className="lg:col-span-7 flex flex-col gap-4">
