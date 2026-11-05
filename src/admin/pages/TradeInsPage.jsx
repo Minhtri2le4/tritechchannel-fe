@@ -36,7 +36,7 @@ export default function TradeInsPage() {
         <div className="flex flex-wrap gap-2 p-3 border-b border-gray-100">
           <div className="relative flex-1 min-w-[200px]">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <Input className="pl-9" placeholder="Tìm SĐT, tên khách, tên máy..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+            <Input className="pl-9" placeholder="Tìm SĐT, tên khách, tên máy, IMEI / Serial, CCCD..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
           </div>
           <Select className="w-auto" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">Mọi trạng thái</option>
