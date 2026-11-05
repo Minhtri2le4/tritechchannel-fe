@@ -50,7 +50,11 @@ export default function ImageLightbox({ images: initialImages, start = 0, title,
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black md:bg-black/60 md:p-6" onClick={onClose}>
       <div
         className="lightbox-in relative flex h-full w-full flex-col md:h-auto md:max-h-[90vh] md:w-auto md:max-w-[960px] md:flex-row md:gap-4 md:bg-white md:p-3 md:shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          // Điện thoại: chạm vào vùng đen quanh ảnh thì đóng
+          if (e.target === e.currentTarget) onClose();
+        }}
       >
         <button type="button" aria-label="Đóng" onClick={onClose} className="absolute right-3 top-3 z-20 rounded-full bg-black/50 p-1.5 text-white md:-right-3 md:-top-3 md:bg-white md:text-gray-700 md:shadow">
           <X size={20} />
@@ -61,6 +65,7 @@ export default function ImageLightbox({ images: initialImages, start = 0, title,
           className="relative flex flex-1 items-center justify-center md:h-[min(640px,80vh)] md:w-[min(640px,80vh)] md:flex-none md:bg-white"
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
+          onClick={(e) => e.target === e.currentTarget && window.innerWidth < 768 && onClose()}
         >
           <img key={idx} src={images[idx]} onError={imgFallback} alt={title} className="lightbox-img max-h-full max-w-full select-none object-contain" draggable={false} />
           {n > 1 && (
