@@ -9,6 +9,7 @@ import ShipToShopGuide from './ShipToShopGuide';
 // Trạng thái hiển thị cho khách
 const stage = (t) => {
   if (t.status === 'COMPLETED') return { text: 'Đã thu máy – giao dịch hoàn tất', cls: 'bg-emerald-100 text-emerald-700', Icon: PackageCheck };
+  if (t.status === 'FAILED') return { text: 'Giao dịch không thành công', cls: 'bg-gray-100 text-gray-600', Icon: XCircle };
   if (t.status === 'REJECTED') return { text: 'Shop không thu được máy này', cls: 'bg-gray-100 text-gray-600', Icon: XCircle };
   if (t.decision === 'DECLINED') return { text: 'Bạn đã từ chối bán', cls: 'bg-gray-100 text-gray-600', Icon: XCircle };
   if (t.signed) return { text: 'Đã ký giấy – chờ giao máy', cls: 'bg-blue-100 text-blue-700', Icon: CheckCircle2 };

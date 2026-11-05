@@ -25,8 +25,9 @@ export const TRADE_IN_STATUS = {
   NEW: { label: 'Mới', className: 'bg-red-100 text-red-700' },
   CONTACTED: { label: 'Đã liên hệ', className: 'bg-blue-100 text-blue-800' },
   QUOTED: { label: 'Đã báo giá', className: 'bg-amber-100 text-amber-800' },
-  COMPLETED: { label: 'Đã thu', className: 'bg-emerald-100 text-emerald-800' },
-  REJECTED: { label: 'Từ chối', className: 'bg-gray-200 text-gray-600' },
+  COMPLETED: { label: 'Hoàn thành', className: 'bg-emerald-100 text-emerald-800' },
+  FAILED: { label: 'Thất bại (khách không giao)', className: 'bg-rose-100 text-rose-700' },
+  REJECTED: { label: 'Shop từ chối', className: 'bg-gray-200 text-gray-600' },
 };
 
 export function Badge({ map, value, children, className }) {
