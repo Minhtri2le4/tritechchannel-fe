@@ -24,6 +24,18 @@ const SUGGEST_TABS = {
   audio: { category: '6', sort: 'best_selling' },
 };
 const SUGGEST_PAGE = 20;
+// Danh sách số trang kiểu Shopee: 1 … 4 5 6 … 12 (luôn có trang đầu, trang cuối, 2 trang quanh trang đang xem)
+const pageList = (cur, total) => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const out = [1];
+  const from = Math.max(2, Math.min(cur - 1, total - 4));
+  const to = Math.min(total - 1, Math.max(cur + 1, 5));
+  if (from > 2) out.push('…');
+  for (let n = from; n <= to; n++) out.push(n);
+  if (to < total - 1) out.push('…');
+  out.push(total);
+  return out;
+};
 import { 
   ShieldCheck, RefreshCw, Truck, RotateCcw, 
   ChevronLeft, ChevronRight, PhoneCall, Star, Play, Flame, Zap, Clock,
@@ -123,7 +135,8 @@ export default function HomePage() {
   const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 15, seconds: 40 });
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('all');
-  const [suggestLimit, setSuggestLimit] = useState(SUGGEST_PAGE);
+  const [suggestPage, setSuggestPage] = useState(1);
+  const suggestTopRef = useRef(null);
   const [suggestCategory, setSuggestCategory] = useState(null);
   const shortsContainerRef = useRef(null);
   // Banner, video review: lấy từ Admin → Giao diện trang chủ (chưa cấu hình thì dùng mặc định)
@@ -158,8 +171,8 @@ export default function HomePage() {
   const { data: flashSale } = useFetch(() => shopApi.products({ isFlashSale: true, limit: 6 }), []);
   const bestPricesToday = flashSale || [];
   const { data: suggested, meta: suggestMeta, loading: suggestLoading } = useFetch(
-    () => shopApi.products({ ...SUGGEST_TABS[activeTab], ...(suggestCategory ? { category: String(suggestCategory) } : {}), limit: suggestLimit }),
-    [activeTab, suggestCategory, suggestLimit]
+    () => shopApi.products({ ...SUGGEST_TABS[activeTab], ...(suggestCategory ? { category: String(suggestCategory) } : {}), limit: SUGGEST_PAGE, page: suggestPage }),
+    [activeTab, suggestCategory, suggestPage]
   );
   const thirtyProducts = suggested || [];
   // Backend xếp sản phẩm hết hàng xuống cuối -> tách ra để hiện dưới tiêu đề "Hết hàng"
@@ -168,12 +181,20 @@ export default function HomePage() {
   const changeTab = (tab) => {
     setActiveTab(tab);
     setSuggestCategory(null);
-    setSuggestLimit(SUGGEST_PAGE);
+    setSuggestPage(1);
+  };
+  // Phân trang như Shopee: đổi trang thì cuộn lên đầu mục gợi ý
+  const suggestPages = suggestMeta?.totalPages || 1;
+  const goSuggestPage = (n) => {
+    if (n < 1 || n > suggestPages || n === suggestPage) return;
+    setSuggestPage(n);
+    const el = suggestTopRef.current;
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
   };
   const changeCategory = (id) => {
     setActiveTab('all');
     setSuggestCategory(id);
-    setSuggestLimit(SUGGEST_PAGE);
+    setSuggestPage(1);
   };
 
   // Đại lý ủy quyền: trên điện thoại các thẻ nằm ngang, cứ 2 giây tự trượt sang thẻ kế tiếp (hết thì quay về đầu).
@@ -563,7 +584,7 @@ export default function HomePage() {
         </div>
 
         {/* LƯỚI SẢN PHẨM GỢI Ý + DANH MỤC BÊN TRÁI (danh mục nhiều, thanh menu trên không chứa hết) */}
-        <div className="mb-16 md:flex md:items-start md:gap-4">
+        <div ref={suggestTopRef} className="mb-16 md:flex md:items-start md:gap-4">
           <aside className="hidden md:block w-[210px] shrink-0 sticky top-24 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 max-h-[calc(100vh-7rem)] overflow-y-auto">
             <h3 className="flex items-center gap-2 text-base font-black text-gray-900 pb-3 mb-2 border-b border-gray-100">
               <List size={18} /> Danh Mục
@@ -588,6 +609,17 @@ export default function HomePage() {
           </aside>
 
           <div className="flex-1 min-w-0">
+          {/* Trang hiện tại / tổng số trang + nút < > (góc phải như Shopee) */}
+          {suggestPages > 1 && (
+            <div className="mb-3 flex items-center justify-end gap-3 text-sm">
+              <span><b className="text-red-600">{suggestPage}</b><span className="text-gray-500">/{suggestPages}</span></span>
+              <div className="flex">
+                <button type="button" aria-label="Trang trước" disabled={suggestPage <= 1} onClick={() => goSuggestPage(suggestPage - 1)} className="flex h-8 w-9 items-center justify-center rounded-l border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-300">‹</button>
+                <button type="button" aria-label="Trang sau" disabled={suggestPage >= suggestPages} onClick={() => goSuggestPage(suggestPage + 1)} className="flex h-8 w-9 items-center justify-center rounded-r border border-l-0 border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-300">›</button>
+              </div>
+            </div>
+          )}
+          <div className={`transition-opacity ${suggestLoading ? 'opacity-50' : ''}`}>
           {[inStockSuggested, soldOutSuggested].map((list, i) => list.length > 0 && (
           <div key={i}>
           {i === 1 && <h3 className="mt-8 mb-4 text-sm md:text-base font-semibold text-gray-500 uppercase">Hết hàng</h3>}
@@ -624,12 +656,33 @@ export default function HomePage() {
           </div>
           ))}
 
-          {/* KHÔI PHỤC NÚT XEM THÊM */}
-          <div className="flex justify-center mt-8">
-            {(suggestMeta?.total ?? 0) > thirtyProducts.length && <button disabled={suggestLoading} onClick={() => setSuggestLimit((n) => n + SUGGEST_PAGE)} className="bg-white hover:bg-gray-50 disabled:opacity-60 text-gray-900 font-black text-xs px-8 py-3.5 rounded-2xl shadow-md border border-gray-200 transition-all hover:scale-105">
-              XEM THÊM SẢN PHẨM KHÁC ▾
-            </button>}
           </div>
+
+          {/* Số trang như Shopee: ‹ 1 2 3 … 9 › – trang cuối là hết sản phẩm */}
+          {suggestPages > 1 && (
+            <nav aria-label="Phân trang" className="mt-8 flex items-center justify-center gap-1.5 md:gap-3">
+              <button type="button" aria-label="Trang trước" disabled={suggestPage <= 1} onClick={() => goSuggestPage(suggestPage - 1)} className="flex h-9 w-9 items-center justify-center text-xl text-gray-500 hover:text-red-600 disabled:cursor-not-allowed disabled:text-gray-300">‹</button>
+              {pageList(suggestPage, suggestPages).map((n, i) =>
+                n === '…' ? (
+                  <span key={`gap${i}`} className="w-8 text-center text-gray-400">…</span>
+                ) : (
+                  <button
+                    type="button"
+                    key={n}
+                    onClick={() => goSuggestPage(n)}
+                    aria-current={n === suggestPage ? 'page' : undefined}
+                    className={`h-9 min-w-9 rounded px-2 text-base transition-colors ${n === suggestPage ? 'bg-red-600 font-semibold text-white shadow-sm' : 'text-gray-600 hover:text-red-600'}`}
+                  >
+                    {n}
+                  </button>
+                )
+              )}
+              <button type="button" aria-label="Trang sau" disabled={suggestPage >= suggestPages} onClick={() => goSuggestPage(suggestPage + 1)} className="flex h-9 w-9 items-center justify-center text-xl text-gray-500 hover:text-red-600 disabled:cursor-not-allowed disabled:text-gray-300">›</button>
+            </nav>
+          )}
+          {suggestPages > 1 && suggestPage >= suggestPages && (
+            <p className="mt-3 text-center text-xs text-gray-400">Bạn đã xem hết {suggestMeta?.total} sản phẩm</p>
+          )}
           </div>
         </div>
 
