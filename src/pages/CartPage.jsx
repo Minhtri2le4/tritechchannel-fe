@@ -18,6 +18,7 @@ import { useCustomer } from '../context/CustomerContext';
 const HCM = 'Thành phố Hồ Chí Minh';
 const EXPRESS_FEE = 30000;
 import { formatAddress } from '../lib/address';
+import { nameLooksReal, phoneLooksReal, streetLooksReal } from '../lib/sanity';
 
 // Tính tiền giảm theo mã đã áp dụng (server sẽ tính lại khi đặt hàng)
 const calcCouponDiscount = (coupon, subtotal) => {
@@ -136,15 +137,17 @@ const [note, setNote] = useState('');
     const phoneDigits = phone.replace(/[\s.\-()]/g, '').replace(/^\+?84/, '0');
     if (!name) e.fullName = 'Vui lòng nhập họ và tên';
     else if (!/^[\p{L}\s.'-]{2,}$/u.test(name) || !/\p{L}{2,}/u.test(name)) e.fullName = 'Họ tên chỉ gồm chữ, ví dụ: Nguyễn Văn An';
+    else if (!nameLooksReal(name)) e.fullName = 'Vui lòng nhập họ tên thật của người nhận (VD: Nguyễn Văn An)';
     if (!phoneDigits) e.phone = 'Vui lòng nhập số điện thoại';
     else if (!/^(0[35789]\d{8}|02\d{9})$/.test(phoneDigits)) e.phone = 'Số điện thoại không đúng (VD: 0901 234 567)';
+    else if (!phoneLooksReal(phoneDigits)) e.phone = 'Vui lòng nhập số điện thoại đang dùng để shop gọi xác nhận đơn';
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) e.email = 'Email không hợp lệ';
     if (deliveryMethod === 'home') {
       if (!addr.province) e.province = 'Chọn Tỉnh / Thành phố';
       if (!addr.ward) e.ward = 'Chọn Phường / Xã';
       const street = addr.street.trim();
       if (!street) e.street = 'Nhập số nhà, tên đường';
-      else if (street.length < 5 || !/\p{L}{2,}/u.test(street)) e.street = 'Ghi rõ số nhà và tên đường (VD: 12 Nguyễn Xí)';
+      else if (street.length < 5 || !/\p{L}{2,}/u.test(street) || !streetLooksReal(street)) e.street = 'Ghi rõ số nhà và tên đường (VD: 12 Nguyễn Xí)';
     }
     return e;
   };
