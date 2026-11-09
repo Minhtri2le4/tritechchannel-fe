@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Mail, Bot, X, Send, PhoneCall } from 'lucide-react';
+import { MapPin, Mail, Bot, X, Send, PhoneCall, MessageSquareHeart } from 'lucide-react';
+import FeedbackModal from './FeedbackModal';
 
 export default function Footer() {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const chatBodyRef = useRef(null);
@@ -83,7 +85,13 @@ export default function Footer() {
               <li><Link to="/chinh-sach/giao-hang" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Giao hàng và kiểm tra</Link></li>
               <li><Link to="/chinh-sach/doi-tra" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Trả hàng hoàn tiền</Link></li>
               <li><Link to="/chinh-sach/bao-mat" className="hover:text-red-600 hover:translate-x-2 inline-block transition-all duration-300">Bảo mật thông tin</Link></li>
+              <li>
+                <button type="button" onClick={() => setFeedbackOpen(true)} className="inline-flex items-center gap-1.5 font-semibold text-red-600 hover:translate-x-2 transition-all duration-300">
+                  <MessageSquareHeart size={16} /> Góp ý về website
+                </button>
+              </li>
             </ul>
+            {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
           </div>
 
           <div>

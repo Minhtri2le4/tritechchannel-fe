@@ -5,7 +5,7 @@ import {
   LogOut, Menu, ExternalLink, KeyRound, LayoutTemplate, Sun, Moon, Camera, Loader2,
   PartyPopper,
   UserRound,
-  MessageSquareText, Newspaper,
+  MessageSquareText, Newspaper, MessageSquareHeart,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import AdminSidebar from './AdminSidebar';
@@ -40,6 +40,7 @@ const NAV = [
       { to: '/admin/posts', label: 'Blog', icon: Newspaper },
       { to: '/admin/home-content', label: 'Giao diện trang chủ', icon: LayoutTemplate },
       { to: '/admin/campaigns', label: 'Chương trình khuyến mãi', icon: PartyPopper },
+      { to: '/admin/feedback', label: 'Góp ý website', icon: MessageSquareHeart },
     ],
   },
   { group: 'Hệ thống', items: [{ to: '/admin/users', label: 'Nhân viên', icon: Users, adminOnly: true }] },
@@ -93,6 +94,7 @@ export default function AdminLayout() {
     '/admin/warranties': stats?.warrantiesPending || 0,
     '/admin/reviews': stats?.reviewsToReply || 0,
     '/admin/trade-ins': stats?.newTradeIns || 0,
+    '/admin/feedback': stats?.feedbackUnread || 0,
   };
 
   // Chế độ tối: gắn class lên <html> để cả hộp thoại (Modal) cũng đổi màu; rời trang admin thì gỡ ra

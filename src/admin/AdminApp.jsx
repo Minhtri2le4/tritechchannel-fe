@@ -11,6 +11,7 @@ import OrdersPage from './pages/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import OrderPrintPage from './pages/OrderPrintPage';
 import TradeInsPage from './pages/TradeInsPage';
+import FeedbackPage from './pages/FeedbackPage';
 import TradeInPrintPage from './pages/TradeInPrintPage';
 import WarrantiesPage from './pages/WarrantiesPage';
 import CouponsPage from './pages/CouponsPage';
@@ -61,6 +62,7 @@ function AdminRoutes() {
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="reviews" element={<ReviewsPage />} />
+        <Route path="feedback" element={<FeedbackPage />} />
         <Route path="posts" element={<PostsPage />} />
         <Route path="posts/new" element={<PostFormPage />} />
         <Route path="posts/:id" element={<PostFormPage />} />
