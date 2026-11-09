@@ -20,6 +20,7 @@ export const shopApi = {
   myTradeIns: () => api.get('/trade-ins/mine'),
   tradeInDecide: (token, body) => api.post(`/trade-ins/track/${token}/decision`, body),
   tradeInSign: (token, body) => api.post(`/trade-ins/track/${token}/contract`, body),
+  sendFeedback: (body) => api.post('/feedback', body),
   lookupWarranty: (q) => api.get('/warranties/lookup', { params: { q } }),
 
   // Banner, video review trang chủ chỉnh trong admin (null = chưa cấu hình, dùng mặc định)
