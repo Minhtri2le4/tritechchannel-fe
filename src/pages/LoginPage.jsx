@@ -26,7 +26,9 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
 
   // Chỉ quay về trang trong web (tránh chuyển hướng ra ngoài)
-  const next = params.get('next')?.startsWith('/') ? params.get('next') : '/tai-khoan';
+  const raw = params.get('next') || '';
+  const next = /^\/(?![/\\])/.test(raw) ? raw : '/tai-khoan';
+  const fromCart = next === '/cart';
   if (customer) return <Navigate to={next} replace />;
 
   const set = (k) => (e) => {
@@ -64,6 +66,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-[70vh] bg-gray-100 px-3 py-6 md:py-10">
       <div className="mx-auto w-full max-w-[420px] rounded-2xl bg-white p-5 md:p-7 shadow-sm border border-gray-200">
+        {fromCart && (
+          <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+            Vui lòng <b>đăng nhập</b> hoặc <b>đăng ký</b> để đặt hàng. Giỏ hàng của bạn vẫn được giữ nguyên.
+          </p>
+        )}
         <div className="flex border-b border-gray-200 mb-5">
           <button type="button" className={tabClass('login')} onClick={() => { setTab('login'); setMessage(''); setErrors({}); }}>Đăng nhập</button>
           <button type="button" className={tabClass('register')} onClick={() => { setTab('register'); setMessage(''); setErrors({}); }}>Đăng ký</button>
@@ -122,7 +129,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-5 text-center text-xs text-gray-500">
-          Không cần tài khoản vẫn đặt hàng được.{' '}
+          Chưa có tài khoản? Đăng ký chỉ mất 30 giây và nhận ngay voucher 50K.{' '}
           <Link to="/cart" className="font-semibold text-red-600 hover:underline">Về giỏ hàng</Link>
         </p>
       </div>
