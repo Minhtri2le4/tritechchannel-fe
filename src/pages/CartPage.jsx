@@ -154,7 +154,20 @@ const [note, setNote] = useState('');
 
   const contactReady = Object.keys(validate()).length === 0;
 
+  // Như Shopee: phải đăng nhập mới đặt hàng được – chưa đăng nhập thì sang trang đăng nhập rồi quay lại giỏ
+  const needLogin = () => {
+    if (customer) return false;
+    navigate('/dang-nhap?next=/cart');
+    return true;
+  };
+  const goCheckout = () => {
+    if (needLogin()) return;
+    setStep('checkout');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handlePlaceOrder = async () => {
+    if (needLogin()) return;
     const found = validate();
     setErrors(found);
     if (Object.keys(found).length) {
@@ -195,6 +208,12 @@ const [note, setNote] = useState('');
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
+      // Phiên đăng nhập hết hạn -> đăng nhập lại rồi quay về giỏ
+      if (err.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để đặt hàng.');
+        navigate('/dang-nhap?next=/cart');
+        return;
+      }
       // Lỗi dữ liệu từ server: hiện chi tiết từng trường
       const detail = err.details?.map((d) => `• ${d.message}`).join('\n');
       alert(detail ? `${err.message}\n${detail}` : err.message);
@@ -673,7 +692,7 @@ const [note, setNote] = useState('');
               {step === 'cart' ? (
                 <button
                   disabled={selectedItems.length === 0}
-                  onClick={() => setStep('checkout')}
+                  onClick={goCheckout}
                   className="hidden lg:block w-full bg-[#FFD400] hover:bg-amber-400 disabled:opacity-50 text-black font-black py-3 rounded-xl text-xs sm:text-sm transition-all shadow-md active:scale-[0.98] uppercase cursor-pointer"
                 >
                   ĐẶT HÀNG NGAY ({selectedItems.length})
@@ -800,7 +819,7 @@ const [note, setNote] = useState('');
           <button
             type="button"
             disabled={selectedItems.length === 0}
-            onClick={() => { setStep('checkout'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            onClick={goCheckout}
             className="h-14 min-w-[130px] bg-red-600 px-4 text-sm font-bold text-white disabled:opacity-50"
           >
             Mua hàng ({selectedItems.length})
