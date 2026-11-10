@@ -12,6 +12,7 @@ import useFetch from '../hooks/useFetch';
 import AddressPicker from '../components/AddressPicker';
 import CartOptionPicker from '../components/CartOptionPicker';
 import SwipeRow from '../components/SwipeRow';
+import SuggestedProducts from '../components/SuggestedProducts';
 import { useCustomer } from '../context/CustomerContext';
 
 // Giao hỏa tốc: chỉ trong TP. Hồ Chí Minh, cộng phí này (server tính lại khi đặt hàng)
@@ -271,8 +272,8 @@ const [note, setNote] = useState('');
   // GIAO DIỆN KHI GIỎ HÀNG TRỐNG
   if (cartItems.length === 0) {
     return (
-      <div className="bg-gray-100 min-h-[70vh] flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-sm text-center max-w-md w-full">
+      <div className="bg-gray-100 min-h-[70vh] px-2 py-6 pb-24 sm:px-4 lg:pb-12">
+        <div className="bg-white p-8 rounded-2xl shadow-sm text-center max-w-md w-full mx-auto">
           <ShoppingBag size={64} className="mx-auto text-gray-300 mb-4" />
           <h2 className="text-lg font-bold text-gray-800 mb-1">Giỏ hàng của bạn đang trống</h2>
           <p className="text-xs text-gray-500 mb-6">Hãy chọn thêm sản phẩm để tiếp tục mua sắm nhé!</p>
@@ -282,6 +283,9 @@ const [note, setNote] = useState('');
           >
             Quay lại trang chủ
           </Link>
+        </div>
+        <div className="max-w-[1200px] mx-auto">
+          <SuggestedProducts />
         </div>
       </div>
     );
@@ -804,6 +808,13 @@ const [note, setNote] = useState('');
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Gợi ý sản phẩm dưới giỏ hàng (như Shopee) */}
+      {step === 'cart' && (
+        <div className="max-w-[1200px] mx-auto px-2 sm:px-4">
+          <SuggestedProducts excludeIds={cartItems.map((i) => i.productId)} />
         </div>
       )}
 
