@@ -6,7 +6,7 @@ const KEY = 'tritech_visitor';
 const EVERY_MS = 45 * 1000;
 
 // Mã ngẫu nhiên cho mỗi trình duyệt (không chứa thông tin cá nhân) – để đếm ai đang xem web
-const visitorId = () => {
+export const visitorId = () => {
   try {
     let id = localStorage.getItem(KEY);
     if (!id) {
