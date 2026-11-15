@@ -4,6 +4,7 @@ import useFetch from '../hooks/useFetch';
 import useSeo, { SITE_URL } from '../hooks/useSeo';
 import { shopApi } from '../services/shop';
 import { PostAuthor, PostGallery, PostVideo } from '../components/PostMedia';
+import PostSocial from '../components/PostSocial';
 
 const absUrl = (src) => (src && /^https?:/.test(src) ? src : `${SITE_URL}${src || ''}`);
 
@@ -64,7 +65,10 @@ export default function BlogPostPage() {
           <Link to="/blog" className="inline-block bg-[#FFD400] px-5 py-2 rounded-xl font-bold text-xs">Xem các bài khác</Link>
         </div>
       ) : (
-        <PostView key={post.id} post={post} />
+        <>
+          <PostView key={post.id} post={post} />
+          <PostSocial key={`s${post.id}`} post={post} />
+        </>
       )}
 
       <Link to="/blog" className="inline-flex items-center gap-1 text-sm font-semibold text-gray-600 hover:text-red-600 mt-4">

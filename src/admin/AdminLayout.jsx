@@ -5,7 +5,7 @@ import {
   LogOut, Menu, ExternalLink, KeyRound, LayoutTemplate, Sun, Moon, Camera, Loader2,
   PartyPopper,
   UserRound,
-  MessageSquareText, Newspaper, MessageSquareHeart,
+  MessageSquareText, Newspaper, MessageSquareHeart, MessagesSquare,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import AdminSidebar from './AdminSidebar';
@@ -38,6 +38,7 @@ const NAV = [
     group: 'Website',
     items: [
       { to: '/admin/posts', label: 'Blog', icon: Newspaper },
+      { to: '/admin/blog-comments', label: 'Bình luận blog', icon: MessagesSquare },
       { to: '/admin/home-content', label: 'Giao diện trang chủ', icon: LayoutTemplate },
       { to: '/admin/campaigns', label: 'Chương trình khuyến mãi', icon: PartyPopper },
       { to: '/admin/feedback', label: 'Góp ý website', icon: MessageSquareHeart },

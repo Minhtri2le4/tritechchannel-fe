@@ -71,4 +71,11 @@ export const shopApi = {
   // Blog
   posts: (params) => api.get('/posts', { params }),
   post: (slug) => api.get(`/posts/${slug}`),
+  // Blog: tim, bình luận, chia sẻ
+  postSocial: (slug, visitorId) => api.get(`/posts/${slug}/social`, { params: { visitorId } }),
+  likePost: (slug, visitorId) => api.post(`/posts/${slug}/like`, { visitorId }),
+  sharePost: (slug) => api.post(`/posts/${slug}/share`),
+  commentPost: (slug, body) => api.post(`/posts/${slug}/comments`, body),
+  likeComment: (id, visitorId) => api.post(`/posts/comments/${id}/like`, { visitorId }),
+  deleteComment: (id) => api.delete(`/posts/comments/${id}`),
 };

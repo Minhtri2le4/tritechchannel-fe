@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Loader2, Newspaper, Play } from 'lucide-react';
+import { ChevronRight, Heart, Loader2, MessageCircle, Newspaper, Play, Share2 } from 'lucide-react';
 import useFetch from '../hooks/useFetch';
 import useSeo from '../hooks/useSeo';
 import { shopApi } from '../services/shop';
@@ -40,6 +40,16 @@ function PostCard({ post }) {
           </Link>
         )
       )}
+      {/* Tim · bình luận · chia sẻ như bảng tin Facebook */}
+      <Link to={to} className="flex items-center justify-between border-t border-gray-100 pt-2.5 text-sm text-gray-500 hover:text-gray-700">
+        <span className="flex items-center gap-1.5">
+          <Heart size={16} className={post.likes ? 'fill-red-500 text-red-500' : ''} /> {post.likes || 0}
+        </span>
+        <span className="flex items-center gap-4">
+          <span className="flex items-center gap-1.5"><MessageCircle size={16} /> {post.comments || 0} bình luận</span>
+          <span className="flex items-center gap-1.5"><Share2 size={16} /> {post.shares || 0}</span>
+        </span>
+      </Link>
       {post.images?.length > 0 && video && (
         <Link to={to} className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600">
           <Play size={14} /> Bài viết có video
