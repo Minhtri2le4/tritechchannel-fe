@@ -12,6 +12,7 @@ import { shopApi } from '../services/shop';
 import { assetUrl, imgFallback } from '../lib/api';
 import { useHomeContent } from '../lib/homeContent';
 import { youtubeEmbedUrl } from '../lib/youtube';
+import AutoPlayYouTube from '../components/AutoPlayYouTube';
 import { videoEmbed } from '../lib/video';
 import { isNewArrival } from '../lib/newArrival';
 import PopularSearches from '../components/PopularSearches';
@@ -404,13 +405,8 @@ export default function HomePage() {
           </div>
           <div className="relative w-full rounded-[20px] shadow-sm border border-gray-200 bg-white p-2 md:p-3 hover:shadow-md transition-shadow">
             <div className="w-full aspect-video rounded-xl overflow-hidden bg-black/5 flex items-center justify-center">
-              <iframe 
-                className="w-full h-full"
-                src={youtubeEmbedUrl(home.reviewVideo.url)}
-                title="YouTube video player" 
-                frameBorder="0" 
-                allowFullScreen
-              ></iframe>
+              {/* Lướt tới là tự chạy (tắt tiếng), chỉ dừng khi khách bấm dừng */}
+              <AutoPlayYouTube url={home.reviewVideo.url} />
             </div>
           </div>
         </div>
