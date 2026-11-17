@@ -28,6 +28,7 @@ import WelcomeVoucherModal from './components/WelcomeVoucherModal';
 import MobileBottomNav from './components/MobileBottomNav';
 import VoucherPopup from './components/VoucherPopup';
 import TradeInNotice from './components/TradeInNotice';
+import InstallAppPrompt from './components/InstallAppPrompt';
 import usePresence from './hooks/usePresence';
 
 function AppContent() {
@@ -71,6 +72,7 @@ function AppContent() {
       <MobileBottomNav />
       <VoucherPopup />
       <TradeInNotice />
+      <InstallAppPrompt />
       <WelcomeVoucherModal />
     </div>
   );
