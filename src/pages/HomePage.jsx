@@ -18,10 +18,11 @@ import PopularSearches from '../components/PopularSearches';
 import useSeo from '../hooks/useSeo';
 
 // Tab "Gợi ý cho bạn" -> tham số lọc gửi lên API
+// Thứ tự mặc định của backend: hàng mới đăng (14 ngày) lên đầu, rồi hàng nổi bật / bán chạy, hết hàng xuống cuối
 const SUGGEST_TABS = {
-  all: { sort: 'best_selling' },
-  apple: { brand: 'APPLE', sort: 'best_selling' },
-  audio: { category: '6', sort: 'best_selling' },
+  all: { sort: 'default' },
+  apple: { brand: 'APPLE', sort: 'default' },
+  audio: { category: '6', sort: 'default' },
 };
 const SUGGEST_PAGE = 20;
 // Danh sách số trang kiểu Shopee: 1 … 4 5 6 … 12 (luôn có trang đầu, trang cuối, 2 trang quanh trang đang xem)
