@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Mail, Bot, X, Send, PhoneCall, MessageSquareHeart } from 'lucide-react';
 import FeedbackModal from './FeedbackModal';
+import { OPEN_INSTALL } from './InstallAppPrompt';
 
 export default function Footer() {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -91,6 +92,13 @@ export default function Footer() {
                 </button>
               </li>
             </ul>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(OPEN_INSTALL))}
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-gray-900 px-3 py-2 text-xs font-bold text-white hover:bg-gray-700"
+            >
+              <img src="/app/icon-192.png" alt="" className="h-5 w-5 rounded" /> Cài app TriTech
+            </button>
             {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
           </div>
 
