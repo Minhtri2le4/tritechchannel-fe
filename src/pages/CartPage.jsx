@@ -66,6 +66,17 @@ export default function CartPage() {
   const [errors, setErrors] = useState({});
 const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('bank');
+  // Sản phẩm shop đặt "bắt buộc chuyển khoản" -> khoá COD
+  const selectedIdsKey = [...new Set(cartItems.filter((i) => i.selected).map((i) => i.productId))].sort().join(',');
+  const { data: transferInfo } = useFetch(
+    () => (selectedIdsKey ? shopApi.products({ ids: selectedIdsKey }) : Promise.resolve({ data: [] })),
+    [selectedIdsKey]
+  );
+  const transferOnly = (transferInfo || []).filter((p) => p.requireTransfer);
+  const codBlocked = transferOnly.length
+    ? transferOnly.length === 1 ? `"${transferOnly[0].name.slice(0, 40)}${transferOnly[0].name.length > 40 ? '…' : ''}"` : `${transferOnly.length} sản phẩm trong giỏ`
+    : '';
+  const payMethod = codBlocked ? 'bank' : paymentMethod;
   const [couponCode, setCouponCode] = useState('');
   const [copiedSTK, setCopiedSTK] = useState(false);
 
@@ -186,7 +197,7 @@ const [note, setNote] = useState('');
         address: deliveryMethod === 'home' ? formatAddress(addr) : undefined,
         express: expressActive,
         note,
-        paymentMethod: paymentMethod === 'bank' ? 'BANK' : 'COD',
+        paymentMethod: payMethod === 'bank' ? 'BANK' : 'COD',
         couponCode: appliedCoupon && !couponBelowMin ? appliedCoupon.code : undefined,
         items: selectedItems.map((i) => ({
           productId: i.productId,
@@ -532,16 +543,16 @@ const [note, setNote] = useState('');
                     <div
                       onClick={() => setPaymentMethod('bank')}
                       className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                        paymentMethod === 'bank' ? 'border-amber-400 bg-amber-50/30' : 'border-gray-200'
+                        payMethod === 'bank' ? 'border-amber-400 bg-amber-50/30' : 'border-gray-200'
                       }`}
                     >
                       <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
-                        <input type="radio" checked={paymentMethod === 'bank'} readOnly className="accent-amber-400" />
+                        <input type="radio" checked={payMethod === 'bank'} readOnly className="accent-amber-400" />
                         <QrCode size={16} className="text-amber-600 shrink-0" />
                         <span>Thanh toán chuyển khoản ngân hàng (Quét mã QR)</span>
                       </div>
 
-                      {paymentMethod === 'bank' && (
+                      {payMethod === 'bank' && (
                         <div className="mt-3 p-3 sm:p-3.5 bg-white border border-amber-200 rounded-xl text-xs flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4 items-center">
                           <div className="w-full sm:col-span-5 flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 rounded-xl">
                             <img
@@ -585,16 +596,21 @@ const [note, setNote] = useState('');
                     </div>
 
                     <div
-                      onClick={() => setPaymentMethod('cod')}
-                      className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                        paymentMethod === 'cod' ? 'border-amber-400 bg-amber-50/30' : 'border-gray-200'
-                      }`}
+                      onClick={() => !codBlocked && setPaymentMethod('cod')}
+                      className={`p-3 rounded-xl border transition-all ${
+                        codBlocked ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-60' : 'cursor-pointer'
+                      } ${!codBlocked && paymentMethod === 'cod' ? 'border-amber-400 bg-amber-50/30' : 'border-gray-200'}`}
                     >
                       <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
-                        <input type="radio" checked={paymentMethod === 'cod'} readOnly className="accent-amber-400" />
+                        <input type="radio" checked={!codBlocked && paymentMethod === 'cod'} disabled={!!codBlocked} readOnly className="accent-amber-400" />
                         <Truck size={16} className="text-blue-600 shrink-0" />
                         <span>Thanh toán tiền mặt khi nhận hàng (COD)</span>
                       </div>
+                      {codBlocked && (
+                        <p className="mt-1.5 pl-6 text-[11px] font-medium text-red-600">
+                          Không áp dụng: {codBlocked} chỉ nhận chuyển khoản trước.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

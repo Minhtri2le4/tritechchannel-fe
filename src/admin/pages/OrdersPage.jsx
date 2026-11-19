@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { formatDate, formatPrice } from '../../lib/api';
+import { assetUrl, formatDate, formatPrice, imgFallback } from '../../lib/api';
 import { adminApi } from '../adminApi';
-import { Badge, Card, ErrorBox, Input, ORDER_STATUS, PAYMENT_STATUS, PageHeader, Pagination, Select, Table, useDebounced } from '../ui';
+import { Badge, Card, ErrorBox, Input, ORDER_STATUS, PAYMENT_STATUS, PageHeader, Pagination, Select, Table, paymentView, useDebounced } from '../ui';
 
 export default function OrdersPage() {
   const navigate = useNavigate();
@@ -76,7 +76,30 @@ export default function OrdersPage() {
           columns={[
             { key: 'code', title: 'Mã đơn', render: (o) => <span className="font-mono font-semibold">{o.code}</span> },
             { key: 'customer', title: 'Khách hàng', render: (o) => <><p className="font-medium">{o.fullName}</p><p className="text-xs text-gray-500">{o.phone}</p></> },
-            { key: 'items', title: 'SP', className: 'text-center hidden md:table-cell', render: (o) => o._count?.items },
+            {
+              key: 'items',
+              title: 'Sản phẩm',
+              render: (o) => (
+                <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 -space-x-3">
+                    {(o.items || []).slice(0, 3).map((it, i) => (
+                      <img
+                        key={i}
+                        src={assetUrl(it.image)}
+                        onError={imgFallback}
+                        alt=""
+                        title={`${it.productName}${it.color ? ` (${it.color})` : ''} x${it.quantity}`}
+                        className="h-11 w-11 shrink-0 rounded-lg border-2 border-white bg-white object-cover shadow-sm" style={{ minWidth: 44 }}
+                      />
+                    ))}
+                  </div>
+                  <div className="min-w-0 max-w-[220px]">
+                    <p className="line-clamp-2 text-xs text-gray-700">{o.items?.[0]?.productName}</p>
+                    {o._count?.items > 1 && <p className="text-[11px] text-gray-400">+{o._count.items - 1} sản phẩm khác</p>}
+                  </div>
+                </div>
+              ),
+            },
             { key: 'delivery', title: 'Nhận hàng', className: 'whitespace-nowrap text-xs hidden md:table-cell', render: (o) => (o.deliveryMethod === 'HOME' ? '🚚 Giao tận nhà' : '🤝 Nhận trực tiếp') },
             { key: 'total', title: 'Tổng tiền', className: 'text-right whitespace-nowrap font-bold', render: (o) => formatPrice(o.total) },
             {
@@ -86,7 +109,7 @@ export default function OrdersPage() {
               render: (o) => (
                 <div className="flex flex-col gap-0.5 items-start">
                   <span className="text-[11px] text-gray-500">{o.paymentMethod === 'BANK' ? 'Chuyển khoản' : 'COD'}</span>
-                  <Badge map={PAYMENT_STATUS} value={o.paymentStatus} />
+                  <PayBadge o={o} />
                 </div>
               ),
             },
@@ -98,4 +121,9 @@ export default function OrdersPage() {
       </Card>
     </>
   );
+}
+
+function PayBadge({ o }) {
+  const v = paymentView(o);
+  return <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${v.className}`}>{v.label}</span>;
 }

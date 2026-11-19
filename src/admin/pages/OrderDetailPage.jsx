@@ -4,7 +4,7 @@ import { ArrowLeft, Phone, Mail, MapPin, Store, Printer } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { assetUrl, imgFallback, formatDate, formatPrice } from '../../lib/api';
 import { adminApi } from '../adminApi';
-import { Badge, Button, Card, ErrorBox, Field, ORDER_STATUS, PAYMENT_STATUS, PageHeader, Spinner, Textarea } from '../ui';
+import { Badge, Button, Card, ErrorBox, Field, ORDER_STATUS, PageHeader, paymentView, Spinner, Textarea } from '../ui';
 
 // Bước tiếp theo hợp lệ (khớp quy tắc chuyển trạng thái ở backend)
 const NEXT_ACTIONS = {
@@ -133,8 +133,14 @@ export default function OrderDetailPage() {
           <Card className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="font-bold">Thanh toán</h2>
-              <Badge map={PAYMENT_STATUS} value={order.paymentStatus} />
+              {(() => {
+                const v = paymentView(order);
+                return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${v.className}`}>{v.label}</span>;
+              })()}
             </div>
+            {order.paymentMethod === 'COD' && order.paymentStatus === 'UNPAID' && order.status !== 'CANCELLED' && (
+              <p className="text-xs text-gray-500">Đơn COD: khách trả tiền khi nhận hàng. Bấm <b>Hoàn tất</b> đơn là tự chuyển sang Đã thanh toán.</p>
+            )}
             <p className="text-sm text-gray-600">
               {order.paymentMethod === 'BANK' ? 'Chuyển khoản' : 'Thanh toán khi nhận hàng (COD)'}
               {order.transferContent && <> · Nội dung CK: <b className="text-black">{order.transferContent}</b></>}
