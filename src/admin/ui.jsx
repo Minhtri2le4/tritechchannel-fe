@@ -15,6 +15,16 @@ export const ORDER_STATUS = {
   CANCELLED: { label: 'Đã hủy', className: 'bg-gray-200 text-gray-600' },
 };
 
+// Trạng thái thanh toán hiển thị: COD chưa giao xong thì là "Thu khi giao" (chưa phải nợ), huỷ thì không thu
+export const paymentView = (o) => {
+  if (o.paymentStatus === 'UNPAID' && o.paymentMethod === 'COD') {
+    if (o.status === 'CANCELLED') return { label: 'Không thu', className: 'bg-gray-100 text-gray-500' };
+    return { label: 'Thu khi giao', className: 'bg-amber-50 text-amber-700' };
+  }
+  if (o.paymentStatus === 'UNPAID' && o.status === 'CANCELLED') return { label: 'Không thu', className: 'bg-gray-100 text-gray-500' };
+  return PAYMENT_STATUS[o.paymentStatus] || { label: o.paymentStatus, className: 'bg-gray-100 text-gray-600' };
+};
+
 export const PAYMENT_STATUS = {
   UNPAID: { label: 'Chưa thanh toán', className: 'bg-red-50 text-red-700' },
   PAID: { label: 'Đã thanh toán', className: 'bg-emerald-50 text-emerald-700' },

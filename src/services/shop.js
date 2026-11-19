@@ -8,6 +8,7 @@ export const shopApi = {
   products: (params) => api.get('/products', { params }),
   brands: (category) => api.get('/products/brands', { params: { category } }),
   product: (idOrSlug) => api.get(`/products/${idOrSlug}`),
+  viewProduct: (id) => api.post(`/products/${id}/view`),
 
   validateCoupon: (code, subtotal) => api.post('/coupons/validate', { code, subtotal }),
   createOrder: (payload) => api.post('/orders', payload),

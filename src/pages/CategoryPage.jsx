@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
+import { isSoldOut } from '../lib/stock';
 import useCategories from '../hooks/useCategories';
 import useFetch from '../hooks/useFetch';
 import useSeo from '../hooks/useSeo';
@@ -150,9 +151,17 @@ export default function CategoryPage() {
           {error.message}
         </div>
       ) : filtered.length > 0 ? (
-        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 mb-6 transition-opacity ${loading ? 'opacity-60' : ''}`}>
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
+        // Như Shopee: hàng còn bán ở trên, hàng hết nằm riêng dưới tiêu đề "Hết hàng"
+        <div className={`mb-6 transition-opacity ${loading ? 'opacity-60' : ''}`}>
+          {[filtered.filter((p) => !isSoldOut(p)), filtered.filter(isSoldOut)].map((list, i) => list.length > 0 && (
+            <div key={i}>
+              {i === 1 && <h2 className="mb-3 mt-6 text-sm font-semibold uppercase text-gray-500 md:text-base">Hết hàng</h2>}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                {list.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       ) : loading ? (

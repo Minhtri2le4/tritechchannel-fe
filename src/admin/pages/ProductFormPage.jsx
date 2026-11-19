@@ -9,7 +9,7 @@ import { Button, Card, Checkbox, ErrorBox, Field, Input, MoneyInput, PageHeader,
 const EMPTY = {
   name: '', slug: '', brand: '', categoryId: '', price: null, originalPrice: null, stock: 0,
   image: '', images: [], description: '', perks: [], rating: 5, reviewsCount: 0, soldCount: 0,
-  isHot: false, isFlashSale: false, installment: false, status: 'ACTIVE', variants: [], colors: [], warrantyMonths: null,
+  isHot: false, isFlashSale: false, installment: false, status: 'ACTIVE', variants: [], colors: [], warrantyMonths: null, requireTransfer: false,
 };
 
 // Chuyển dữ liệu API -> state form
@@ -157,6 +157,7 @@ function ProductForm({ initial, productId }) {
       isFlashSale: form.isFlashSale,
       installment: form.installment,
       warrantyMonths: form.warrantyMonths ?? null,
+      requireTransfer: !!form.requireTransfer,
       status: form.status,
       variants: form.variants.map((v, i) => ({ label: v.label, price: v.price, originalPrice: v.originalPrice || null, stock: Number(v.stock) || 0, sortOrder: i })),
       colors: form.colors.map((c, i) => ({
@@ -424,6 +425,12 @@ function ProductForm({ initial, productId }) {
               <Checkbox label="Sản phẩm HOT (trang chủ)" checked={form.isHot} onChange={(e) => set('isHot', e.target.checked)} />
               <Checkbox label="Flash Sale" checked={form.isFlashSale} onChange={(e) => set('isFlashSale', e.target.checked)} />
               <Checkbox label="Hỗ trợ trả góp 0%" checked={form.installment} onChange={(e) => set('installment', e.target.checked)} />
+              <Checkbox label="Bắt buộc chuyển khoản trước (không nhận COD)" checked={!!form.requireTransfer} onChange={(e) => set('requireTransfer', e.target.checked)} />
+              {form.requireTransfer && (
+                <p className="-mt-1 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
+                  Khách mua sản phẩm này chỉ chọn được <b>Chuyển khoản</b>, mục COD bị khoá. Bỏ tick là cho COD lại bình thường.
+                </p>
+              )}
             </div>
             <Field label="Bảo hành mặc định" hint="Khách nhận hàng thì phiếu bảo hành tự tạo, chọn sẵn mức này – bạn bấm duyệt ở mục Bảo hành">
               <Select value={form.warrantyMonths ?? ''} onChange={(e) => set('warrantyMonths', e.target.value === '' ? null : Number(e.target.value))}>

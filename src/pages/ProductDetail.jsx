@@ -64,6 +64,18 @@ function ProductDetailView({ productData }) {
   const [sheetMode, setSheetMode] = useState(() => (location.state?.pick && hasOptions ? 'cart' : null));
   const [pickHint, setPickHint] = useState(false);
 
+  // Đếm lượt xem sản phẩm (mỗi sản phẩm 1 lần / phiên trình duyệt) cho mục Phân tích bán hàng của admin
+  useEffect(() => {
+    const key = `tt_viewed_${productData.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch {
+      // không lưu được thì vẫn đếm
+    }
+    shopApi.viewProduct(productData.id).catch(() => {});
+  }, [productData.id]);
+
   // Từ giỏ hàng vuốt chọn "Sản phẩm tương tự" -> cuộn xuống mục đó
   useEffect(() => {
     if (location.hash !== '#similar') return;
@@ -343,6 +355,12 @@ function ProductDetailView({ productData }) {
                   Chính hãng 100% · 1 đổi 1 trong 45 ngày · Kiểm tra hàng khi nhận
                 </p>
               </Row>
+
+              {productData.requireTransfer && (
+                <Row label="Thanh toán">
+                  <p className="pt-1.5 text-sm font-semibold text-red-600">Sản phẩm chỉ nhận chuyển khoản trước (không áp dụng COD)</p>
+                </Row>
+              )}
 
               {hasOptions && (
               <div className={`flex flex-col gap-4 rounded-lg -mx-2 px-2 py-2 ${pickHint && missing ? 'bg-red-50 ring-1 ring-red-300' : ''}`}>

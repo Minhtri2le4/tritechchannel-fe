@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Trash2 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
-import { formatDate } from '../../lib/api';
+import { assetUrl, formatDate, imgFallback } from '../../lib/api';
 import { adminApi } from '../adminApi';
 import { useAuth } from '../AuthContext';
 import { Badge, Button, Card, ErrorBox, Field, Input, Modal, PageHeader, Pagination, Select, Spinner, Table, Textarea, errorText, useDebounced } from '../ui';
@@ -148,7 +148,16 @@ export default function WarrantiesPage() {
           empty="Chưa có phiếu bảo hành"
           columns={[
             { key: 'imei', title: 'IMEI / Serial', render: (w) => <span className="font-mono text-xs font-semibold">{w.imei}</span> },
-            { key: 'productName', title: 'Sản phẩm', className: 'font-medium' },
+            {
+              key: 'productName',
+              title: 'Sản phẩm',
+              render: (w) => (
+                <div className="flex items-center gap-3">
+                  <img src={assetUrl(w.image)} onError={imgFallback} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-gray-100 bg-white object-cover" />
+                  <span className="line-clamp-2 font-medium">{w.productName}</span>
+                </div>
+              ),
+            },
             { key: 'customer', title: 'Khách hàng', render: (w) => <><p>{w.customerName}</p><p className="text-xs text-gray-500">{w.phone}</p></> },
             { key: 'purchaseDate', title: 'Ngày mua', className: 'whitespace-nowrap text-gray-600', render: (w) => formatDate(w.purchaseDate) },
             { key: 'expiryDate', title: 'Hết hạn', className: 'whitespace-nowrap text-gray-600', render: (w) => (w.pending ? '—' : formatDate(w.expiryDate)) },

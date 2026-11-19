@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ShoppingCart, Wallet, Receipt, Clock, Package, AlertTriangle, RefreshCw, TrendingUp, TrendingDown, Table2, LineChart,
+  Clock, Package, AlertTriangle, RefreshCw, Table2, LineChart,
   PackageCheck, Truck, XCircle, MessageSquareText, ShieldCheck,
 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
@@ -24,48 +24,13 @@ const SERIES_COLOR = '#2563eb'; // 1 màu cho mọi biểu đồ 1 chuỗi – k
 // % thay đổi so với kỳ trước (null khi kỳ trước = 0)
 const change = (cur, prev) => (prev ? ((cur - prev) / prev) * 100 : null);
 
-function Delta({ value, vs = 'kỳ trước' }) {
-  if (value === null) return <span className="text-[11px] text-gray-400">Chưa có số liệu {vs}</span>;
-  const up = value >= 0;
-  const Icon = up ? TrendingUp : TrendingDown;
-  return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${up ? 'text-emerald-700' : 'text-red-600'}`}>
-      <Icon size={12} />
-      {up ? '+' : ''}
-      {value.toFixed(0)}% <span className="font-normal text-gray-500">so với {vs}</span>
-    </span>
-  );
-}
+const money = (n) => formatPrice(Math.round(n / 1000) * 1000);
 
 // Số tự chạy từ 0 lên khi mở trang, đổi kỳ thì chạy tiếp từ số cũ sang số mới
 function CountUp({ value, format = (n) => Math.round(n).toLocaleString('vi-VN'), delay = 0 }) {
   const n = useCountUp(value, true, delay, 1200);
   return format(n);
 }
-const money = (n) => formatPrice(Math.round(n / 1000) * 1000);
-
-function Kpi({ icon: Icon, label, value, format, footer, to, index = 0 }) {
-  const body = (
-    <Card className="dash-pop p-4 h-full transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97]">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
-        <span className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center">
-          <Icon size={16} />
-        </span>
-      </div>
-      <p className="mt-2 text-lg sm:text-2xl font-black text-gray-900 tabular-nums truncate">
-        <CountUp value={value} format={format} delay={index * 120} />
-      </p>
-      <div className="mt-1">{footer}</div>
-    </Card>
-  );
-  return (
-    <div style={{ '--dash-delay': `${index * 80}ms` }}>
-      {to ? <Link to={to} className="block h-full">{body}</Link> : body}
-    </div>
-  );
-}
-
 // Nút chọn kỳ có nền trượt theo nút đang chọn
 function RangeSwitch({ days, onChange }) {
   const idx = Math.max(0, RANGES.findIndex((r) => r.days === days));
@@ -306,6 +271,63 @@ function Panel({ title, subtitle, action, children, className = '' }) {
   );
 }
 
+// Kiểu "Kênh Người bán" Shopee: hàng việc cần làm (số xanh to) + Phân tích bán hàng có ▲▼ so với kỳ trước
+function ShopeeOverview({ data, rangeLabel, vs, avg, prevAvg }) {
+  const s = data.ordersByStatus;
+  const todo = [
+    { n: s.PENDING || 0, label: 'Chờ xác nhận', to: '/admin/orders?status=PENDING' },
+    { n: s.CONFIRMED || 0, label: 'Chờ lấy hàng', to: '/admin/orders?status=CONFIRMED' },
+    { n: s.SHIPPING || 0, label: 'Đang giao', to: '/admin/orders?status=SHIPPING' },
+    { n: data.todo?.cancelledPeriod ?? 0, label: `Đơn huỷ (${rangeLabel.toLowerCase()})`, to: '/admin/orders?status=CANCELLED' },
+    { n: data.todo?.outOfStock ?? 0, label: 'Sản phẩm hết hàng', to: '/admin/products' },
+  ];
+  const cur = data.analytics?.current || {};
+  const pre = data.analytics?.previous || {};
+  const metrics = [
+    { label: 'Doanh số', num: cur.revenue || 0, fmt: (n) => `₫${compactVnd(n)}`, delta: change(cur.revenue, pre.revenue), tip: 'Tổng tiền các đơn không huỷ' },
+    { label: 'Lượt truy cập', num: cur.visits || 0, delta: change(cur.visits, pre.visits), tip: 'Số khách (trình duyệt) khác nhau vào web mỗi ngày' },
+    { label: 'Lượt xem sản phẩm', num: cur.productViews || 0, delta: change(cur.productViews, pre.productViews), tip: 'Số lần khách mở trang chi tiết sản phẩm' },
+    { label: 'Đơn hàng', num: cur.orders || 0, delta: change(cur.orders, pre.orders), tip: 'Số đơn không huỷ' },
+    { label: 'Tỉ lệ chuyển đổi', num: cur.conversion || 0, fmt: (n) => `${n.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}%`, delta: change(cur.conversion, pre.conversion), tip: 'Đơn hàng / lượt truy cập' },
+    { label: 'Giá trị TB / đơn', num: avg, fmt: (n) => `₫${compactVnd(n)}`, delta: change(avg, prevAvg), tip: 'Doanh số / số đơn' },
+  ];
+  return (
+    <div className="mb-4 space-y-3">
+      <Card className="grid grid-cols-2 divide-gray-100 sm:grid-cols-5 sm:divide-x">
+        {todo.map((t) => (
+          <Link key={t.label} to={t.to} className="group px-3 py-4 text-center transition-colors hover:bg-gray-50">
+            <p className="text-2xl font-bold tabular-nums text-blue-600 group-hover:text-blue-700"><CountUp value={t.n} /></p>
+            <p className="mt-0.5 text-xs text-gray-600">{t.label}</p>
+          </Link>
+        ))}
+      </Card>
+      <Card className="p-4">
+        <div className="mb-3 flex flex-wrap items-baseline gap-2">
+          <h2 className="text-lg font-bold text-gray-900">Phân tích bán hàng</h2>
+          <span className="text-xs text-gray-400">{rangeLabel} · (dữ liệu thay đổi so với {vs})</span>
+        </div>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-gray-100 bg-gray-100 md:grid-cols-3 xl:grid-cols-6">
+          {metrics.map((m) => (
+            <div key={m.label} className="bg-white px-4 py-3" title={m.tip}>
+              <p className="text-xs text-gray-500">{m.label}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{m.fmt ? <CountUp value={m.num} format={m.fmt} /> : <CountUp value={m.num} />}</p>
+              <p className="mt-0.5 text-xs">
+                {m.delta == null || !Number.isFinite(m.delta) ? (
+                  <span className="text-gray-400">—</span>
+                ) : m.delta >= 0 ? (
+                  <span className="font-semibold text-emerald-600">▲ {Math.abs(m.delta).toFixed(2).replace('.', ',')}%</span>
+                ) : (
+                  <span className="font-semibold text-red-600">▼ {Math.abs(m.delta).toFixed(2).replace('.', ',')}%</span>
+                )}
+              </p>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [days, setDays] = useState(1); // mở trang là xem Hôm nay
@@ -339,11 +361,9 @@ export default function DashboardPage() {
   const { period, previousPeriod: prev } = data;
   const avg = period.orders ? Math.round(period.revenue / period.orders) : 0;
   const prevAvg = prev.orders ? Math.round(prev.revenue / prev.orders) : 0;
-  const pending = data.ordersByStatus.PENDING || 0;
   const totalOrders = Object.values(data.ordersByStatus).reduce((s, n) => s + n, 0);
   const rangeLabel = RANGES.find((r) => r.days === days)?.label;
   const isToday = data.days === 1;
-  const kpiLabel = (s) => (days === 1 ? `${s} hôm nay` : `${s} ${rangeLabel}`);
   const recent = isToday ? 'Theo từng giờ hôm nay' : `${rangeLabel} gần nhất`;
   const vs = isToday ? 'hôm qua' : 'kỳ trước';
 
@@ -360,19 +380,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_380px] gap-4 items-start">
       <div className={`min-w-0 transition-opacity duration-300 ${switching ? 'opacity-60' : ''}`}>
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
-        <Kpi index={0} icon={Wallet} label={kpiLabel('Doanh thu')} value={period.revenue} format={money} footer={<Delta vs={vs} value={change(period.revenue, prev.revenue)} />} />
-        <Kpi index={1} icon={ShoppingCart} label={kpiLabel('Đơn hàng')} value={period.orders} footer={<Delta vs={vs} value={change(period.orders, prev.orders)} />} />
-        <Kpi index={2} icon={Receipt} label="Giá trị TB / đơn" value={avg} format={money} footer={<Delta vs={vs} value={change(avg, prevAvg)} />} />
-        <Kpi
-          index={3}
-          icon={Clock}
-          label="Chờ xác nhận"
-          value={pending}
-          to="/admin/orders?status=PENDING"
-          footer={<span className="text-[11px] font-semibold text-amber-700">{pending ? 'Bấm để xử lý ngay →' : 'Đã xử lý hết 👍'}</span>}
-        />
-      </div>
+      <ShopeeOverview data={data} rangeLabel={isToday ? 'Hôm nay' : rangeLabel} vs={vs} avg={avg} prevAvg={prevAvg} />
 
       <div key={data.days} className="dash-swap">
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
