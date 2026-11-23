@@ -6,6 +6,7 @@ import {
   PartyPopper,
   UserRound,
   MessageSquareText, Newspaper, MessageSquareHeart, MessagesSquare,
+  Sparkles, ClipboardList, CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import AdminSidebar from './AdminSidebar';
@@ -15,7 +16,15 @@ import { assetUrl } from '../lib/api';
 import ChangePasswordModal from './pages/ChangePasswordModal';
 
 const NAV = [
-  { group: null, items: [{ to: '/admin', label: 'Tổng quan', icon: LayoutDashboard, end: true }] },
+  { group: null, items: [{ to: '/admin', label: 'Tổng quan', icon: LayoutDashboard, end: true, adminOnly: true }] },
+  {
+    group: 'Nhân viên',
+    items: [
+      { to: '/admin/me', label: 'Dành cho bạn', icon: Sparkles },
+      { to: '/admin/staff-tasks', label: 'Giao việc', icon: ClipboardList, adminOnly: true },
+      { to: '/admin/checkins', label: 'Chấm công', icon: CalendarCheck, adminOnly: true },
+    ],
+  },
   {
     group: 'Bán hàng',
     items: [
@@ -86,16 +95,23 @@ export default function AdminLayout() {
 
   // Số đỏ trên menu: đơn chờ xác nhận, bảo hành chờ duyệt, đánh giá chờ trả lời, thu cũ mới – tự cập nhật mỗi phút
   const { data: stats, reload: reloadStats } = useFetch(() => adminApi.dashboard(1), []);
+  // Việc của tôi chưa xong / việc nhân viên đã nộp chờ duyệt
+  const { data: work, reload: reloadWork } = useFetch(() => adminApi.staff.summary(), [pathname]);
   useEffect(() => {
-    const t = setInterval(reloadStats, 60000);
+    const t = setInterval(() => {
+      reloadStats();
+      reloadWork();
+    }, 60000);
     return () => clearInterval(t);
-  }, [reloadStats]);
+  }, [reloadStats, reloadWork]);
   const badges = {
     '/admin/orders': stats?.ordersByStatus?.PENDING || 0,
     '/admin/warranties': stats?.warrantiesPending || 0,
     '/admin/reviews': stats?.reviewsToReply || 0,
     '/admin/trade-ins': stats?.newTradeIns || 0,
     '/admin/feedback': stats?.feedbackUnread || 0,
+    '/admin/me': work?.open || 0,
+    '/admin/staff-tasks': work?.toReview || 0,
   };
 
   // Chế độ tối: gắn class lên <html> để cả hộp thoại (Modal) cũng đổi màu; rời trang admin thì gỡ ra

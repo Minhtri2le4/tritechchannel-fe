@@ -51,6 +51,29 @@ export const adminApi = {
     removeRecord: (id, recordId) => api.delete(`/admin/warranties/${id}/records/${recordId}`),
   },
   users: crud('/admin/users'),
+  // Nhân viên: giao việc + chấm công bằng ảnh
+  staff: {
+    summary: () => api.get('/admin/staff/summary'),
+    people: () => api.get('/admin/staff/people'),
+    tasks: (params) => api.get('/admin/staff/tasks', { params }),
+    task: (id) => api.get(`/admin/staff/tasks/${id}`),
+    createTask: (body) => api.post('/admin/staff/tasks', body),
+    updateTask: (id, body) => api.patch(`/admin/staff/tasks/${id}`, body),
+    removeTask: (id) => api.delete(`/admin/staff/tasks/${id}`),
+    start: (id) => api.post(`/admin/staff/tasks/${id}/start`),
+    submit: (id, body) => api.post(`/admin/staff/tasks/${id}/submit`, body),
+    review: (id, body) => api.post(`/admin/staff/tasks/${id}/review`, body),
+    checkins: (params) => api.get('/admin/staff/checkins', { params }),
+    checkin: (body) => api.post('/admin/staff/checkins', body),
+    upload: (files, onProgress) => {
+      const body = new FormData();
+      [...files].forEach((f) => body.append('files', f));
+      return api.post('/admin/staff/uploads', body, {
+        timeout: 0,
+        onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
+      });
+    },
+  },
   posts: crud('/admin/posts'),
   customers: crud('/admin/customers'),
   reviews: crud('/admin/reviews'),
