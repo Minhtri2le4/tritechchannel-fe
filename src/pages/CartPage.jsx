@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Trash2, Plus, Minus, MapPin, QrCode,
-  ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2, Zap, X, Ticket
+  ChevronRight, ChevronDown, Truck, Check, Copy, ShoppingBag, Loader2, CheckCircle2, Zap, X, Ticket, Clock3, Download
 } from 'lucide-react';
 import { useCart } from '../context/CartContext'; // Dynamic import Context
 import { shopApi } from '../services/shop';
@@ -234,8 +234,98 @@ const [note, setNote] = useState('');
     }
   };
 
-  // GIAO DIỆN SAU KHI ĐẶT HÀNG THÀNH CÔNG
+  // GIAO DIỆN SAU KHI ĐẶT HÀNG
   if (placedOrder) {
+    const isBank = placedOrder.paymentMethod === 'BANK';
+    const follow = customer ? (
+      <p className="text-[11px] text-gray-500">
+        Theo dõi đơn trong <Link to="/tai-khoan" className="font-semibold text-red-600 underline">Tài khoản của tôi</Link>
+      </p>
+    ) : (
+      <p className="text-[11px] text-gray-500">
+        <Link to="/dang-nhap?tab=register" className="font-semibold text-red-600 underline">Tạo tài khoản</Link> để lần sau đặt nhanh hơn và xem lại đơn hàng
+      </p>
+    );
+
+    // Chuyển khoản: đơn mới TẠO, chưa thanh toán -> hướng dẫn chuyển, không báo "thành công"
+    if (isBank) {
+      const qr = buildQrUrl(placedOrder.total, placedOrder.transferContent);
+      const rows = [
+        ['Ngân hàng', 'MB Bank (Quân Đội)', null],
+        ['Số tài khoản', bankInfo.accountNo, bankInfo.accountNo],
+        ['Chủ tài khoản', bankInfo.accountName, null],
+        ['Số tiền', `${placedOrder.total.toLocaleString('vi-VN')}đ`, String(placedOrder.total)],
+        ['Nội dung', placedOrder.transferContent, placedOrder.transferContent],
+      ];
+      return (
+        <div className="bg-gray-100 min-h-[70vh] flex flex-col items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-sm max-w-md w-full overflow-hidden">
+            <div className="bg-amber-50 border-b border-amber-100 px-5 py-4 text-center">
+              <span className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+                <Clock3 size={30} className="text-amber-600" />
+              </span>
+              <h2 className="text-lg font-black text-gray-900">Chờ thanh toán</h2>
+              <p className="mt-0.5 text-xs text-gray-600">
+                Đơn <strong className="text-red-600 tracking-wide">{placedOrder.code}</strong> đã được tạo nhưng <b>chưa thanh toán</b>.
+                Vui lòng chuyển khoản để shop xử lý đơn.
+              </p>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="text-center">
+                <p className="text-[11px] uppercase tracking-wide text-gray-500">Số tiền cần chuyển</p>
+                <p className="text-3xl font-black text-red-600">{placedOrder.total.toLocaleString('vi-VN')}đ</p>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 p-3">
+                <p className="mb-2 text-center text-xs font-semibold text-gray-700">Mở app ngân hàng → quét mã QR (đã điền sẵn số tiền & nội dung)</p>
+                <img src={qr} alt="Mã QR chuyển khoản" className="mx-auto h-56 w-56 object-contain" />
+                <a href={qr} download={`QR-${placedOrder.code}.png`} target="_blank" rel="noopener noreferrer" className="mt-1 flex items-center justify-center gap-1 text-[11px] font-semibold text-blue-600">
+                  <Download size={13} /> Lưu ảnh QR
+                </a>
+              </div>
+
+              <div className="divide-y divide-gray-100 rounded-xl border border-gray-200 text-xs">
+                {rows.map(([label, value, copy]) => (
+                  <div key={label} className="flex items-center gap-2 px-3 py-2">
+                    <span className="w-24 shrink-0 text-gray-500">{label}</span>
+                    <strong className={`flex-1 break-all ${label === 'Nội dung' ? 'text-red-600' : 'text-gray-900'}`}>{value}</strong>
+                    {copy && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(copy);
+                          setCopiedSTK(label);
+                          setTimeout(() => setCopiedSTK(false), 1500);
+                        }}
+                        className="flex shrink-0 items-center gap-1 rounded-md bg-gray-100 px-2 py-1 font-semibold text-gray-700 active:bg-gray-200"
+                      >
+                        {copiedSTK === label ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                        {copiedSTK === label ? 'Đã chép' : 'Chép'}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <ul className="space-y-1.5 rounded-xl bg-gray-50 p-3 text-[11px] text-gray-600">
+                <li>• Ghi <b>đúng nội dung {placedOrder.transferContent}</b> để shop nhận ra đơn của bạn.</li>
+                <li>• Shop kiểm tra tiền về rồi xác nhận và gọi qua SĐT <b>{placedOrder.phone}</b>.</li>
+                <li>• Trạng thái thanh toán cập nhật trong mục đơn hàng sau khi shop xác nhận.</li>
+              </ul>
+
+              <div className="space-y-2 text-center">
+                {follow}
+                <Link to="/" className="inline-block rounded-xl border border-gray-300 px-6 py-2.5 text-xs font-bold uppercase text-gray-700 hover:bg-gray-50">
+                  Tiếp tục mua sắm
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-gray-100 min-h-[70vh] flex flex-col items-center justify-center p-4">
         <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm text-center max-w-md w-full space-y-3">
@@ -245,30 +335,10 @@ const [note, setNote] = useState('');
             Mã đơn hàng của bạn: <strong className="text-red-600 text-sm tracking-wide">{placedOrder.code}</strong>
           </p>
           <p className="text-xs text-gray-600">
-            Tổng thanh toán: <strong className="text-gray-900">{placedOrder.total.toLocaleString('vi-VN')}đ</strong>
+            Tổng tiền thanh toán khi nhận hàng: <strong className="text-gray-900">{placedOrder.total.toLocaleString('vi-VN')}đ</strong>
           </p>
-          {placedOrder.paymentMethod === 'BANK' && (
-            <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-3 space-y-2">
-              <img
-                src={buildQrUrl(placedOrder.total, placedOrder.transferContent)}
-                alt="Mã QR thanh toán"
-                className="w-40 h-40 mx-auto object-contain rounded-lg"
-              />
-              <p className="text-[11px] text-gray-700">
-                Nội dung chuyển khoản: <strong className="text-black">{placedOrder.transferContent}</strong>
-              </p>
-            </div>
-          )}
           <p className="text-[11px] text-gray-500">TriTech sẽ gọi xác nhận qua SĐT <strong>{placedOrder.phone}</strong> trong ít phút.</p>
-          {customer ? (
-            <p className="text-[11px] text-gray-500">
-              Theo dõi đơn trong <Link to="/tai-khoan" className="font-semibold text-red-600 underline">Tài khoản của tôi</Link>
-            </p>
-          ) : (
-            <p className="text-[11px] text-gray-500">
-              <Link to="/dang-nhap?tab=register" className="font-semibold text-red-600 underline">Tạo tài khoản</Link> để lần sau đặt nhanh hơn và xem lại đơn hàng
-            </p>
-          )}
+          {follow}
           <Link
             to="/"
             className="inline-block bg-[#FFD400] hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs uppercase transition-all shadow"
