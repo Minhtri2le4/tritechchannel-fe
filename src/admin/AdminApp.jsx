@@ -24,6 +24,9 @@ import CustomersPage from './pages/CustomersPage';
 import ReviewsPage from './pages/ReviewsPage';
 import PostsPage from './pages/PostsPage';
 import PostFormPage from './pages/PostFormPage';
+import MyWorkPage from './pages/MyWorkPage';
+import StaffTasksPage from './pages/StaffTasksPage';
+import CheckinsPage from './pages/CheckinsPage';
 
 // Chặn trang khi chưa đăng nhập; adminOnly: chỉ tài khoản ADMIN
 function Protected({ children, adminOnly }) {
@@ -32,6 +35,12 @@ function Protected({ children, adminOnly }) {
   if (!user) return <Navigate to="/admin/login" replace />;
   if (adminOnly && !isAdmin) return <Navigate to="/admin" replace />;
   return children;
+}
+
+// Trang đầu sau khi đăng nhập: quản trị viên -> Tổng quan, nhân viên -> "Dành cho bạn"
+function HomeIndex() {
+  const { isAdmin } = useAuth();
+  return isAdmin ? <DashboardPage /> : <Navigate to="/admin/me" replace />;
 }
 
 function AdminRoutes() {
@@ -49,7 +58,10 @@ function AdminRoutes() {
           </Protected>
         }
       >
-        <Route index element={<DashboardPage />} />
+        <Route index element={<HomeIndex />} />
+        <Route path="me" element={<MyWorkPage />} />
+        <Route path="staff-tasks" element={<Protected adminOnly><StaffTasksPage /></Protected>} />
+        <Route path="checkins" element={<Protected adminOnly><CheckinsPage /></Protected>} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="orders/:id" element={<OrderDetailPage />} />
         <Route path="products" element={<ProductsPage />} />
