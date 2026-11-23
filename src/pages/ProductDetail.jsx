@@ -14,6 +14,7 @@ import ProductCard from '../components/ProductCard';
 import VariantSheet from '../components/VariantSheet';
 import ProductReviews from '../components/ProductReviews';
 import ImageLightbox from '../components/ImageLightbox';
+import ShareButton from '../components/ShareButton';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -275,6 +276,12 @@ function ProductDetailView({ productData }) {
                   -{discountPercent}%
                 </span>
               )}
+              <ShareButton
+                url={`${SITE_URL}${productPath}`}
+                title={productData.name}
+                text={`${productData.name} – TriTech Channel`}
+                className="absolute right-3 top-3"
+              />
             </div>
             <div className="flex gap-2 overflow-x-auto scrollbar-hide">
               {productImages.map((img, index) => (
