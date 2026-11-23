@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, ShieldCheck, AlertCircle, Clock, Wrench, PhoneCall, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { shopApi } from '../services/shop';
-import { formatDate } from '../lib/api';
+import { assetUrl, formatDate, imgFallback } from '../lib/api';
 import useSeo from '../hooks/useSeo';
 
 export default function WarrantyPage() {
@@ -113,8 +113,9 @@ export default function WarrantyPage() {
                     key={w.imei}
                     type="button"
                     onClick={() => setSearchResult(w)}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border ${searchResult?.imei === w.imei ? 'bg-black text-white border-black' : 'bg-white border-gray-200 hover:border-gray-400'}`}
+                    className={`flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full text-xs font-semibold border ${searchResult?.imei === w.imei ? 'bg-black text-white border-black' : 'bg-white border-gray-200 hover:border-gray-400'}`}
                   >
+                    {w.image && <img src={assetUrl(w.image)} onError={imgFallback} alt="" className="w-6 h-6 rounded-full object-cover bg-white shrink-0" />}
                     {w.productName}
                   </button>
                 ))}
@@ -149,7 +150,18 @@ export default function WarrantyPage() {
                     </div>
                     <div>
                       <span className="text-gray-400 block text-[11px]">Sản phẩm:</span>
-                      <strong className="text-red-600 text-sm sm:text-base">{searchResult.productName}</strong>
+                      <div className="flex items-center gap-3 mt-1">
+                        {searchResult.image && (
+                          <img
+                            src={assetUrl(searchResult.image)}
+                            onError={imgFallback}
+                            alt={searchResult.productName}
+                            className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-gray-100 bg-gray-50 shrink-0"
+                            style={{ minWidth: 56 }}
+                          />
+                        )}
+                        <strong className="text-red-600 text-sm sm:text-base">{searchResult.productName}</strong>
+                      </div>
                     </div>
                     <div>
                       <span className="text-gray-400 block text-[11px]">Mã IMEI / Serial:</span>
