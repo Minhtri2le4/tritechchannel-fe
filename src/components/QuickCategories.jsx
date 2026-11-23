@@ -77,8 +77,23 @@ function CategoryTile({ item, index }) {
 }
 
 // Lưới danh mục dưới banner: 5 cột trên điện thoại (2 hàng), 10 cột trên máy tính – giống các shop lớn
-export default function QuickCategories({ items }) {
-  if (!items?.length) return null;
+export default function QuickCategories({ items, loading }) {
+  if (!items?.length) {
+    if (!loading) return null;
+    // Đang tải lần đầu: khung xám chờ, không hiện danh mục cũ
+    return (
+      <div className="bg-white rounded-2xl p-3 md:p-5 shadow-sm mb-4 md:mb-6 mt-4">
+        <div className="grid grid-cols-5 md:grid-cols-10 gap-x-2 gap-y-4 md:gap-4 justify-items-center">
+          {Array.from({ length: 10 }, (_, i) => (
+            <div key={i} className="flex w-full flex-col items-center gap-2">
+              <span className="aspect-square w-full max-w-[72px] animate-pulse rounded-2xl bg-gray-100" />
+              <span className="h-2.5 w-3/4 animate-pulse rounded bg-gray-100" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="bg-white rounded-2xl p-3 md:p-5 shadow-sm mb-4 md:mb-6 mt-4">
       <div className="grid grid-cols-5 md:grid-cols-10 gap-x-2 gap-y-4 md:gap-4 justify-items-center">

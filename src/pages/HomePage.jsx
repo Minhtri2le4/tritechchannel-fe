@@ -158,7 +158,7 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   // Dữ liệu từ backend
-  const { sidebar: sidebarCategories, quick: quickCategories, all: allCategories } = useCategories();
+  const { sidebar: sidebarCategories, quick: quickCategories, all: allCategories, loading: categoriesLoading } = useCategories();
   // Cột danh mục ở mục Gợi ý: mọi danh mục có trang sản phẩm (bỏ Blog, Thu cũ đổi mới...)
   // + "Sản phẩm khác": sản phẩm chưa gán danh mục nào (backend lọc category=other)
   const productCategories = [
@@ -345,7 +345,7 @@ export default function HomePage() {
         </div>
 
         {/* LƯỚI DANH MỤC DƯỚI BANNER */}
-        <QuickCategories items={quickCategories} />
+        <QuickCategories items={quickCategories} loading={categoriesLoading} />
 
         {/* ĐẠI LÝ ỦY QUYỀN CHÍNH HÃNG */}
         <div className="mb-10 mt-12">
