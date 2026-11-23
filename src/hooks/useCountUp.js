@@ -1,19 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 
-const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 // Số chạy dần tới `target` (easeOutCubic) sau `delay` ms, khi `start` = true.
-// Đổi target thì chạy tiếp từ số đang hiện (VD đổi 7 ngày -> 30 ngày ở trang Tổng quan)
+// Đổi target thì chạy tiếp từ số đang hiện (VD đổi 7 ngày -> 30 ngày ở trang Tổng quan).
+// Luôn chạy kể cả khi Windows tắt hiệu ứng (prefers-reduced-motion): chỉ là số đổi nhẹ, không lắc/trượt.
 export default function useCountUp(target, start = true, delay = 0, ms = 1400) {
-  const [value, setValue] = useState(() => (reducedMotion() ? target : 0));
-  const shown = useRef(value);
+  const [value, setValue] = useState(0);
+  const shown = useRef(0);
 
   useEffect(() => {
-    if (!start) return;
-    if (reducedMotion()) {
-      const t = setTimeout(() => setValue((shown.current = target)), 0);
-      return () => clearTimeout(t);
-    }
+    if (!start) return undefined;
     let raf;
     const from = shown.current;
     const timer = setTimeout(() => {
