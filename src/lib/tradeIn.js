@@ -49,8 +49,14 @@ export const fetchMyTradeIns = async () => {
 
 // Báo giá đang chờ khách trả lời
 export const needsAnswer = (t) => t.status === 'QUOTED' && t.quotedPrice != null && !t.decision;
-// Đã đồng ý nhưng chưa ký giấy
-export const needsSign = (t) => t.status === 'QUOTED' && t.decision === 'ACCEPTED' && !t.signed;
+// Chỉ máy shop báo giá TRÊN 3 triệu mới cần khách điền thông tin + ký giấy mua bán
+export const CONTRACT_MIN = 3000000;
+export const needsContract = (t) => Number(t.quotedPrice) > CONTRACT_MIN;
+// Đã đồng ý nhưng chưa ký giấy (chỉ với máy trên 3 triệu)
+export const needsSign = (t) => t.status === 'QUOTED' && t.decision === 'ACCEPTED' && !t.signed && needsContract(t);
+// Đã xong phần thủ tục của khách -> chờ giao máy (đã ký, hoặc máy từ 3 triệu trở xuống thì đồng ý là xong)
+export const readyToHandOver = (t) =>
+  t.status !== 'COMPLETED' && (t.signed || (t.status === 'QUOTED' && t.decision === 'ACCEPTED' && !needsContract(t)));
 
 // Đã xem thông báo của lần báo giá này chưa (báo giá lại -> quotedAt đổi -> hiện lại)
 const seenKey = (t) => `${t.token}:${t.quotedAt || ''}:${t.decision || ''}`;

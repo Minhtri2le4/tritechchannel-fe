@@ -95,7 +95,13 @@ const DECISION = {
 };
 function CustomerStep({ t }) {
   if (t.signedAt) return <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-blue-700"><FileSignature size={12} /> Đã ký giấy</p>;
-  if (t.decision === 'ACCEPTED') return <p className={`mt-1 text-[11px] font-semibold ${DECISION.ACCEPTED}`}>Khách đồng ý · {t.sellMethod === 'STORE' ? 'tại cửa hàng' : 'online'}</p>;
+  if (t.decision === 'ACCEPTED')
+    return (
+      <p className={`mt-1 text-[11px] font-semibold ${DECISION.ACCEPTED}`}>
+        Khách đồng ý · {t.sellMethod === 'STORE' ? 'tại cửa hàng' : 'online'}
+        {Number(t.quotedPrice) > 3000000 ? <span className="text-amber-700"> · chờ ký giấy</span> : <span className="text-gray-500"> · không cần ký (≤ 3tr)</span>}
+      </p>
+    );
   if (t.decision === 'DECLINED') return <p className={`mt-1 text-[11px] font-semibold ${DECISION.DECLINED}`}>Khách không bán</p>;
   if (t.status === 'QUOTED' && t.quotedPrice != null) return <p className="mt-1 text-[11px] text-amber-700">Chờ khách trả lời</p>;
   return null;

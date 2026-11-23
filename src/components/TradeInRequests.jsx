@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, Clock, FileSignature, Loader2, PackageCheck, Store, Truck, XCircle } from 'lucide-react';
 import { shopApi } from '../services/shop';
 import { assetUrl, formatDate, imgFallback } from '../lib/api';
-import { TRADE_IN_EVENT, fetchMyTradeIns, markSeen, needsAnswer, needsSign, saveToken, vnd } from '../lib/tradeIn';
+import { TRADE_IN_EVENT, fetchMyTradeIns, markSeen, needsAnswer, needsSign, readyToHandOver, saveToken, vnd } from '../lib/tradeIn';
 import TradeInContractSheet from './TradeInContractSheet';
 import ShipToShopGuide from './ShipToShopGuide';
 
@@ -13,6 +13,7 @@ const stage = (t) => {
   if (t.status === 'REJECTED') return { text: 'Shop không thu được máy này', cls: 'bg-gray-100 text-gray-600', Icon: XCircle };
   if (t.decision === 'DECLINED') return { text: 'Bạn đã từ chối bán', cls: 'bg-gray-100 text-gray-600', Icon: XCircle };
   if (t.signed) return { text: 'Đã ký giấy – chờ giao máy', cls: 'bg-blue-100 text-blue-700', Icon: CheckCircle2 };
+  if (readyToHandOver(t)) return { text: 'Đã đồng ý bán – chờ giao máy', cls: 'bg-blue-100 text-blue-700', Icon: CheckCircle2 };
   if (needsSign(t)) return { text: 'Đã đồng ý – cần ký giấy mua bán', cls: 'bg-amber-100 text-amber-800', Icon: FileSignature };
   if (needsAnswer(t)) return { text: 'Đã có giá – chờ bạn trả lời', cls: 'bg-red-100 text-red-700', Icon: Clock };
   return { text: 'Shop đang định giá', cls: 'bg-yellow-100 text-yellow-800', Icon: Clock };
@@ -108,7 +109,7 @@ export default function TradeInRequests({ focusToken }) {
                   <FileSignature size={16} /> Điền thông tin & ký giấy mua bán
                 </button>
               )}
-              {t.signed && t.status !== 'COMPLETED' && (t.sellMethod === 'ONLINE' ? (
+              {readyToHandOver(t) && (t.sellMethod === 'ONLINE' ? (
                 <ShipToShopGuide requestId={t.id} />
               ) : (
                 <p className="mt-2 rounded-lg bg-blue-50 p-2 text-xs text-blue-800">
