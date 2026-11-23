@@ -88,13 +88,23 @@ export default function OrdersPage() {
                         src={assetUrl(it.image)}
                         onError={imgFallback}
                         alt=""
-                        title={`${it.productName}${it.color ? ` (${it.color})` : ''} x${it.quantity}`}
+                        title={`${it.productName}${[it.variantLabel, it.color].filter(Boolean).length ? ` (${[it.variantLabel, it.color].filter(Boolean).join(' · ')})` : ''} x${it.quantity}`}
                         className="h-11 w-11 shrink-0 rounded-lg border-2 border-white bg-white object-cover shadow-sm" style={{ minWidth: 44 }}
                       />
                     ))}
                   </div>
                   <div className="min-w-0 max-w-[220px]">
                     <p className="line-clamp-2 text-xs text-gray-700">{o.items?.[0]?.productName}</p>
+                    {(() => {
+                      const it = o.items?.[0];
+                      const opt = [it?.variantLabel, it?.color].filter(Boolean).join(' · ');
+                      return opt || it?.quantity > 1 ? (
+                        <p className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px]">
+                          {opt && <span className="rounded bg-amber-100 px-1.5 py-px font-semibold text-amber-800">{opt}</span>}
+                          {it.quantity > 1 && <span className="font-semibold text-gray-500">x{it.quantity}</span>}
+                        </p>
+                      ) : null;
+                    })()}
                     {o._count?.items > 1 && <p className="text-[11px] text-gray-400">+{o._count.items - 1} sản phẩm khác</p>}
                   </div>
                 </div>
