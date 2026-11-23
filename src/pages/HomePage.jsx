@@ -1,3 +1,4 @@
+import SoldBar from '../components/SoldBar';
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext'; 
 import ProductCard, { SoldOutBadge } from '../components/ProductCard.jsx';
@@ -454,6 +455,7 @@ export default function HomePage() {
                       <span className="text-xs md:text-sm font-black text-red-600 block leading-none">{item.price.toLocaleString('vi-VN')}đ</span>
                       {item.originalPrice > item.price && <span className="text-[10px] text-gray-400 line-through">{item.originalPrice.toLocaleString('vi-VN')}đ</span>}
                     </div>
+                    <SoldBar sold={item.soldCount || 0} stock={item.stock || 0} className="mt-2" />
                   </div>
                 </div>
               ))}
