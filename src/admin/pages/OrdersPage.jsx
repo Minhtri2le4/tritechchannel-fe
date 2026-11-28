@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import HandoverModal from '../HandoverModal';
-import { Ban, CheckCheck, CircleDollarSign, PackageCheck, Printer, Search, Truck, X } from 'lucide-react';
+import ReturnModal from '../ReturnModal';
+import { Ban, CheckCheck, CircleDollarSign, PackageCheck, PackageOpen, Printer, Search, Truck, Undo2, X } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { assetUrl, formatDate, formatPrice, imgFallback } from '../../lib/api';
 import { ORDER_TABS, STAGE, orderStage } from '../../lib/orderFlow';
@@ -12,8 +13,10 @@ import { Badge, Button, Card, ErrorBox, Input, Modal, PAYMENT_STATUS, PageHeader
 const BULK_ACTIONS = [
   { action: 'CONFIRM', label: 'Xác nhận đơn', icon: CheckCheck, when: (o) => o.status === 'PENDING', variant: 'primary' },
   { action: 'HANDOVER', label: 'Bàn giao ĐVVC', icon: PackageCheck, when: (o) => o.status === 'CONFIRMED' && !o.handedOverAt && o.deliveryMethod === 'HOME', variant: 'dark' },
-  { action: 'SHIP', label: 'Đang giao', icon: Truck, when: (o) => o.status === 'CONFIRMED', variant: 'outline' },
+  { action: 'SHIP', label: 'Đang giao', icon: Truck, when: (o) => o.status === 'CONFIRMED' && !o.returningAt, variant: 'outline' },
   { action: 'COMPLETE', label: 'Hoàn tất', icon: CheckCheck, when: (o) => ['CONFIRMED', 'SHIPPING'].includes(o.status), variant: 'outline' },
+  { action: 'RETURNING', label: 'Giao thất bại – Hoàn về', icon: Undo2, when: (o) => ['HANDED_OVER', 'SHIPPING'].includes(orderStage(o)) && o.deliveryMethod === 'HOME', variant: 'outline' },
+  { action: 'RETURNED', label: 'Đã nhận hàng hoàn', icon: PackageOpen, when: (o) => orderStage(o) === 'RETURNING', variant: 'dark' },
   { action: 'MARK_PAID', label: 'Đã nhận tiền', icon: CircleDollarSign, when: (o) => o.paymentStatus === 'UNPAID' && o.status !== 'CANCELLED', variant: 'outline' },
 ];
 
@@ -31,6 +34,7 @@ export default function OrdersPage() {
   const [selKey, setSelKey] = useState('');
   const [busy, setBusy] = useState('');
   const [handover, setHandover] = useState(null); // danh sách id chờ chọn ĐVVC
+  const [returning, setReturning] = useState(null); // danh sách id chờ chọn lý do hoàn
   const [result, setResult] = useState(null);
 
   const setParam = (key, value) => {
@@ -56,7 +60,7 @@ export default function OrdersPage() {
 
   const picked = (data || []).filter((o) => selected.includes(o.id));
   const actions = BULK_ACTIONS.filter((a) => picked.some(a.when));
-  const cancellable = picked.filter((o) => !['COMPLETED', 'CANCELLED'].includes(o.status));
+  const cancellable = picked.filter((o) => !['COMPLETED', 'CANCELLED'].includes(o.status) && orderStage(o) !== 'RETURNING');
 
   const run = async (action, ids, extra = {}) => {
     setBusy(action);
@@ -76,6 +80,8 @@ export default function OrdersPage() {
   const onAction = (a) => {
     const ids = picked.filter(a.when).map((o) => o.id);
     if (a.action === 'HANDOVER') return setHandover(ids);
+    if (a.action === 'RETURNING') return setReturning(ids);
+    if (a.action === 'RETURNED' && !confirm(`Xác nhận đã nhận lại ${ids.length} gói hàng hoàn? Đơn chuyển Đã hủy và hàng cộng lại vào kho.`)) return null;
     run(a.action, ids);
   };
   const cancelSelected = () => {
@@ -229,7 +235,16 @@ export default function OrdersPage() {
                 </div>
               ),
             },
-            { key: 'status', title: 'Trạng thái', render: (o) => <Badge map={STAGE} value={orderStage(o)} /> },
+            {
+              key: 'status',
+              title: 'Trạng thái',
+              render: (o) => (
+                <div className="flex flex-col items-start gap-0.5">
+                  <Badge map={STAGE} value={orderStage(o)} />
+                  {o.returnReason && <span className="max-w-[140px] text-[11px] leading-tight text-orange-700">{o.returnReason}</span>}
+                </div>
+              ),
+            },
             { key: 'createdAt', title: 'Ngày đặt', className: 'whitespace-nowrap text-gray-500 text-xs hidden lg:table-cell', render: (o) => formatDate(o.createdAt, true) },
           ]}
         />
@@ -244,6 +259,17 @@ export default function OrdersPage() {
           const ids = handover;
           setHandover(null);
           run('HANDOVER', ids, { carrier });
+        }}
+      />
+
+      <ReturnModal
+        ids={returning}
+        busy={busy === 'RETURNING'}
+        onClose={() => setReturning(null)}
+        onSubmit={(returnReason) => {
+          const ids = returning;
+          setReturning(null);
+          run('RETURNING', ids, { returnReason });
         }}
       />
 
