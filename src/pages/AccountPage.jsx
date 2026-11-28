@@ -223,7 +223,8 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
                 {o.status === 'PENDING' && (unpaid ? 'Shop xác nhận đơn sau khi nhận được tiền' : 'Shop sẽ gọi xác nhận đơn trong ít phút')}
                 {orderStage(o) === 'CONFIRMED' && 'Shop đang chuẩn bị hàng cho bạn'}
                 {orderStage(o) === 'HANDED_OVER' && 'Shop đã giao hàng cho đơn vị vận chuyển'}
-                {o.status === 'SHIPPING' && 'Đơn đang trên đường giao tới bạn'}
+                {orderStage(o) === 'SHIPPING' && 'Đơn đang trên đường giao tới bạn'}
+                {orderStage(o) === 'RETURNING' && 'Shipper không giao được – nhắn shop nếu bạn vẫn muốn nhận hàng'}
                 {o.status === 'COMPLETED' && (toReview ? 'Đánh giá sản phẩm để giúp người mua khác nhé!' : 'Cảm ơn bạn đã mua hàng')}
               </span>
               <a

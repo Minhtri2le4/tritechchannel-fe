@@ -1,18 +1,20 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Boxes, Check, ClipboardList, CreditCard, MapPin, PackageCheck, ShieldCheck, Truck, X, XCircle } from 'lucide-react';
+import { Boxes, Check, ClipboardList, CreditCard, MapPin, PackageCheck, PackageX, ShieldCheck, Truck, Undo2, X, XCircle } from 'lucide-react';
 import { assetUrl, formatDate, imgFallback } from '../lib/api';
 import { canChangeAddress, isUnpaidBank, orderStage, timelineSteps } from '../lib/orderFlow';
 
 const vnd = (n) => `${Number(n || 0).toLocaleString('vi-VN')}đ`;
 
 // Các bước của đơn – như Shopee: Đặt hàng → Đã xác nhận → Đã bàn giao ĐVVC → Đang giao → Hoàn thành
-const STEP_ICON = { PLACED: ClipboardList, CONFIRMED: PackageCheck, HANDED_OVER: Boxes, SHIPPING: Truck, COMPLETED: Check };
+const STEP_ICON = { PLACED: ClipboardList, CONFIRMED: PackageCheck, HANDED_OVER: Boxes, SHIPPING: Truck, COMPLETED: Check, RETURNING: Undo2, RETURNED: PackageX };
 const STATUS_TEXT = {
   PENDING: ['Chờ shop xác nhận', 'Shop sẽ gọi xác nhận đơn trong ít phút.'],
   CONFIRMED: ['Shop đang chuẩn bị hàng', 'Đơn đã được xác nhận, đang đóng gói để giao cho đơn vị vận chuyển.'],
   HANDED_OVER: ['Đã bàn giao cho đơn vị vận chuyển', 'Shipper sẽ lấy hàng và giao tới bạn trong thời gian sớm nhất.'],
   SHIPPING: ['Đơn đang được giao', 'Đơn đang trên đường tới bạn, nhớ để ý điện thoại nhé.'],
+  RETURNING: ['Giao hàng không thành công', 'Shipper không giao được đơn và đang hoàn hàng về shop. Bạn vẫn muốn nhận? Nhắn shop để được giao lại.'],
+  RETURNED: ['Đơn đã hoàn về shop', 'Đơn giao không thành công và đã được hoàn về shop.'],
   COMPLETED: ['Giao hàng thành công', 'Cảm ơn bạn đã mua hàng tại TriTech Channel.'],
   CANCELLED: ['Đơn đã huỷ', 'Đơn hàng này đã được huỷ.'],
 };
@@ -55,7 +57,7 @@ export default function OrderDetailSheet({ order: o, onClose, onCancel, onReview
 
         <div className="flex-1 space-y-2.5 overflow-y-auto p-2.5">
           {/* Trạng thái */}
-          <div className={`rounded-xl px-4 py-3.5 text-white ${cancelled ? 'bg-gray-500' : unpaid && o.status === 'PENDING' ? 'bg-orange-500' : 'bg-[#26aa99]'}`}>
+          <div className={`rounded-xl px-4 py-3.5 text-white ${cancelled ? 'bg-gray-500' : (unpaid && o.status === 'PENDING') || orderStage(o) === 'RETURNING' ? 'bg-orange-500' : 'bg-[#26aa99]'}`}>
             <p className="font-bold">{title}</p>
             <p className="text-xs opacity-90">{sub}</p>
             {unpaid && (

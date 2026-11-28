@@ -6,6 +6,7 @@ import { assetUrl, imgFallback, formatDate, formatPrice } from '../../lib/api';
 import { CARRIERS, STAGE, orderStage, timelineSteps } from '../../lib/orderFlow';
 import { adminApi } from '../adminApi';
 import HandoverModal from '../HandoverModal';
+import ReturnModal from '../ReturnModal';
 import { Badge, Button, Card, ErrorBox, Field, Input, Modal, PageHeader, paymentView, Spinner, Textarea } from '../ui';
 
 // Bước tiếp theo theo quy trình: Chờ xác nhận → Đã xác nhận → Đã bàn giao ĐVVC → Đang giao → Hoàn tất
@@ -14,8 +15,9 @@ const nextActions = (o) => {
   const home = o.deliveryMethod === 'HOME';
   if (stage === 'PENDING') return [['CONFIRMED', 'Xác nhận & in phiếu', 'primary']];
   if (stage === 'CONFIRMED') return home ? [['HANDOVER', 'Bàn giao ĐVVC', 'primary'], ['SHIPPING', 'Đang giao', 'outline']] : [['COMPLETED', 'Khách đã nhận hàng', 'primary']];
-  if (stage === 'HANDED_OVER') return [['SHIPPING', 'Shipper đã lấy – Đang giao', 'primary']];
-  if (stage === 'SHIPPING') return [['COMPLETED', 'Đã giao xong', 'primary']];
+  if (stage === 'HANDED_OVER') return [['SHIPPING', 'Shipper đã lấy – Đang giao', 'primary'], ['RETURNING', 'Giao thất bại – Hoàn về', 'outline']];
+  if (stage === 'SHIPPING') return home ? [['COMPLETED', 'Đã giao xong', 'primary'], ['RETURNING', 'Giao thất bại – Hoàn về', 'outline']] : [['COMPLETED', 'Đã giao xong', 'primary']];
+  if (stage === 'RETURNING') return [['RETURNED', 'Đã nhận lại hàng hoàn', 'primary'], ['REDELIVER', 'Liên hệ được – Giao lại', 'outline'], ['COMPLETED', 'Khách đã nhận', 'outline']];
   return [];
 };
 
@@ -26,6 +28,7 @@ export default function OrderDetailPage() {
   const [saving, setSaving] = useState('');
   const [note, setNote] = useState(null); // null = chưa sửa, dùng adminNote từ server
   const [handover, setHandover] = useState(null);
+  const [returning, setReturning] = useState(null);
   const [editShip, setEditShip] = useState(null);
   const [editAddr, setEditAddr] = useState(null);
 
@@ -66,7 +69,19 @@ export default function OrderDetailPage() {
     if (await update(patch, 'addr')) setEditAddr(null);
   };
 
-  const canCancel = !['COMPLETED', 'CANCELLED'].includes(order.status);
+  const canCancel = !['COMPLETED', 'CANCELLED'].includes(order.status) && orderStage(order) !== 'RETURNING';
+
+  const onAction = (next) => {
+    if (next === 'HANDOVER') return setHandover([order.id]);
+    if (next === 'RETURNING') return setReturning([order.id]);
+    if (next === 'REDELIVER') return update({ redeliver: true }, next);
+    if (next === 'RETURNED') {
+      const refund = order.paymentStatus === 'PAID' ? '\n\nĐơn đã thanh toán: nhớ hoàn tiền cho khách rồi bấm "Đã hoàn tiền".' : '';
+      if (confirm(`Xác nhận shop đã nhận lại gói hàng hoàn?\nĐơn chuyển Đã hủy, hàng được cộng lại vào kho.${refund}`)) update({ returned: true }, next);
+      return null;
+    }
+    return update({ status: next }, next);
+  };
   const open = canCancel;
 
   return (
@@ -161,7 +176,7 @@ export default function OrderDetailPage() {
                   key={next}
                   variant={variant}
                   loading={saving === next}
-                  onClick={() => (next === 'HANDOVER' ? setHandover([order.id]) : update({ status: next }, next))}
+                  onClick={() => onAction(next)}
                 >
                   {label}
                 </Button>
@@ -186,6 +201,13 @@ export default function OrderDetailPage() {
               </div>
               <p className="text-sm"><span className="text-gray-500">Đơn vị:</span> <b>{order.carrier || '—'}</b></p>
               <p className="text-sm"><span className="text-gray-500">Mã vận đơn:</span> <b className="font-mono">{order.trackingCode || '—'}</b></p>
+              {order.returningAt && (
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-2 text-xs text-orange-800">
+                  <p className="font-bold">{order.returnedAt ? 'Đã nhận lại hàng hoàn' : 'Giao không thành công – đang hoàn về shop'}</p>
+                  {order.returnReason && <p>Lý do: {order.returnReason}</p>}
+                  <p className="text-orange-700/80">Từ {formatDate(order.returningAt, true)}{order.returnedAt ? ` · nhận lại ${formatDate(order.returnedAt, true)}` : ''}</p>
+                </div>
+              )}
               {order.handedOverAt ? (
                 <p className="text-xs text-gray-500">Bàn giao lúc {formatDate(order.handedOverAt, true)}</p>
               ) : (
@@ -235,6 +257,15 @@ export default function OrderDetailPage() {
         onClose={() => setHandover(null)}
         onSubmit={async (carrier, trackingCode) => {
           if (await update({ handover: true, carrier, ...(trackingCode ? { trackingCode } : {}) }, 'HANDOVER')) setHandover(null);
+        }}
+      />
+
+      <ReturnModal
+        ids={returning}
+        busy={saving === 'RETURNING'}
+        onClose={() => setReturning(null)}
+        onSubmit={async (returnReason) => {
+          if (await update({ returning: true, returnReason }, 'RETURNING')) setReturning(null);
         }}
       />
 
@@ -315,8 +346,8 @@ function Timeline({ order }) {
     <ol>
       {steps.map((s, i) => (
         <li key={s.key} className="relative flex gap-3 pb-3 last:pb-0">
-          {i < steps.length - 1 && <span className={`absolute left-[9px] top-5 h-[calc(100%-12px)] w-0.5 ${steps[i + 1].done ? 'bg-emerald-500' : 'bg-gray-200'}`} />}
-          <span className={`relative z-[1] mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${s.done ? 'bg-emerald-500 text-white' : 'border-2 border-gray-200 bg-white'}`}>
+          {i < steps.length - 1 && <span className={`absolute left-[9px] top-5 h-[calc(100%-12px)] w-0.5 ${steps[i + 1].done ? (steps[i + 1].warn ? 'bg-orange-400' : 'bg-emerald-500') : 'bg-gray-200'}`} />}
+          <span className={`relative z-[1] mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${s.done ? (s.warn ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white') : 'border-2 border-gray-200 bg-white'}`}>
             {s.done && <Check size={12} strokeWidth={3} />}
           </span>
           <div className="min-w-0">
@@ -325,7 +356,7 @@ function Timeline({ order }) {
           </div>
         </li>
       ))}
-      {order.status === 'CANCELLED' && (
+      {order.status === 'CANCELLED' && !order.returningAt && (
         <li className="mt-3 flex gap-3">
           <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-400 text-xs font-bold text-white">✕</span>
           <div>
