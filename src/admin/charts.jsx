@@ -185,3 +185,67 @@ export function BarList({ items, valueKey, label, format, color = '#2563eb', emp
     </ul>
   );
 }
+
+// Nhiều chỉ số trên cùng 1 biểu đồ (như "Biểu đồ" ở Phân tích bán hàng của Shopee):
+// mỗi đường tự co theo giá trị lớn nhất của nó, rê chuột xem đủ số liệu từng mốc.
+export function MultiLineChart({ data, series, height = 260 }) {
+  const [ref, width] = useWidth();
+  const [hover, setHover] = useState(null);
+  const pad = { top: 14, right: 16, bottom: 26, left: 16 };
+  const n = data.length;
+  const innerW = Math.max(width - pad.left - pad.right, 1);
+  const innerH = height - pad.top - pad.bottom;
+  const band = innerW / Math.max(n, 1);
+  const x = (i) => pad.left + band * i + band / 2;
+  const tops = Object.fromEntries(series.map((s) => [s.key, niceMax(Math.max(...data.map((d) => d[s.key] ?? 0), 0))]));
+  const y = (key, v) => pad.top + innerH - ((v ?? 0) / tops[key]) * innerH;
+  const labelEvery = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(innerW / 56))));
+  const h = hover !== null ? data[hover] : null;
+
+  return (
+    <div ref={ref} className="relative w-full" style={{ height }}>
+      {width > 0 && (
+        <svg width={width} height={height} className="block" onMouseLeave={() => setHover(null)}>
+          {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+            <line key={t} x1={pad.left} x2={width - pad.right} y1={pad.top + innerH * t} y2={pad.top + innerH * t} stroke={GRID} strokeWidth="1" strokeDasharray={t === 1 ? undefined : '3 4'} />
+          ))}
+          {data.map((d, i) =>
+            i % labelEvery === 0 || i === n - 1 ? (
+              <text key={d.date} x={x(i)} y={height - 8} textAnchor="middle" fontSize="11" fill={INK_MUTED}>
+                {dayLabel(d.date)}
+              </text>
+            ) : null
+          )}
+          {series.map((s) => {
+            const pts = data.map((d, i) => (d[s.key] == null ? null : `${x(i)},${y(s.key, d[s.key])}`)).filter(Boolean);
+            if (!pts.length) return null;
+            return (
+              <g key={s.key}>
+                <path d={`M${pts.join('L')}`} fill="none" stroke={s.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                {n <= 31 && data.map((d, i) => (d[s.key] == null ? null : <circle key={i} cx={x(i)} cy={y(s.key, d[s.key])} r={hover === i ? 4.5 : 2.5} fill={s.color} stroke={SURFACE} strokeWidth="1.5" />))}
+              </g>
+            );
+          })}
+          {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={pad.top} y2={pad.top + innerH} stroke={INK_MUTED} strokeWidth="1" />}
+          {data.map((d, i) => (
+            <rect key={d.date} x={pad.left + band * i} y={pad.top} width={band} height={innerH} fill="transparent" onMouseEnter={() => setHover(i)} onTouchStart={() => setHover(i)} />
+          ))}
+        </svg>
+      )}
+      {h && (
+        <div
+          className="pointer-events-none absolute top-2 z-10 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg whitespace-nowrap"
+          style={{ left: Math.min(Math.max(x(hover), 90), width - 90) }}
+        >
+          <p className="mb-1 text-gray-300">{dayLabel(h.date)}</p>
+          {series.map((s) => (
+            <p key={s.key} className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
+              {s.label}: <b>{h[s.key] == null ? '—' : s.format(h[s.key])}</b>
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

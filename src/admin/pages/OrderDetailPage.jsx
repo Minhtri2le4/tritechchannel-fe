@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Phone, Mail, MapPin, Store, Printer } from 'lucide-react';
+import { ArrowLeft, Check, Pencil, Phone, Mail, MapPin, Store, Printer, Truck } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import { assetUrl, imgFallback, formatDate, formatPrice } from '../../lib/api';
+import { CARRIERS, STAGE, orderStage, timelineSteps } from '../../lib/orderFlow';
 import { adminApi } from '../adminApi';
-import { Badge, Button, Card, ErrorBox, Field, ORDER_STATUS, PageHeader, paymentView, Spinner, Textarea } from '../ui';
+import HandoverModal from '../HandoverModal';
+import { Badge, Button, Card, ErrorBox, Field, Input, Modal, PageHeader, paymentView, Spinner, Textarea } from '../ui';
 
-// Bước tiếp theo hợp lệ (khớp quy tắc chuyển trạng thái ở backend)
-const NEXT_ACTIONS = {
-  PENDING: [['CONFIRMED', 'Xác nhận & in phiếu', 'primary']],
-  CONFIRMED: [['SHIPPING', 'Bắt đầu giao', 'dark'], ['COMPLETED', 'Hoàn tất', 'outline']],
-  SHIPPING: [['COMPLETED', 'Đã giao xong', 'primary']],
-  COMPLETED: [],
-  CANCELLED: [],
+// Bước tiếp theo theo quy trình: Chờ xác nhận → Đã xác nhận → Đã bàn giao ĐVVC → Đang giao → Hoàn tất
+const nextActions = (o) => {
+  const stage = orderStage(o);
+  const home = o.deliveryMethod === 'HOME';
+  if (stage === 'PENDING') return [['CONFIRMED', 'Xác nhận & in phiếu', 'primary']];
+  if (stage === 'CONFIRMED') return home ? [['HANDOVER', 'Bàn giao ĐVVC', 'primary'], ['SHIPPING', 'Đang giao', 'outline']] : [['COMPLETED', 'Khách đã nhận hàng', 'primary']];
+  if (stage === 'HANDED_OVER') return [['SHIPPING', 'Shipper đã lấy – Đang giao', 'primary']];
+  if (stage === 'SHIPPING') return [['COMPLETED', 'Đã giao xong', 'primary']];
+  return [];
 };
 
 export default function OrderDetailPage() {
@@ -21,6 +25,9 @@ export default function OrderDetailPage() {
   const { data: order, loading, error, reload } = useFetch(() => adminApi.orders.get(id), [id]);
   const [saving, setSaving] = useState('');
   const [note, setNote] = useState(null); // null = chưa sửa, dùng adminNote từ server
+  const [handover, setHandover] = useState(null);
+  const [editShip, setEditShip] = useState(null);
+  const [editAddr, setEditAddr] = useState(null);
 
   if (loading && !order) return <Spinner />;
   if (error && !order) return <ErrorBox error={error} onRetry={reload} />;
@@ -36,10 +43,12 @@ export default function OrderDetailPage() {
       await adminApi.orders.update(order.id, patch);
       if (printTab) printTab.location.href = printUrl;
       reload();
-      setNote(null);
+      if (patch.adminNote !== undefined) setNote(null);
+      return true;
     } catch (err) {
       printTab?.close();
       alert(err.message);
+      return false;
     } finally {
       setSaving('');
     }
@@ -49,7 +58,16 @@ export default function OrderDetailPage() {
     if (confirm('Hủy đơn này? Hàng sẽ được hoàn lại kho và mã giảm giá được trả lượt.')) update({ status: 'CANCELLED' }, 'cancel');
   };
 
+  const saveAddress = async () => {
+    const stamp = new Date().toLocaleString('vi-VN');
+    const line = `[Shop đổi thông tin nhận hàng ${stamp}] Cũ: ${order.fullName} · ${order.phone}${order.address ? ` · ${order.address}` : ''}`;
+    const patch = { ...editAddr, adminNote: order.adminNote ? `${order.adminNote}\n${line}` : line };
+    if (order.deliveryMethod !== 'HOME') delete patch.address;
+    if (await update(patch, 'addr')) setEditAddr(null);
+  };
+
   const canCancel = !['COMPLETED', 'CANCELLED'].includes(order.status);
+  const open = canCancel;
 
   return (
     <>
@@ -102,7 +120,23 @@ export default function OrderDetailPage() {
           </Card>
 
           <Card className="p-4 space-y-2">
-            <h2 className="font-bold">Khách hàng</h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-bold">Khách hàng · Thông tin nhận hàng</h2>
+              {open && (
+                <button
+                  type="button"
+                  onClick={() => setEditAddr({ fullName: order.fullName, phone: order.phone, address: order.address || '' })}
+                  className="flex shrink-0 items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
+                >
+                  <Pencil size={12} /> Sửa
+                </button>
+              )}
+            </div>
+            {order.addressChangedAt && (
+              <p className="rounded-lg bg-orange-50 px-2 py-1 text-xs font-semibold text-orange-700">
+                Thông tin nhận hàng đã đổi lúc {formatDate(order.addressChangedAt, true)} – lịch sử xem ở ghi chú nội bộ
+              </p>
+            )}
             <p className="font-semibold">{order.gender ? `${order.gender} ` : ''}{order.fullName}</p>
             <a href={`tel:${order.phone}`} className="flex items-center gap-2 text-sm text-blue-700 hover:underline"><Phone size={14} /> {order.phone}</a>
             {order.email && <p className="flex items-center gap-2 text-sm"><Mail size={14} className="text-gray-400" /> {order.email}</p>}
@@ -118,17 +152,47 @@ export default function OrderDetailPage() {
           <Card className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="font-bold">Trạng thái đơn</h2>
-              <Badge map={ORDER_STATUS} value={order.status} />
+              <Badge map={STAGE} value={orderStage(order)} />
             </div>
+            <Timeline order={order} />
             <div className="flex flex-wrap gap-2">
-              {NEXT_ACTIONS[order.status].map(([next, label, variant]) => (
-                <Button key={next} variant={variant} loading={saving === next} onClick={() => update({ status: next }, next)}>
+              {nextActions(order).map(([next, label, variant]) => (
+                <Button
+                  key={next}
+                  variant={variant}
+                  loading={saving === next}
+                  onClick={() => (next === 'HANDOVER' ? setHandover([order.id]) : update({ status: next }, next))}
+                >
                   {label}
                 </Button>
               ))}
               {canCancel && <Button variant="outline" className="text-red-600" loading={saving === 'cancel'} onClick={cancel}>Hủy đơn</Button>}
             </div>
           </Card>
+
+          {order.deliveryMethod === 'HOME' && (
+            <Card className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 font-bold"><Truck size={16} /> Vận chuyển</h2>
+                {order.status !== 'CANCELLED' && (
+                  <button
+                    type="button"
+                    onClick={() => setEditShip({ carrier: order.carrier || '', trackingCode: order.trackingCode || '' })}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
+                  >
+                    <Pencil size={12} /> Sửa
+                  </button>
+                )}
+              </div>
+              <p className="text-sm"><span className="text-gray-500">Đơn vị:</span> <b>{order.carrier || '—'}</b></p>
+              <p className="text-sm"><span className="text-gray-500">Mã vận đơn:</span> <b className="font-mono">{order.trackingCode || '—'}</b></p>
+              {order.handedOverAt ? (
+                <p className="text-xs text-gray-500">Bàn giao lúc {formatDate(order.handedOverAt, true)}</p>
+              ) : (
+                order.status === 'CONFIRMED' && <p className="text-xs text-amber-700">Chưa bàn giao cho đơn vị vận chuyển</p>
+              )}
+            </Card>
+          )}
 
           <Card className="p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -163,6 +227,113 @@ export default function OrderDetailPage() {
           </Card>
         </div>
       </div>
+
+      <HandoverModal
+        ids={handover}
+        withTracking
+        busy={saving === 'HANDOVER'}
+        onClose={() => setHandover(null)}
+        onSubmit={async (carrier, trackingCode) => {
+          if (await update({ handover: true, carrier, ...(trackingCode ? { trackingCode } : {}) }, 'HANDOVER')) setHandover(null);
+        }}
+      />
+
+      <Modal
+        open={Boolean(editShip)}
+        title="Sửa thông tin vận chuyển"
+        onClose={() => setEditShip(null)}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditShip(null)}>Hủy</Button>
+            <Button loading={saving === 'ship'} onClick={async () => (await update(editShip, 'ship')) && setEditShip(null)}>Lưu</Button>
+          </>
+        }
+      >
+        {editShip && (
+          <div className="space-y-3">
+            <Field label="Đơn vị vận chuyển">
+              <div className="flex flex-wrap gap-2">
+                {CARRIERS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setEditShip({ ...editShip, carrier: c })}
+                    className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${editShip.carrier === c ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white'}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </Field>
+            <Field label="Mã vận đơn">
+              <Input value={editShip.trackingCode} onChange={(e) => setEditShip({ ...editShip, trackingCode: e.target.value })} placeholder="VD: SPXVN0123456789" />
+            </Field>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(editAddr)}
+        title="Sửa thông tin nhận hàng"
+        onClose={() => setEditAddr(null)}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditAddr(null)}>Hủy</Button>
+            <Button loading={saving === 'addr'} onClick={saveAddress}><Check size={16} /> Lưu</Button>
+          </>
+        }
+      >
+        {editAddr && (
+          <div className="space-y-3">
+            <Field label="Người nhận">
+              <Input value={editAddr.fullName} onChange={(e) => setEditAddr({ ...editAddr, fullName: e.target.value })} />
+            </Field>
+            <Field label="Số điện thoại">
+              <Input value={editAddr.phone} onChange={(e) => setEditAddr({ ...editAddr, phone: e.target.value })} />
+            </Field>
+            {order.deliveryMethod === 'HOME' && (
+              <Field label="Địa chỉ" hint="Số nhà, đường, phường/xã, tỉnh/thành">
+                <Textarea value={editAddr.address} onChange={(e) => setEditAddr({ ...editAddr, address: e.target.value })} />
+              </Field>
+            )}
+            {order.handedOverAt && (
+              <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
+                Đơn đã bàn giao {order.carrier || 'ĐVVC'} – nhớ báo đổi địa chỉ trên app của đơn vị vận chuyển{order.trackingCode ? ` (mã ${order.trackingCode})` : ''}.
+              </p>
+            )}
+          </div>
+        )}
+      </Modal>
     </>
+  );
+}
+
+// Dòng thời gian các bước của đơn
+function Timeline({ order }) {
+  const steps = timelineSteps(order);
+  return (
+    <ol>
+      {steps.map((s, i) => (
+        <li key={s.key} className="relative flex gap-3 pb-3 last:pb-0">
+          {i < steps.length - 1 && <span className={`absolute left-[9px] top-5 h-[calc(100%-12px)] w-0.5 ${steps[i + 1].done ? 'bg-emerald-500' : 'bg-gray-200'}`} />}
+          <span className={`relative z-[1] mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${s.done ? 'bg-emerald-500 text-white' : 'border-2 border-gray-200 bg-white'}`}>
+            {s.done && <Check size={12} strokeWidth={3} />}
+          </span>
+          <div className="min-w-0">
+            <p className={`text-sm font-semibold ${s.done ? 'text-gray-900' : 'text-gray-400'}`}>{s.label}</p>
+            {s.at && <p className="text-xs text-gray-500">{formatDate(s.at, true)}</p>}
+          </div>
+        </li>
+      ))}
+      {order.status === 'CANCELLED' && (
+        <li className="mt-3 flex gap-3">
+          <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-400 text-xs font-bold text-white">✕</span>
+          <div>
+            <p className="text-sm font-semibold text-gray-700">Đã hủy</p>
+            {order.cancelledAt && <p className="text-xs text-gray-500">{formatDate(order.cancelledAt, true)}</p>}
+          </div>
+        </li>
+      )}
+    </ol>
   );
 }

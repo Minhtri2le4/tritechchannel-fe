@@ -41,7 +41,12 @@ export const adminApi = {
   },
   categories: crud('/admin/categories'),
   coupons: crud('/admin/coupons'),
-  orders: crud('/admin/orders'),
+  orders: {
+    ...crud('/admin/orders'),
+    counts: () => api.get('/admin/orders/counts'),
+    bulk: (body) => api.post('/admin/orders/bulk', body),
+  },
+  analytics: (from, to) => api.get('/admin/dashboard/analytics', { params: { from, to } }),
   tradeIns: crud('/admin/trade-ins'),
   warranties: {
     ...crud('/admin/warranties'),

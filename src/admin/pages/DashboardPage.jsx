@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Clock, Package, AlertTriangle, RefreshCw, Table2, LineChart,
-  PackageCheck, Truck, XCircle, MessageSquareText, ShieldCheck,
+  PackageCheck, Truck, XCircle, MessageSquareText, ShieldCheck, ChevronRight,
 } from 'lucide-react';
 import useFetch from '../../hooks/useFetch';
 import useCountUp from '../../hooks/useCountUp';
@@ -305,6 +305,9 @@ function ShopeeOverview({ data, rangeLabel, vs, avg, prevAvg }) {
         <div className="mb-3 flex flex-wrap items-baseline gap-2">
           <h2 className="text-lg font-bold text-gray-900">Phân tích bán hàng</h2>
           <span className="text-xs text-gray-400">{rangeLabel} · (dữ liệu thay đổi so với {vs})</span>
+          <Link to="/admin/analytics" className="ml-auto flex items-center gap-0.5 text-sm font-semibold text-blue-600 hover:underline">
+            Xem thêm <ChevronRight size={16} />
+          </Link>
         </div>
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-gray-100 bg-gray-100 md:grid-cols-3 xl:grid-cols-6">
           {metrics.map((m) => (

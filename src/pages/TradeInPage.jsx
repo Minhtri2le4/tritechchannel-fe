@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { RefreshCw, PhoneCall, ArrowRight, FileText, PackageCheck, X, Camera } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { RefreshCw, PhoneCall, ArrowRight, FileText, PackageCheck, X, Camera, LogIn } from 'lucide-react';
+import { useCustomer } from '../context/CustomerContext';
 import { shopApi } from '../services/shop';
 import useSeo from '../hooks/useSeo';
 import { saveToken } from '../lib/tradeIn';
@@ -26,6 +27,16 @@ export default function TradeIn() {
   const [otherCategory, setOtherCategory] = useState('');
   const [otherAccessory, setOtherAccessory] = useState('');
   const location = useLocation();
+  const navigate = useNavigate();
+  // Phải đăng nhập mới gửi được yêu cầu (shop biết ai gửi, khách xem báo giá trong tài khoản)
+  const { customer, loading: customerLoading } = useCustomer();
+  const loginUrl = '/dang-nhap?next=/thu-cu-doi-moi';
+  // Đã đăng nhập: điền sẵn họ tên + SĐT từ tài khoản
+  const [prefilledFor, setPrefilledFor] = useState(null);
+  if (customer && prefilledFor !== customer.id) {
+    setPrefilledFor(customer.id);
+    setFormData((f) => ({ ...f, fullName: f.fullName || customer.fullName || '', phone: f.phone || customer.phone || '' }));
+  }
 
   // State quản lý ảnh upload
   const [images, setImages] = useState([]);
@@ -55,6 +66,10 @@ export default function TradeIn() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!customer) {
+      navigate(loginUrl);
+      return;
+    }
     if (!formData.fullName || !formData.phone || !formData.brand || !formData.deviceName) {
       alert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
       return;
@@ -112,6 +127,18 @@ export default function TradeIn() {
             <FileText size={20} className="text-yellow-600 shrink-0" />
             <h2 className="font-bold text-gray-900 text-base sm:text-lg">Thông Tin Món Đồ Cần Định Giá</h2>
           </div>
+
+          {!customerLoading && !customer && !submitted && (
+            <div className="mb-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center">
+              <LogIn size={22} className="hidden shrink-0 text-amber-600 sm:block" />
+              <p className="flex-1 text-xs text-amber-900 sm:text-sm">
+                Vui lòng <b>đăng nhập</b> để gửi yêu cầu định giá – shop báo giá và bạn theo dõi, đồng ý bán ngay trong tài khoản.
+              </p>
+              <Link to={loginUrl} className="shrink-0 rounded-lg bg-black px-4 py-2 text-center text-xs font-bold text-white hover:bg-gray-800">
+                Đăng nhập / Đăng ký
+              </Link>
+            </div>
+          )}
 
           {submitted ? (
             <div className="text-center py-6 sm:py-8 space-y-3">
@@ -325,7 +352,7 @@ export default function TradeIn() {
                 disabled={submitting}
                 className="w-full bg-[#FFD400] hover:bg-yellow-400 disabled:opacity-60 text-black font-black py-3 rounded-xl flex items-center justify-center gap-2 transition-all uppercase text-xs sm:text-sm shadow-md active:scale-[0.98] cursor-pointer"
               >
-                <span>{submitting ? 'Đang gửi...' : 'Gửi Thông Tin & Ảnh Định Giá'}</span>
+                <span>{submitting ? 'Đang gửi...' : customer ? 'Gửi Thông Tin & Ảnh Định Giá' : 'Đăng nhập để gửi yêu cầu'}</span>
                 <ArrowRight size={16} />
               </button>
             </form>

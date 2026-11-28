@@ -42,6 +42,7 @@ export const shopApi = {
   myVouchers: () => api.get('/customers/me/vouchers'),
   presencePing: (visitorId, path) => api.post('/presence/ping', { visitorId, path }),
   cancelMyOrder: (id, reason) => api.post(`/customers/me/orders/${id}/cancel`, { reason }),
+  changeOrderAddress: (id, body) => api.patch(`/customers/me/orders/${id}/address`, body),
   uploadAvatar: (file) => {
     const body = new FormData();
     body.append('file', file);

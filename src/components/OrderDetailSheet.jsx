@@ -1,27 +1,29 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ClipboardList, CreditCard, MapPin, PackageCheck, ShieldCheck, Truck, X, XCircle } from 'lucide-react';
+import { Boxes, Check, ClipboardList, CreditCard, MapPin, PackageCheck, ShieldCheck, Truck, X, XCircle } from 'lucide-react';
 import { assetUrl, formatDate, imgFallback } from '../lib/api';
+import { canChangeAddress, isUnpaidBank, orderStage, timelineSteps } from '../lib/orderFlow';
 
 const vnd = (n) => `${Number(n || 0).toLocaleString('vi-VN')}đ`;
 
-// Các bước của đơn – như Shopee: Đặt hàng → Đã xác nhận → Đang giao → Hoàn thành
-const STEPS = [
-  ['PENDING', 'Đã đặt', ClipboardList],
-  ['CONFIRMED', 'Đã xác nhận', PackageCheck],
-  ['SHIPPING', 'Đang giao', Truck],
-  ['COMPLETED', 'Hoàn thành', Check],
-];
+// Các bước của đơn – như Shopee: Đặt hàng → Đã xác nhận → Đã bàn giao ĐVVC → Đang giao → Hoàn thành
+const STEP_ICON = { PLACED: ClipboardList, CONFIRMED: PackageCheck, HANDED_OVER: Boxes, SHIPPING: Truck, COMPLETED: Check };
 const STATUS_TEXT = {
   PENDING: ['Chờ shop xác nhận', 'Shop sẽ gọi xác nhận đơn trong ít phút.'],
-  CONFIRMED: ['Shop đang chuẩn bị hàng', 'Đơn đã được xác nhận, đang đóng gói để giao.'],
+  CONFIRMED: ['Shop đang chuẩn bị hàng', 'Đơn đã được xác nhận, đang đóng gói để giao cho đơn vị vận chuyển.'],
+  HANDED_OVER: ['Đã bàn giao cho đơn vị vận chuyển', 'Shipper sẽ lấy hàng và giao tới bạn trong thời gian sớm nhất.'],
   SHIPPING: ['Đơn đang được giao', 'Đơn đang trên đường tới bạn, nhớ để ý điện thoại nhé.'],
   COMPLETED: ['Giao hàng thành công', 'Cảm ơn bạn đã mua hàng tại TriTech Channel.'],
   CANCELLED: ['Đơn đã huỷ', 'Đơn hàng này đã được huỷ.'],
 };
 
+const shortTime = (d) => {
+  const x = new Date(d);
+  return `${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')} ${String(x.getDate()).padStart(2, '0')}/${String(x.getMonth() + 1).padStart(2, '0')}`;
+};
+
 // Chi tiết 1 đơn hàng của khách (trang Tài khoản): trạng thái, địa chỉ, sản phẩm, tiền, thanh toán
-export default function OrderDetailSheet({ order: o, onClose, onCancel, onReview }) {
+export default function OrderDetailSheet({ order: o, onClose, onCancel, onReview, onPay, onChangeAddress }) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -34,8 +36,10 @@ export default function OrderDetailSheet({ order: o, onClose, onCancel, onReview
   }, [onClose]);
 
   const cancelled = o.status === 'CANCELLED';
-  const stepIdx = STEPS.findIndex(([k]) => k === o.status);
-  const [title, sub] = STATUS_TEXT[o.status] || [o.status, ''];
+  const steps = timelineSteps(o);
+  const stepIdx = steps.reduce((n, s, i) => (s.done ? i : n), 0);
+  const unpaid = isUnpaidBank(o);
+  const [title, sub] = unpaid && o.status === 'PENDING' ? ['Chờ thanh toán', 'Chuyển khoản theo mã QR để shop xác nhận và giao hàng cho bạn.'] : STATUS_TEXT[orderStage(o)] || [o.status, ''];
   const toReview = o.status === 'COMPLETED' && o.items.find((it) => it.productId && !it.reviewed);
 
   return (
@@ -51,32 +55,65 @@ export default function OrderDetailSheet({ order: o, onClose, onCancel, onReview
 
         <div className="flex-1 space-y-2.5 overflow-y-auto p-2.5">
           {/* Trạng thái */}
-          <div className={`rounded-xl px-4 py-3.5 text-white ${cancelled ? 'bg-gray-500' : 'bg-[#26aa99]'}`}>
+          <div className={`rounded-xl px-4 py-3.5 text-white ${cancelled ? 'bg-gray-500' : unpaid && o.status === 'PENDING' ? 'bg-orange-500' : 'bg-[#26aa99]'}`}>
             <p className="font-bold">{title}</p>
             <p className="text-xs opacity-90">{sub}</p>
+            {unpaid && (
+              <button type="button" onClick={() => onPay?.(o)} className="mt-2 rounded-lg bg-white px-4 py-1.5 text-xs font-bold text-orange-600">
+                Thanh toán ngay
+              </button>
+            )}
           </div>
 
           {!cancelled && (
-            <div className="rounded-xl bg-white px-3 py-4">
+            <div className="rounded-xl bg-white px-2 py-4">
               <div className="relative flex justify-between">
-                <span className="absolute left-[12%] right-[12%] top-4 h-0.5 bg-gray-200" />
-                <span
-                  className="absolute left-[12%] top-4 h-0.5 bg-[#26aa99] transition-all duration-700"
-                  style={{ width: `${(Math.max(0, stepIdx) / (STEPS.length - 1)) * 76}%` }}
-                />
-                {STEPS.map(([key, label, Icon], i) => {
-                  const done = i <= stepIdx;
+                {(() => {
+                  const edge = 50 / steps.length;
                   return (
-                    <div key={key} className="relative z-10 flex w-1/4 flex-col items-center gap-1.5 text-center">
+                    <>
+                      <span className="absolute top-4 h-0.5 bg-gray-200" style={{ left: `${edge}%`, right: `${edge}%` }} />
                       <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${done ? 'border-[#26aa99] bg-[#26aa99] text-white' : 'border-gray-200 bg-white text-gray-300'}`}
+                        className="absolute top-4 h-0.5 bg-[#26aa99] transition-all duration-700"
+                        style={{ left: `${edge}%`, width: `${(stepIdx / (steps.length - 1)) * (100 - 2 * edge)}%` }}
+                      />
+                    </>
+                  );
+                })()}
+                {steps.map((s) => {
+                  const Icon = STEP_ICON[s.key] || Check;
+                  return (
+                    <div key={s.key} className="relative z-10 flex flex-1 flex-col items-center gap-1 text-center">
+                      <span
+                        className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${s.done ? 'border-[#26aa99] bg-[#26aa99] text-white' : 'border-gray-200 bg-white text-gray-300'}`}
                       >
                         <Icon size={15} />
                       </span>
-                      <span className={`text-[11px] leading-tight ${done ? 'font-semibold text-gray-900' : 'text-gray-400'}`}>{label}</span>
+                      <span className={`px-0.5 text-[10.5px] leading-tight ${s.done ? 'font-semibold text-gray-900' : 'text-gray-400'}`}>{s.label}</span>
+                      {s.done && s.at && <span className="text-[9.5px] leading-tight text-gray-400">{shortTime(s.at)}</span>}
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Vận chuyển */}
+          {o.carrier && !cancelled && (
+            <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 text-sm">
+              <Truck size={18} className="mt-0.5 shrink-0 text-cyan-700" />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-gray-900">Đơn vị vận chuyển: {o.carrier}</p>
+                {o.trackingCode ? (
+                  <p className="flex items-center gap-2 text-gray-600">
+                    Mã vận đơn <b className="font-mono text-gray-900">{o.trackingCode}</b>
+                    <button type="button" onClick={() => navigator.clipboard?.writeText(o.trackingCode)} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-semibold text-gray-700 active:bg-gray-200">
+                      Chép
+                    </button>
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500">Shop sẽ cập nhật mã vận đơn sớm</p>
+                )}
               </div>
             </div>
           )}
@@ -90,6 +127,11 @@ export default function OrderDetailSheet({ order: o, onClose, onCancel, onReview
               {o.deliveryMethod === 'HOME' && o.address && <p className="text-gray-500">{o.address}</p>}
               {o.note && <p className="mt-1 text-xs text-gray-500">Ghi chú: {o.note}</p>}
             </div>
+            {canChangeAddress(o) && onChangeAddress && (
+              <button type="button" onClick={() => onChangeAddress(o)} className="ml-auto shrink-0 self-start text-xs font-semibold text-red-600 hover:underline">
+                Thay đổi
+              </button>
+            )}
           </div>
 
           {/* Sản phẩm */}
