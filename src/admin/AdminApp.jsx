@@ -26,6 +26,7 @@ import PostsPage from './pages/PostsPage';
 import PostFormPage from './pages/PostFormPage';
 import MyWorkPage from './pages/MyWorkPage';
 import StaffTasksPage from './pages/StaffTasksPage';
+import SalesAnalyticsPage from './pages/SalesAnalyticsPage';
 import CheckinsPage from './pages/CheckinsPage';
 
 // Chặn trang khi chưa đăng nhập; adminOnly: chỉ tài khoản ADMIN
@@ -49,6 +50,7 @@ function AdminRoutes() {
     <Routes>
       <Route path="login" element={!checking && user ? <Navigate to="/admin" replace /> : <LoginPage />} />
       {/* Trang in phiếu không có menu admin */}
+      <Route path="orders/print" element={<Protected><OrderPrintPage /></Protected>} />
       <Route path="orders/:id/print" element={<Protected><OrderPrintPage /></Protected>} />
       <Route path="trade-ins/:id/print" element={<Protected><TradeInPrintPage /></Protected>} />
       <Route
@@ -61,6 +63,7 @@ function AdminRoutes() {
         <Route index element={<HomeIndex />} />
         <Route path="me" element={<MyWorkPage />} />
         <Route path="staff-tasks" element={<Protected adminOnly><StaffTasksPage /></Protected>} />
+        <Route path="analytics" element={<Protected adminOnly><SalesAnalyticsPage /></Protected>} />
         <Route path="checkins" element={<Protected adminOnly><CheckinsPage /></Protected>} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="orders/:id" element={<OrderDetailPage />} />

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import {
-  Camera, ChevronLeft, ChevronRight, KeyRound, Loader2, LogOut, Package, PackageOpen, RefreshCw, ShieldCheck, Star, Ticket, Truck, UserRound, Wallet,
+  Camera, ChevronLeft, ChevronRight, ClipboardCheck, KeyRound, Loader2, LogOut, Package, PackageOpen, RefreshCw, ShieldCheck, Star, Ticket, Truck, UserRound, Wallet,
 } from 'lucide-react';
 import useSeo from '../hooks/useSeo';
 import useFetch from '../hooks/useFetch';
@@ -12,24 +12,11 @@ import AddressPicker from '../components/AddressPicker';
 import ReviewForm from '../components/ReviewForm';
 import CancelOrderSheet from '../components/CancelOrderSheet';
 import OrderDetailSheet from '../components/OrderDetailSheet';
+import PayOrderSheet from '../components/PayOrderSheet';
+import ChangeAddressSheet from '../components/ChangeAddressSheet';
+import { CUSTOMER_STAGE, CUSTOMER_TABS, canChangeAddress, isUnpaidBank, matchTab, orderStage } from '../lib/orderFlow';
 import ProductCard from '../components/ProductCard';
 
-// Như Shopee: tên trạng thái phía khách (Đã xác nhận = shop đang chuẩn bị, chờ bên giao lấy hàng)
-const ORDER_STATUS = {
-  PENDING: ['Chờ xác nhận', 'text-amber-600'],
-  CONFIRMED: ['Chờ lấy hàng', 'text-blue-600'],
-  SHIPPING: ['Chờ giao hàng', 'text-indigo-600'],
-  COMPLETED: ['Hoàn thành', 'text-emerald-600'],
-  CANCELLED: ['Đã hủy', 'text-gray-500'],
-};
-const ORDER_TABS = [
-  ['ALL', 'Tất cả'],
-  ['PENDING', 'Chờ xác nhận'],
-  ['CONFIRMED', 'Chờ lấy hàng'],
-  ['SHIPPING', 'Chờ giao hàng'],
-  ['COMPLETED', 'Hoàn thành'],
-  ['CANCELLED', 'Đã hủy'],
-];
 
 const vnd = (n) => `${Number(n || 0).toLocaleString('vi-VN')}đ`;
 const inputClass = 'w-full h-10 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:border-amber-400';
@@ -42,15 +29,18 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
   const [cancelling, setCancelling] = useState(null); // đơn đang chọn lý do huỷ
   const [cancelled, setCancelled] = useState('');
   const [viewingId, setViewingId] = useState(null); // đơn đang xem chi tiết
+  const [paying, setPaying] = useState(null); // đơn mở lại mã QR chuyển khoản
+  const [moving, setMoving] = useState(null); // đơn đang đổi địa chỉ
+  const [moved, setMoved] = useState('');
   if (loading && !orders) return <div className="flex justify-center py-10 text-gray-400"><Loader2 className="animate-spin" /></div>;
   if (error) return <p className="py-6 text-center text-sm text-red-600">{error.message}</p>;
-  const shown = (orders || []).filter((o) => filter === 'ALL' || o.status === filter);
+  const shown = (orders || []).filter(matchTab(filter));
   return (
     <div className="space-y-3">
       {/* Thanh trạng thái như mục "Đơn mua" của Shopee */}
       <div className="-mx-3 -mt-3 md:-mx-5 md:-mt-5 mb-1 flex overflow-x-auto border-b border-gray-200 scrollbar-hide">
-        {ORDER_TABS.map(([key, label]) => {
-          const n = key === 'ALL' ? 0 : (orders || []).filter((o) => o.status === key).length;
+        {CUSTOMER_TABS.map(([key, label, match]) => {
+          const n = key === 'ALL' ? 0 : (orders || []).filter(match).length;
           return (
             <button
               key={key}
@@ -61,7 +51,7 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
               }`}
             >
               {label}
-              {n > 0 && ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(key) && <span className="text-xs text-red-600">({n})</span>}
+              {n > 0 && ['UNPAID', 'PENDING', 'CONFIRMED', 'SHIPPING'].includes(key) && <span className="text-xs text-red-600">({n})</span>}
               <span className={`absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-red-600 transition-transform duration-300 ${filter === key ? 'scale-x-100' : 'scale-x-0'}`} />
             </button>
           );
@@ -82,6 +72,21 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
       {cancelled && (
         <p className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700">Đã huỷ đơn {cancelled}.</p>
       )}
+      {moved && (
+        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">✅ Đã cập nhật địa chỉ nhận hàng cho đơn {moved}. Shop đã nhận được thông báo.</p>
+      )}
+      {paying && <PayOrderSheet order={paying} onClose={() => setPaying(null)} />}
+      {moving && (
+        <ChangeAddressSheet
+          order={moving}
+          onClose={() => setMoving(null)}
+          onDone={() => {
+            setMoved(moving.code);
+            setMoving(null);
+            reload();
+          }}
+        />
+      )}
       {cancelling && (
         <CancelOrderSheet
           order={cancelling}
@@ -101,6 +106,14 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
             setViewingId(null);
             setCancelling(o);
           }}
+          onPay={(o) => {
+            setViewingId(null);
+            setPaying(o);
+          }}
+          onChangeAddress={(o) => {
+            setViewingId(null);
+            setMoving(o);
+          }}
           onReview={(it) => {
             setViewingId(null);
             setReviewing(it);
@@ -119,7 +132,8 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
         />
       )}
       {shown.map((o, i) => {
-        const [label, color] = ORDER_STATUS[o.status] || [o.status, 'text-gray-500'];
+        const [label, color] = CUSTOMER_STAGE[orderStage(o)] || [o.status, 'text-gray-500'];
+        const unpaid = isUnpaidBank(o);
         const toReview = o.status === 'COMPLETED' && o.items.find((it) => it.productId && !it.reviewed);
         return (
           <div key={`${filter}-${o.id}`} className="acc-order rounded-xl border border-gray-200 overflow-hidden bg-white" style={{ '--acc-delay': `${Math.min(i, 6) * 60}ms` }}>
@@ -128,8 +142,29 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
                 <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-black text-white">Yêu thích</span>
                 <b className="truncate text-sm text-gray-900">TriTech Channel</b>
               </span>
-              <span className={`shrink-0 font-bold uppercase ${color}`}>{label}</span>
+              <span className={`shrink-0 font-bold uppercase ${color}`}>{unpaid && o.status === 'PENDING' ? <span className="text-orange-600">Chờ thanh toán</span> : label}</span>
             </div>
+            {unpaid && (
+              <div className="flex items-center justify-between gap-2 border-b border-orange-100 bg-orange-50 px-3 py-2 text-xs text-orange-800">
+                <span>Đơn chuyển khoản chưa thanh toán – chuyển khoản để shop xử lý đơn nhanh hơn</span>
+                <button type="button" onClick={() => setPaying(o)} className="shrink-0 rounded-md bg-orange-500 px-3 py-1 font-bold text-white hover:bg-orange-600">
+                  Thanh toán ngay
+                </button>
+              </div>
+            )}
+            {o.carrier && o.status !== 'CANCELLED' && (
+              <div className="flex flex-wrap items-center gap-x-2 border-b border-gray-100 bg-cyan-50/60 px-3 py-2 text-xs text-cyan-900">
+                <Truck size={14} className="shrink-0" />
+                <span>
+                  {o.status === 'COMPLETED' ? 'Đã giao bởi' : 'Đơn vị vận chuyển:'} <b>{o.carrier}</b>
+                </span>
+                {o.trackingCode && (
+                  <span>
+                    · Mã vận đơn <b className="font-mono">{o.trackingCode}</b>
+                  </span>
+                )}
+              </div>
+            )}
             <div className="divide-y divide-gray-100">
               {o.items.map((it) => (
                 <div key={it.id} className="flex items-center gap-3 px-3 py-2.5">
@@ -185,8 +220,9 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
             {/* Nút hành động theo trạng thái – như Shopee */}
             <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 bg-gray-50/70 px-3 py-2.5">
               <span className="basis-full text-[11px] text-gray-500 sm:mr-auto sm:basis-auto">
-                {o.status === 'PENDING' && 'Shop sẽ gọi xác nhận đơn trong ít phút'}
-                {o.status === 'CONFIRMED' && 'Shop đang chuẩn bị hàng cho bạn'}
+                {o.status === 'PENDING' && (unpaid ? 'Shop xác nhận đơn sau khi nhận được tiền' : 'Shop sẽ gọi xác nhận đơn trong ít phút')}
+                {orderStage(o) === 'CONFIRMED' && 'Shop đang chuẩn bị hàng cho bạn'}
+                {orderStage(o) === 'HANDED_OVER' && 'Shop đã giao hàng cho đơn vị vận chuyển'}
                 {o.status === 'SHIPPING' && 'Đơn đang trên đường giao tới bạn'}
                 {o.status === 'COMPLETED' && (toReview ? 'Đánh giá sản phẩm để giúp người mua khác nhé!' : 'Cảm ơn bạn đã mua hàng')}
               </span>
@@ -198,6 +234,24 @@ function Orders({ orders, loading, error, reload, filter, onFilter }) {
               >
                 Liên hệ shop
               </a>
+              {canChangeAddress(o) && (
+                <button
+                  type="button"
+                  onClick={() => setMoving(o)}
+                  className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-xs font-semibold text-gray-700 transition-transform hover:bg-gray-50 active:scale-95"
+                >
+                  Đổi địa chỉ
+                </button>
+              )}
+              {unpaid && (
+                <button
+                  type="button"
+                  onClick={() => setPaying(o)}
+                  className="rounded-md bg-orange-500 px-4 py-1.5 text-xs font-bold text-white transition-transform hover:bg-orange-600 active:scale-95"
+                >
+                  Thanh toán ngay
+                </button>
+              )}
               {/* Shop chưa xác nhận thì khách được tự huỷ */}
               {o.status === 'PENDING' && (
                 <button
@@ -426,7 +480,8 @@ function Vouchers() {
 
 // Hàng icon "Đơn mua" như trang Tôi của Shopee – số đỏ = số đơn ở trạng thái đó
 const ORDER_SHORTCUTS = [
-  ['PENDING', 'Chờ xác nhận', Wallet],
+  ['UNPAID', 'Chờ thanh toán', Wallet],
+  ['PENDING', 'Chờ xác nhận', ClipboardCheck],
   ['CONFIRMED', 'Chờ lấy hàng', PackageOpen],
   ['SHIPPING', 'Chờ giao hàng', Truck],
   ['REVIEW', 'Đánh giá', Star],
@@ -446,7 +501,8 @@ export default function AccountPage() {
     setSeenTabParam(tabParam);
     if (TABS.some(([k]) => k === tabParam)) setTab(tabParam);
   }
-  const [filter, setFilter] = useState('ALL');
+  // /tai-khoan?tab=orders&filter=UNPAID (từ màn hình chờ thanh toán) mở thẳng tab đó
+  const [filter, setFilter] = useState(() => (CUSTOMER_TABS.some(([k]) => k === params.get('filter')) ? params.get('filter') : 'ALL'));
   const avatarRef = useRef(null);
   const listRef = useRef(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -476,7 +532,7 @@ export default function AccountPage() {
   const countOf = (key) =>
     key === 'REVIEW'
       ? orders.filter((o) => o.status === 'COMPLETED').reduce((n, o) => n + o.items.filter((it) => it.productId && !it.reviewed).length, 0)
-      : orders.filter((o) => o.status === key).length;
+      : orders.filter(matchTab(key)).length;
   const openOrders = (key) => {
     setTab('orders');
     setFilter(key === 'REVIEW' ? 'COMPLETED' : key);
@@ -531,7 +587,7 @@ export default function AccountPage() {
               Xem lịch sử mua hàng <ChevronRight size={16} />
             </button>
           </div>
-          <div className="grid grid-cols-4 px-2 pb-3 pt-2">
+          <div className="grid grid-cols-5 px-1 pb-3 pt-2">
             {ORDER_SHORTCUTS.map(([key, label, Icon]) => {
               const n = countOf(key);
               return (

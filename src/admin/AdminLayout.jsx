@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Package, ShoppingCart, RefreshCw, ShieldCheck, Ticket, FolderTree, Users,
+  LayoutDashboard, BarChart3, Package, ShoppingCart, RefreshCw, ShieldCheck, Ticket, FolderTree, Users,
   LogOut, Menu, ExternalLink, KeyRound, LayoutTemplate, Sun, Moon, Camera, Loader2,
   PartyPopper,
   UserRound,
@@ -16,7 +16,13 @@ import { assetUrl } from '../lib/api';
 import ChangePasswordModal from './pages/ChangePasswordModal';
 
 const NAV = [
-  { group: null, items: [{ to: '/admin', label: 'Tổng quan', icon: LayoutDashboard, end: true, adminOnly: true }] },
+  {
+    group: null,
+    items: [
+      { to: '/admin', label: 'Tổng quan', icon: LayoutDashboard, end: true, adminOnly: true },
+      { to: '/admin/analytics', label: 'Phân tích bán hàng', icon: BarChart3, adminOnly: true },
+    ],
+  },
   {
     group: 'Nhân viên',
     items: [
@@ -225,8 +231,8 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        {/* Trang Tổng quan dùng hết bề ngang màn hình lớn (có cột "Hôm nay" bên phải) */}
-        <main className={`p-4 sm:p-6 ${pathname === '/admin' || pathname === '/admin/' ? 'max-w-[1920px]' : 'max-w-[1400px]'}`}>
+        {/* Nội dung nằm giữa màn hình như Kênh Người Bán Shopee; Tổng quan / Phân tích rộng hơn */}
+        <main className={`mx-auto w-full p-4 sm:p-6 ${['/admin', '/admin/', '/admin/analytics'].includes(pathname) ? 'max-w-[1600px]' : 'max-w-[1400px]'}`}>
           <Outlet />
         </main>
       </div>
